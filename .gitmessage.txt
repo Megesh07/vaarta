@@ -1,0 +1,15 @@
+# <module> — <what changed and why, imperative mood>
+#
+# Examples:
+#   core:reasoning — add Manual Mode parity for LEGITIMACY_THEATER signal
+#   core:complaint — add PDF renderer (per PROJECT_STATUS.md Next Up #3)
+#   docs — amend AI_REASONING_ENGINE.md before implementing weight change
+#
+# Body (optional): why, not what — the diff already shows what.
+# Reference doc sections for decisions: "per AUDIO_PIPELINE.md §6".
+#
+# Rules (docs/CONTRIBUTING.md, docs/CLAUDE_CODE_RULES.md §8):
+# - One logical change per commit; keep diffs reviewable.
+# - Pack changes and code changes in separate commits.
+# - If this changes a permission / endpoint / dependency / privacy property,
+#   say so here and confirm the matching doc table was updated in this change.

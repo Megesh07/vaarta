@@ -1,5 +1,6 @@
 # Build outputs
 build/
+out/
 .gradle/
 .kotlin/
 *.apk
@@ -7,6 +8,11 @@ build/
 
 # Local machine config (SDK path is per-developer)
 local.properties
+
+# Signing — NEVER commit these (guardrail: no secrets in the repo)
+*.jks
+*.keystore
+keystore.properties
 
 # IDE
 .idea/
@@ -17,6 +23,11 @@ local.properties
 .DS_Store
 Thumbs.db
 
-# Android
+# Android native / profiling
 captures/
 .cxx/
+*.hprof
+.navigation/
+
+# Model packs (fetched on demand per docs/CONTRIBUTING.md §2, not checked into git)
+/models/
