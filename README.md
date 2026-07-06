@@ -3,6 +3,10 @@
 Real-time, on-device Android protection against **digital-arrest scams** for Indian citizens:
 it scores a suspicious call live, coaches verification, and auto-drafts the cyber-crime complaint.
 
+> 📋 **[PROJECT_STATUS.md](PROJECT_STATUS.md) — read this first.** It's the single source of
+> truth for what's built, what's not, exact toolchain paths, and the prioritized next-steps
+> backlog. Anyone (human or AI agent) picking up this project should start there, not here.
+
 > **Build intent:** hackathon / portfolio **MVP** (not production), strictly **$0** to build.
 > Scope is locked in [docs/decisions/0001-mvp-scope-lock.md](docs/decisions/0001-mvp-scope-lock.md).
 > Full design lives in [`docs/`](docs/README.md) (foundation frozen).
