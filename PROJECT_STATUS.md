@@ -138,6 +138,15 @@ Android environment (emulator).
 
 ## 5. Next Up (prioritized backlog — start at the top)
 
+**OPEN DECISION (paused 2026-07-07, resume here):** we're ~75% through the locked app scope
+(§4 below) but at 0% on the hackathon's own required deliverables (Architecture Diagram,
+Presentation Deck, Demo Video) — the prototype is demo-able today even though those three are
+unstarted. Three options were on the table when we paused: (a) finish the remaining ~25% of app
+features first, (b) stop feature work and produce the diagram/deck/video from what already works,
+(c) both in parallel (small app fixes + start the diagram, since diagram work doesn't depend on
+app code). **No option was chosen yet — ask the user which before doing either.** Don't assume;
+this was an explicit pause, not a decision.
+
 1. **Manual Mode parity fix** — add chips/cues for `SIG_LEGITIMACY_THEATER`, `SIG_IDENTITY_PHISH`,
    `SIG_ESCALATION_DOCS` in the pack + `SessionViewModel.cues`. Small, closes a guardrail gap.
 2. **Verification-question UI** — surface the pack's `questions` list in the risk card, one at a
