@@ -1,0 +1,247 @@
+{
+  "packId": "core-scam@2026.07.1",
+  "version": "2026.07.1",
+  "signals": [
+    {
+      "id": "SIG_PARCEL_PRETEXT",
+      "category": "PARCEL_PRETEXT",
+      "stage": "HOOK",
+      "weight": 10,
+      "patterns": {
+        "en": ["parcel", "courier", "fedex", "package seized", "illegal items"],
+        "hi_latn": ["parcel", "courier", "aapke naam par parcel"],
+        "hi": ["पार्सल", "कूरियर"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller opens with a seized parcel/courier story",
+        "hi": "कॉलर पार्सल/कूरियर की कहानी से शुरू करता है"
+      },
+      "manualCue": "CUE_PARCEL"
+    },
+    {
+      "id": "SIG_SIM_VIOLATION",
+      "category": "IDENTITY_PHISH",
+      "stage": "HOOK",
+      "weight": 10,
+      "patterns": {
+        "en": ["sim will be blocked", "aadhaar linked sim", "sim used for illegal", "number will be disconnected"],
+        "hi_latn": ["sim block", "aadhaar linked sim", "number band ho jayega"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Threat that your SIM/number is linked to a crime" },
+      "manualCue": "CUE_SIM"
+    },
+    {
+      "id": "SIG_AUTHORITY_CBI",
+      "category": "AUTHORITY_CLAIM",
+      "stage": "AUTHORITY",
+      "weight": 18,
+      "patterns": {
+        "en": ["cbi", "central bureau"],
+        "hi_latn": ["cbi", "central bureau"],
+        "hi": ["सीबीआई"]
+      },
+      "match": "EXACT",
+      "explain": {
+        "en": "Caller claims to be from the CBI",
+        "hi": "कॉलर खुद को CBI का बता रहा है"
+      },
+      "manualCue": "CUE_CLAIMS_AUTHORITY"
+    },
+    {
+      "id": "SIG_AUTHORITY_POLICE_ED_CUSTOMS",
+      "category": "AUTHORITY_CLAIM",
+      "stage": "AUTHORITY",
+      "weight": 16,
+      "patterns": {
+        "en": ["police", "crime branch", "cyber cell", "enforcement directorate", "customs department", "narcotics"],
+        "hi_latn": ["police", "crime branch", "cyber cell", "customs", "narcotics"],
+        "hi": ["पुलिस", "क्राइम ब्रांच", "कस्टम"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller claims to be police / ED / Customs",
+        "hi": "कॉलर खुद को पुलिस/ED/कस्टम का बता रहा है"
+      },
+      "manualCue": "CUE_CLAIMS_AUTHORITY"
+    },
+    {
+      "id": "SIG_LEGAL_THREAT",
+      "category": "LEGAL_THREAT",
+      "stage": "AUTHORITY",
+      "weight": 15,
+      "patterns": {
+        "en": ["arrest warrant", "non bailable", "digital arrest", "fir registered", "money laundering case"],
+        "hi_latn": ["arrest warrant", "digital arrest", "fir", "giraftari", "money laundering"],
+        "hi": ["गिरफ्तारी", "वारंट", "मनी लॉन्ड्रिंग"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller threatens arrest / legal action",
+        "hi": "कॉलर गिरफ्तारी/कानूनी कार्रवाई की धमकी दे रहा है"
+      },
+      "manualCue": "CUE_THREATENS_ARREST"
+    },
+    {
+      "id": "SIG_LEGITIMACY_THEATER",
+      "category": "LEGITIMACY_THEATER",
+      "stage": "AUTHORITY",
+      "weight": 8,
+      "patterns": {
+        "en": ["badge number", "case id", "officer", "warrant number"],
+        "hi_latn": ["badge number", "case id", "officer"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Unprompted badge/case numbers (legitimacy theatre)" }
+    },
+    {
+      "id": "SIG_IDENTITY_PHISH",
+      "category": "IDENTITY_PHISH",
+      "stage": "AUTHORITY",
+      "weight": 12,
+      "patterns": {
+        "en": ["aadhaar number", "confirm your aadhaar", "otp", "pan card", "bank account details"],
+        "hi_latn": ["aadhaar number", "otp batao", "pan card", "account details"],
+        "hi": ["आधार नंबर", "ओटीपी"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Caller asks for Aadhaar / OTP / account details" }
+    },
+    {
+      "id": "SIG_ISOLATION_SECRECY",
+      "category": "ISOLATION_ORDER",
+      "stage": "ISOLATION",
+      "weight": 20,
+      "patterns": {
+        "en": ["do not tell anyone", "tell no one", "do not inform your family", "confidentiality", "keep this secret"],
+        "hi_latn": ["kisi ko mat batao", "kisi ko mat bataiye", "family ko mat batana", "yeh baat secret"],
+        "hi": ["किसी को मत बताना", "किसी को मत बताइए", "परिवार को मत बताना"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller orders you to keep it secret from family — real police never do this",
+        "hi": "कॉलर कह रहा है किसी को मत बताओ — असली पुलिस ऐसा नहीं करती"
+      },
+      "manualCue": "CUE_DONT_TELL_ANYONE"
+    },
+    {
+      "id": "SIG_STAY_ON_LINE",
+      "category": "ISOLATION_ORDER",
+      "stage": "ISOLATION",
+      "weight": 18,
+      "patterns": {
+        "en": ["stay on the line", "do not disconnect", "under digital arrest", "keep your camera on", "do not hang up"],
+        "hi_latn": ["line pe raho", "phone mat kaato", "camera on rakho", "disconnect mat karo"],
+        "hi": ["लाइन पर रहो", "फोन मत काटो", "कैमरा चालू रखो"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Caller forbids you from hanging up / demands camera on" },
+      "manualCue": "CUE_STAY_ON_LINE"
+    },
+    {
+      "id": "SIG_CHANNEL_SWITCH",
+      "category": "CHANNEL_SWITCH",
+      "stage": "ISOLATION",
+      "weight": 15,
+      "patterns": {
+        "en": ["whatsapp", "skype", "video call", "download this app", "screen share"],
+        "hi_latn": ["whatsapp", "skype", "video call", "app download karo"],
+        "hi": ["व्हाट्सएप", "वीडियो कॉल"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Caller pushes you onto WhatsApp/Skype video — the #1 escalation step" },
+      "manualCue": "CUE_MOVE_TO_WHATSAPP"
+    },
+    {
+      "id": "SIG_ESCALATION_DOCS",
+      "category": "LEGAL_THREAT",
+      "stage": "ESCALATION",
+      "weight": 15,
+      "patterns": {
+        "en": ["arrest warrant issued", "asset seizure order", "supreme court", "your account is frozen", "we will arrest your family"],
+        "hi_latn": ["warrant issue ho gaya", "account freeze", "supreme court", "family ko arrest"],
+        "hi": ["वारंट जारी", "खाता फ्रीज"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Threats concretize: warrants, asset freeze, family arrest" }
+    },
+    {
+      "id": "SIG_URGENCY",
+      "category": "URGENCY_PRESSURE",
+      "stage": "ESCALATION",
+      "weight": 12,
+      "patterns": {
+        "en": ["within two hours", "immediately", "right now", "time is running out", "before it is too late"],
+        "hi_latn": ["do ghante mein", "abhi karo", "turant", "time nahi hai"],
+        "hi": ["दो घंटे में", "तुरंत", "अभी"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Artificial deadline / urgency pressure" },
+      "manualCue": "CUE_PRESSURE_STAY"
+    },
+    {
+      "id": "SIG_EXTRACTION_TRANSFER",
+      "category": "EXTRACTION_MOVE",
+      "stage": "EXTRACTION",
+      "weight": 25,
+      "patterns": {
+        "en": ["transfer the money", "rbi account", "supervised account", "verify your funds", "security deposit", "refundable deposit"],
+        "hi_latn": ["paise transfer karo", "rbi account", "funds verify", "security deposit", "paise bhejo"],
+        "hi": ["पैसे ट्रांसफर", "पैसे भेजो", "आरबीआई खाता"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller demands money transfer for 'verification' — this is the extraction step",
+        "hi": "कॉलर 'सत्यापन' के लिए पैसे ट्रांसफर करने को कह रहा है"
+      },
+      "manualCue": "CUE_DEMANDS_MONEY"
+    },
+    {
+      "id": "SIG_EXTRACTION_UPI_QR",
+      "category": "EXTRACTION_MOVE",
+      "stage": "EXTRACTION",
+      "weight": 22,
+      "patterns": {
+        "en": ["scan this qr", "upi id", "send to this upi", "account number is"],
+        "hi_latn": ["qr scan karo", "upi id", "is upi pe bhejo"],
+        "hi": ["क्यूआर स्कैन", "यूपीआई"]
+      },
+      "match": "FUZZY1",
+      "explain": { "en": "Caller sends a UPI/QR to pay into" },
+      "manualCue": "CUE_DEMANDS_MONEY"
+    }
+  ],
+  "questions": [
+    {
+      "id": "Q_STATION",
+      "stage": "AUTHORITY",
+      "category": "AUTHORITY_CLAIM",
+      "text": {
+        "en": "Which police station are you calling from? I will call them directly.",
+        "hi": "आप किस थाने से बोल रहे हैं? मैं खुद वहाँ कॉल करूँगा।"
+      },
+      "goal": "A real officer can name a verifiable station; the script cannot."
+    },
+    {
+      "id": "Q_VERIFY_1930",
+      "stage": "AUTHORITY",
+      "category": "LEGAL_THREAT",
+      "text": {
+        "en": "I will verify this with the 1930 cyber helpline and call back.",
+        "hi": "मैं इसे 1930 साइबर हेल्पलाइन से सत्यापित करके वापस कॉल करूँगा।"
+      },
+      "goal": "Hanging up to verify breaks the isolation cage; scripts forbid it."
+    },
+    {
+      "id": "Q_ADD_FAMILY",
+      "stage": "ISOLATION",
+      "category": "ISOLATION_ORDER",
+      "text": {
+        "en": "I am adding my son/daughter to this call now.",
+        "hi": "मैं अभी अपने बेटे/बेटी को इस कॉल में जोड़ रहा हूँ।"
+      },
+      "goal": "Direct isolation breaker; refusal is itself a near-certain scam tell."
+    }
+  ]
+}

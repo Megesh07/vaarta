@@ -1,0 +1,22 @@
+# Build outputs
+build/
+.gradle/
+.kotlin/
+*.apk
+*.aab
+
+# Local machine config (SDK path is per-developer)
+local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android
+captures/
+.cxx/
