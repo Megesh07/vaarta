@@ -180,3 +180,16 @@ Android environment (emulator).
   tested (14 tests green). Android `:app` built, installed, and manually verified live on the
   `vaarta_test` emulator (demo scam call correctly reached SCAM_PATTERN 100/100). This status file
   and git version control created.
+- **2026-07-07 (later same day)** — Git hygiene pass: renamed `master` → `main` (matches
+  `CONTRIBUTING.md`, was mismatched before); added `.gitattributes` (LF enforced regardless of a
+  contributor's local `core.autocrlf`); hardened `.gitignore` (keystores, native build dirs,
+  `/models/`); added local commit-message template matching the `module — what/why` convention.
+  Re-verified the foundation from a clean state, not from memory: `gradle clean test` → 12/12 pass
+  (counted from fresh XML results, not the build banner); deleted and rebuilt the APK from source
+  (byte-identical, 24,997,022 bytes — confirms reproducibility); reinstalled fresh on the emulator
+  and re-ran the demo tap end-to-end. One methodology note worth keeping: the first re-verify
+  screenshot looked wrong (Android's default splash icon, not the app), which turned out to be a
+  too-short wait after `force-stop` (cold start takes ~6s) — confirmed via logcat (no crash, process
+  alive, `MainActivity` resumed) before concluding it was a test-script timing issue, not an app
+  bug. Re-ran with a longer wait and got the correct SCAM_PATTERN 100/100 result again. No app code
+  changed in this pass — process/tooling only.
