@@ -4,10 +4,14 @@ import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.RiskState
 import ai.vaarta.export.PdfExporter
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.core.content.FileProvider
@@ -39,6 +43,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -101,7 +107,13 @@ fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit, onExportPdf: (
     val aiEnabled by vm.aiEnabled.collectAsState()
     val aiLoading by vm.aiLoading.collectAsState()
     val aiSuggestion by vm.aiSuggestion.collectAsState()
+    val liveStatus by vm.liveStatus.collectAsState()
     val scroll = rememberScrollState()
+
+    val context = LocalContext.current
+    val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.startLiveListening()
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -131,6 +143,28 @@ fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit, onExportPdf: (
 
             if (vm.aiConfigured) {
                 AiConsentRow(enabled = aiEnabled, onToggle = { vm.setAiEnabled(it) })
+
+                if (liveStatus == null) {
+                    Button(
+                        onClick = {
+                            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                                PackageManager.PERMISSION_GRANTED
+                            if (granted) vm.startLiveListening() else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4527A0)),
+                    ) { Text("🎙  Start live listening") }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        Text("● Live: $liveStatus", color = Color(0xFF4527A0), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Spacer(Modifier.weight(1f))
+                        OutlinedButton(onClick = { vm.stopLiveListening() }) { Text("Stop") }
+                    }
+                    Text("🔊  Put the call on speaker so VAARTA can hear the caller.", fontSize = 12.sp, color = Color.Gray)
+                }
             }
 
             if (state.level.ordinal >= RiskLevel.HIGH_RISK.ordinal) {

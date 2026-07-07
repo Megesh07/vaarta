@@ -71,6 +71,7 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
 
     // Parse the Gemini JSON response into LiveSuggestion. HTTP uses the JDK's HttpURLConnection
-    // (no networking dep yet) for the text-mode call; a WebSocket client is added later for Live streaming.
+    // for the text-mode call; OkHttp provides the WebSocket for the Gemini Live streaming path.
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.okhttp)
 }

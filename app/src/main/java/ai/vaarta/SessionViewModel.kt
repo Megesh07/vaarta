@@ -8,6 +8,8 @@ import ai.vaarta.core.complaint.ComplaintInput
 import ai.vaarta.core.complaint.ComplaintRenderers
 import ai.vaarta.core.complaint.DetectedSignal
 import ai.vaarta.ai.GeminiClient
+import ai.vaarta.ai.GeminiLiveClient
+import ai.vaarta.audio.AudioCapture
 import ai.vaarta.core.reasoning.PackLoader
 import ai.vaarta.core.reasoning.QuestionSelector
 import ai.vaarta.core.reasoning.RiskEngine
@@ -77,6 +79,60 @@ class SessionViewModel : ViewModel() {
 
     /** The most recent thing the "caller" said (from transcript events) — the AI's input. */
     private var lastCallerLine: String = ""
+
+    // --- Live audio listening (ADR-0002): mic -> Gemini Live -> transcription + suggestion ---
+    private var liveClient: GeminiLiveClient? = null
+    private var audioCapture: AudioCapture? = null
+
+    /** null = not listening; otherwise the live-session status label for the UI. */
+    private val _liveStatus = MutableStateFlow<String?>(null)
+    val liveStatus: StateFlow<String?> = _liveStatus.asStateFlow()
+
+    /** Start live listening. Caller (Activity) MUST have RECORD_AUDIO granted first. */
+    fun startLiveListening() {
+        if (liveClient != null) return
+        _aiEnabled.value = true // live listening implies the AI layer is on
+        val client = GeminiLiveClient(
+            onCallerText = { text -> viewModelScope.launch { onLiveCallerText(text) } },
+            onSuggestion = { raw -> viewModelScope.launch { onLiveSuggestion(raw) } },
+            onStatus = { st -> _liveStatus.value = st.name },
+        )
+        liveClient = client
+        client.start()
+        val capture = AudioCapture { pcm, len -> client.sendAudio(pcm, len) }
+        if (!capture.start()) {
+            _liveStatus.value = GeminiLiveClient.Status.ERROR.name
+            stopLiveListening()
+            return
+        }
+        audioCapture = capture
+    }
+
+    fun stopLiveListening() {
+        audioCapture?.stop(); audioCapture = null
+        liveClient?.close(); liveClient = null
+        _liveStatus.value = null
+        _aiLoading.value = false
+    }
+
+    /** Caller's transcribed words → deterministic engine (score stays deterministic, ADR-0002). */
+    private fun onLiveCallerText(text: String) {
+        if (text.isBlank()) return
+        clockMs += 3_000
+        lastCallerLine = text
+        applyState(engine.ingest(RiskEvent.Transcript(text, clockMs, clockMs + 3_000, isFinal = true, confidence = 0.9f)))
+    }
+
+    /** AI's streamed suggestion → safety filter → shown only if it passes (else deterministic). */
+    private fun onLiveSuggestion(raw: String) {
+        _aiSuggestion.value =
+            if (SuggestionSafetyFilter.check(raw) is SuggestionSafetyFilter.Result.Accepted) raw else null
+    }
+
+    override fun onCleared() {
+        stopLiveListening()
+        super.onCleared()
+    }
 
     /**
      * Manual Mode cues (id -> label) — MOBILE_UX_SPEC.md §3.3.
