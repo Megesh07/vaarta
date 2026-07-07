@@ -147,6 +147,17 @@ stays deterministic per this ADR); AI-grade understanding + rule-grade safety fr
 How we measure specialization working: a curated eval set of scam lines → expected suggestion
 category (Phase D), same discipline as the existing text-mode eval.
 
+## Accepted deviation — API key embedded in the APK
+
+PRIVACY_SECURITY.md §6 / ADR-0001 D7 state "no raw API keys client-side; use a stateless backend
+proxy." The MVP has **no backend** ($0), so the Gemini key is injected via `BuildConfig` from the
+git-ignored `secrets.properties` — which means it is compiled into the (debug) APK and is
+extractable by anyone who unpacks it. **Accepted for the sideloaded $0 MVP shared with a few
+people**, NOT acceptable for public/production release. Mitigations: key is never committed to git;
+key should be rotated after demo; the proper production fix (a stateless proxy that holds the key
+server-side) is the same one D7 already prescribes and is out of MVP scope. This is logged as a
+conscious trade-off, not an oversight.
+
 ## Alternatives considered
 
 | Option | Why not chosen |

@@ -9,10 +9,12 @@ out/
 # Local machine config (SDK path is per-developer)
 local.properties
 
-# Signing — NEVER commit these (guardrail: no secrets in the repo)
+# Signing / secrets — NEVER commit these (guardrail: no secrets in the repo)
 *.jks
 *.keystore
 keystore.properties
+secrets.properties
+*.env
 
 # IDE
 .idea/
