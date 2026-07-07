@@ -115,6 +115,7 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Intel pack `core-scam-v1.json` | 14 signals + 3 questions, EN/HI/Hinglish, loaded and matched correctly in tests + live run |
 | Manual Mode ↔ signal parity | **Closed.** All 14 signals now have a `manualCue`; enforced by `PackParityTest.kt` so it can't silently regress |
 | Risk UI — verification questions | **Closed.** `QuestionSelector` (core:reasoning, 5 tests) picks the highest-relevance question for the current stage; app shows one at a time with tap-to-cycle. Live-verified on the emulator: demo call correctly surfaced the ISOLATION-stage question first, tap cycled to the AUTHORITY-stage one. |
+| Complaint export — PDF | **Closed.** `PdfExporter` (app, Android `PdfDocument` — can't be pure-Kotlin-tested, no unit tests for this one, noted honestly) paints `ComplaintRenderers.toText`'s output onto paginated A4 pages. Live-verified on the emulator: tapped Export PDF → Android share sheet opened offering a real `vaarta_complaint.pdf` with a **Print** option (OS only offers that for content it successfully parsed as a valid document) → pulled the file via `adb run-as` and confirmed `%PDF-1.4` header + `%%EOF` trailer, 39,244 bytes. Page-by-page visual render was not separately confirmed (no `pdftoppm` in this environment) — noted as the one unverified edge of this check. |
 
 **Total: 18 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
 build banner — see §7's evidence rule). Plus manual end-to-end verification on a real Android
@@ -130,7 +131,6 @@ by parsing `build/test-results/test/*.xml` directly, is 13. Fixed here rather th
 | Component | What's missing |
 |---|---|
 | Intel pack breadth | Only a ~14-signal seed. Docs call for full per-scam-code (SC-01..SC-05) pattern lists per language. Current pack leans digital-arrest-generic. |
-| Complaint export | JSON + TXT renderers done and tested. **PDF renderer not built** (needs Android `PdfDocument`, was deferred as Android-specific). DOCX correctly out of scope. |
 | Guardian/family alert | Share-intent mechanism works, but the message is **hardcoded/canned** — no real guardian contact picker or per-contact consent flow. |
 
 ### ❌ Not built (correctly deferred per ADR-0001, or genuinely not started)
@@ -159,8 +159,7 @@ track status via its own color-coding, not describe a "finished" product, so it 
 the same way — but no further deliverable work happens until the app itself is further along.
 
 1. ~~Verification-question UI~~ — ✅ **Done**, see §4.
-2. **PDF export** — Android `PdfDocument` renderer for `ComplaintDraft` (parallel to the existing
-   TXT/JSON renderers in `core:complaint`).
+2. ~~PDF export~~ — ✅ **Done**, see §4.
 3. **Real guardian contact picker** — replace the canned alert message with a system contact picker
    + stored preference (still share-intent only, per the locked `SEND_SMS` decision).
 4. **Intel pack breadth** — grow signal/pattern coverage per `SCAM_INTELLIGENCE.md` §5, still EN/HI/Hinglish only for MVP.
@@ -241,3 +240,17 @@ the same way — but no further deliverable work happens until the app itself is
   ("I am adding my son/daughter..."), tapping cycled to the AUTHORITY-stage one ("Which police
   station..."), matching `QuestionSelectorTest`'s predicted order exactly. Both unit-level and
   device-level evidence agree — no daylight between "tests pass" and "the feature actually works."
+- **2026-07-07 (same session, PDF export)** — Closed Next Up #2. Added `PdfExporter` (app-level,
+  `android.graphics.pdf.PdfDocument` — Android-only, so this can't live in `core:complaint`;
+  honestly has no unit tests, noted rather than hidden) plus a `FileProvider` + `file_paths.xml`
+  so the generated PDF can be shared via `content://` on modern Android without any new dangerous
+  permission. Verified live on the emulator, methodically: (1) hit a coordinate bug mid-check —
+  used displayed-screenshot pixel coordinates for `adb shell input tap` instead of converting to
+  the device's actual 1080x2400 resolution, taps landed on the wrong element; caught it, switched
+  to `uiautomator dump` for exact element bounds instead of eyeballing screenshots, which is the
+  more reliable method going forward; (2) with correct coordinates, tapped Export PDF — Android's
+  share sheet opened with a real `vaarta_complaint.pdf` and a **Print** option (the OS only offers
+  that for content it successfully parsed); (3) pulled the file via `adb shell run-as` and
+  confirmed `%PDF-1.4` header + `%%EOF` trailer, 39,244 bytes. Four independent signals the PDF is
+  real and valid; page-by-page visual render specifically was not confirmed (no `pdftoppm` in this
+  environment) — that's the one honestly-open edge of this verification.
