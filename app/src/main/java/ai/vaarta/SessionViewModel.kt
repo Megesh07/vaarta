@@ -37,14 +37,21 @@ class SessionViewModel : ViewModel() {
     private val _complaint = MutableStateFlow<String?>(null)
     val complaint: StateFlow<String?> = _complaint.asStateFlow()
 
-    /** Manual Mode cues (id -> label) — MOBILE_UX_SPEC.md §3.3. */
+    /**
+     * Manual Mode cues (id -> label) — MOBILE_UX_SPEC.md §3.3.
+     * Every signal in the pack that carries a `manualCue` must have a matching entry here
+     * (IMPLEMENTATION_GUARDRAILS.md ALWAYS #10 — audio-derived signals need Manual Mode parity).
+     */
     val cues: List<Pair<String, String>> = listOf(
         "CUE_CLAIMS_AUTHORITY" to "Says POLICE / CBI / ED",
         "CUE_THREATENS_ARREST" to "Threatens ARREST / warrant",
         "CUE_PARCEL" to "Mentions PARCEL / customs",
+        "CUE_BADGE_CASE_ID" to "Gives badge / case number unprompted",
+        "CUE_ASKS_AADHAAR_OTP" to "Asks for AADHAAR / OTP / account",
         "CUE_DONT_TELL_ANYONE" to "Says DON'T TELL ANYONE",
         "CUE_STAY_ON_LINE" to "Says STAY ON THE LINE",
         "CUE_MOVE_TO_WHATSAPP" to "Move to WHATSAPP / video",
+        "CUE_SENT_FAKE_DOCS" to "Sends warrant / freeze 'document'",
         "CUE_PRESSURE_STAY" to "Urgency / deadline",
         "CUE_DEMANDS_MONEY" to "Demands MONEY / UPI",
     )

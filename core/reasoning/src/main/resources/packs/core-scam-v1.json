@@ -93,7 +93,8 @@
         "hi_latn": ["badge number", "case id", "officer"]
       },
       "match": "FUZZY1",
-      "explain": { "en": "Unprompted badge/case numbers (legitimacy theatre)" }
+      "explain": { "en": "Unprompted badge/case numbers (legitimacy theatre)" },
+      "manualCue": "CUE_BADGE_CASE_ID"
     },
     {
       "id": "SIG_IDENTITY_PHISH",
@@ -106,7 +107,8 @@
         "hi": ["आधार नंबर", "ओटीपी"]
       },
       "match": "FUZZY1",
-      "explain": { "en": "Caller asks for Aadhaar / OTP / account details" }
+      "explain": { "en": "Caller asks for Aadhaar / OTP / account details" },
+      "manualCue": "CUE_ASKS_AADHAAR_OTP"
     },
     {
       "id": "SIG_ISOLATION_SECRECY",
@@ -164,7 +166,8 @@
         "hi": ["वारंट जारी", "खाता फ्रीज"]
       },
       "match": "FUZZY1",
-      "explain": { "en": "Threats concretize: warrants, asset freeze, family arrest" }
+      "explain": { "en": "Threats concretize: warrants, asset freeze, family arrest" },
+      "manualCue": "CUE_SENT_FAKE_DOCS"
     },
     {
       "id": "SIG_URGENCY",
