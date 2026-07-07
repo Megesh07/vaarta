@@ -303,3 +303,14 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   DEBUGGING_PLAYBOOK's content-free logging. Phase B (text-mode AI) is functionally DONE and proven
   in-app. Remaining for full vision: live-audio streaming (Gemini Live WebSocket + mic) — needs the
   physical phone. Standing reminders: rotate the API key; key is embedded in the debug APK (ADR-0002).
+- **2026-07-07 (same session, Live WebSocket protocol PROVEN)** — Before building Android mic/stream
+  code, de-risked the Gemini Live BidiGenerateContent protocol with a headless OkHttp probe
+  (`tools:demo:liveProbe`, run via git-ignored key). Key finding it caught early: the native-audio
+  model REJECTS `responseModalities:["TEXT"]` (close 1007) — it's the only Live model on this key, so
+  Live must run in AUDIO mode. Solution proven working: AUDIO mode + `outputAudioTranscription`
+  (AI suggestion as text, displayed; audio never played) + `inputAudioTranscription` (scammer words
+  → deterministic engine). Full protocol recipe recorded in ADR-0002. Verified turn returned a real
+  text suggestion. Added OkHttp dep. **Entire live-audio AI path now de-risked at $0 before touching
+  the device.** Next (big, needs the physical phone to test): Android mic capture (AudioRecord 16kHz
+  PCM16) + foreground service + `GeminiLiveClient` (OkHttp WebSocket streaming) + a "live listening"
+  UI mode. Reminder unchanged: rotate the API key.

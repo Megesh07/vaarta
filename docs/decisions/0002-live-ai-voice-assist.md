@@ -147,6 +147,26 @@ stays deterministic per this ADR); AI-grade understanding + rule-grade safety fr
 How we measure specialization working: a curated eval set of scam lines → expected suggestion
 category (Phase D), same discipline as the existing text-mode eval.
 
+## Live WebSocket protocol — PROVEN headless (2026-07-07, `tools:demo:liveProbe`)
+
+De-risked the BidiGenerateContent protocol before any Android/mic code (findings, so no one re-guesses):
+- Endpoint: `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=…`
+- **The native-audio model does NOT support `responseModalities:["TEXT"]`** — returns close code
+  1007. It is the ONLY Live model this key exposes. So Live runs in **AUDIO** mode.
+- Recipe that works: setup with `model: models/gemini-2.5-flash-native-audio-latest`,
+  `generationConfig.responseModalities:["AUDIO"]`, `systemInstruction` (our specialized prompt),
+  **`outputAudioTranscription:{}`** and **`inputAudioTranscription:{}`**.
+- We take **`outputTranscription.text`** (streamed) as the AI's suggestion to display, and never play
+  the returned audio (playing it would leak to the scammer on speaker). `inputTranscription` gives
+  the caller's words as text to feed the deterministic engine — one stream, both needs met.
+- Flow: connect → send `setup` → wait `setupComplete` → send `realtimeInput.mediaChunks`
+  (`audio/pcm;rate=16000`, base64) for live mic, or `clientContent.turns` for text → collect
+  `serverContent` messages (thinking parts have `"thought":true`; transcription in
+  `outputTranscription`) → `generationComplete`.
+- Verified turn: scammer line → suggestion "I must inform my family before transferring any funds."
+- **Tuning note:** thinking is ON by default in Live (`"thought":true` chunks add latency) — set
+  `generationConfig.thinkingConfig.thinkingBudget=0` in the real setup, as on the REST path.
+
 ## Accepted deviation — API key embedded in the APK
 
 PRIVACY_SECURITY.md §6 / ADR-0001 D7 state "no raw API keys client-side; use a stateless backend
