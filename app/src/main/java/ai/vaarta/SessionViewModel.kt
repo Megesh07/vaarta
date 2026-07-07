@@ -7,15 +7,21 @@ import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.core.complaint.ComplaintInput
 import ai.vaarta.core.complaint.ComplaintRenderers
 import ai.vaarta.core.complaint.DetectedSignal
+import ai.vaarta.ai.GeminiClient
 import ai.vaarta.core.reasoning.PackLoader
 import ai.vaarta.core.reasoning.QuestionSelector
 import ai.vaarta.core.reasoning.RiskEngine
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.RiskState
+import ai.vaarta.core.reasoning.SuggestionSafetyFilter
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Bridges the tested Tier-0 engine (core:reasoning) and complaint builder (core:complaint) to the
@@ -53,6 +59,25 @@ class SessionViewModel : ViewModel() {
     private val _currentQuestion = MutableStateFlow<String?>(null)
     val currentQuestion: StateFlow<String?> = _currentQuestion.asStateFlow()
 
+    // --- Live AI layer (ADR-0002) — opt-in, fails closed, never replaces the deterministic path ---
+
+    /** Opt-in consent for cloud AI suggestions. OFF by default; app works fully without it. */
+    private val _aiEnabled = MutableStateFlow(false)
+    val aiEnabled: StateFlow<Boolean> = _aiEnabled.asStateFlow()
+
+    private val _aiLoading = MutableStateFlow(false)
+    val aiLoading: StateFlow<Boolean> = _aiLoading.asStateFlow()
+
+    /** Safe AI suggestion text to show, or null (never shown if unavailable/unsafe → deterministic). */
+    private val _aiSuggestion = MutableStateFlow<String?>(null)
+    val aiSuggestion: StateFlow<String?> = _aiSuggestion.asStateFlow()
+
+    /** True only if a key is compiled in — lets the UI explain when AI can't be enabled. */
+    val aiConfigured: Boolean = GeminiClient.isConfigured()
+
+    /** The most recent thing the "caller" said (from transcript events) — the AI's input. */
+    private var lastCallerLine: String = ""
+
     /**
      * Manual Mode cues (id -> label) — MOBILE_UX_SPEC.md §3.3.
      * Every signal in the pack that carries a `manualCue` must have a matching entry here
@@ -88,6 +113,41 @@ class SessionViewModel : ViewModel() {
         _tapped.value = emptySet()
         _complaint.value = null
         _complaintDraft.value = null
+        lastCallerLine = ""
+        _aiSuggestion.value = null
+        _aiLoading.value = false
+    }
+
+    /** Opt-in toggle for the cloud AI layer. Turning it off immediately clears any AI suggestion. */
+    fun setAiEnabled(enabled: Boolean) {
+        _aiEnabled.value = enabled
+        if (!enabled) {
+            _aiSuggestion.value = null
+            _aiLoading.value = false
+        } else if (lastCallerLine.isNotBlank()) {
+            requestAiSuggestion()
+        }
+    }
+
+    /**
+     * Ask the AI for a suggested reply to [lastCallerLine]. Async, off the main thread, and
+     * FAILS CLOSED: not enabled / not configured / no caller line / any error / unsafe output all
+     * leave [aiSuggestion] null so the UI shows only the deterministic question (ADR-0002).
+     */
+    private fun requestAiSuggestion() {
+        if (!_aiEnabled.value || !aiConfigured || lastCallerLine.isBlank()) {
+            _aiSuggestion.value = null
+            return
+        }
+        val line = lastCallerLine
+        val stage = _state.value.stage.name
+        _aiLoading.value = true
+        viewModelScope.launch {
+            val suggestion = withContext(Dispatchers.IO) { GeminiClient.suggest(line, stage) }
+            // Rail: only show it if it survives the safety filter; else stay null (deterministic).
+            _aiSuggestion.value = suggestion?.let { SuggestionSafetyFilter.sanitizedOrNull(it) }
+            _aiLoading.value = false
+        }
     }
 
     /** Rig-mode demo: play a scripted digital-arrest call through the real engine. */
@@ -107,7 +167,9 @@ class SessionViewModel : ViewModel() {
             last = engine.ingest(RiskEvent.Transcript(text, t, t + 3_000, isFinal = true, confidence = 0.9f))
         }
         clockMs = 155_000
+        lastCallerLine = script.last().second // the AI reacts to the latest caller utterance
         applyState(last)
+        requestAiSuggestion() // no-op unless AI is opted in
     }
 
     /** Tap = next suggestion (MOBILE_UX_SPEC.md §3.2) — cycles among questions relevant to the current stage. */

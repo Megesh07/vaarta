@@ -289,3 +289,17 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   latency + to not blow the token budget. **The whole AI approach is now de-risked at $0 before the
   Android/streaming build.** Next: wire this proven `generateContent` call into the app as an
   "AI-suggested" card (text-mode first, emulator-testable), then the live-audio streaming layer.
+- **2026-07-07 (same session, LIVE AI WORKING in-app)** — Wired the proven Gemini call into the app
+  end-to-end: `GeminiClient` (app, HttpURLConnection + structured output, thinking off, fails-closed
+  on any error), opt-in consent toggle (OFF by default), async request via viewModelScope/IO, result
+  passed through `SuggestionSafetyFilter`, shown as a distinct "AI-SUGGESTED REPLY" card ALONGSIDE
+  (never replacing) the deterministic ASK-THEM card. **Verified LIVE on the emulator:** enabled AI,
+  ran the demo scam call → real Gemini reply appeared — "I will not transfer any money. I will verify
+  this with the RBI directly." — contextual to the scammer's last line, safe, filter-passed. Two
+  test-method bugs hit and fixed along the way (both mine, not the app's): (1) tapped adb coords from
+  a taller layout onto a shorter fresh-launch layout → missed the toggle; fix = run demo first, then
+  dump UI for real bounds; (2) added temporary content-free diagnostic logging to GeminiClient (HTTP
+  code + error type only, no key/PII) to diagnose the silent fail-closed — kept, aligns with
+  DEBUGGING_PLAYBOOK's content-free logging. Phase B (text-mode AI) is functionally DONE and proven
+  in-app. Remaining for full vision: live-audio streaming (Gemini Live WebSocket + mic) — needs the
+  physical phone. Standing reminders: rotate the API key; key is embedded in the debug APK (ADR-0002).
