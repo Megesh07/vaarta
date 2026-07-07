@@ -114,10 +114,11 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | `app` — Manual Mode chips, risk card (4 states), demo-call button, family-alert share, complaint share | **Manually verified live** on the `vaarta_test` emulator: tapped "Run demo scam call" → card correctly went OBSERVING → SCAM_PATTERN (100/100), "Alert family" button appeared, counter-fact line appeared |
 | Intel pack `core-scam-v1.json` | 14 signals + 3 questions, EN/HI/Hinglish, loaded and matched correctly in tests + live run |
 | Manual Mode ↔ signal parity | **Closed.** All 14 signals now have a `manualCue`; enforced by `PackParityTest.kt` so it can't silently regress |
+| Risk UI — verification questions | **Closed.** `QuestionSelector` (core:reasoning, 5 tests) picks the highest-relevance question for the current stage; app shows one at a time with tap-to-cycle. Live-verified on the emulator: demo call correctly surfaced the ISOLATION-stage question first, tap cycled to the AUTHORITY-stage one. |
 
-**Total: 13 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
-build banner — see §7's evidence rule). Plus one manual end-to-end verification on a real Android
-environment (emulator).
+**Total: 18 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
+build banner — see §7's evidence rule). Plus manual end-to-end verification on a real Android
+environment (emulator) for both Manual Mode/demo-call flow and the question-cycling UI.
 
 **Correction (2026-07-07):** earlier notes in this file's history and in conversation said "14"
 then implied "15" total tests — both were arithmetic slips (RiskEngineTest has always had 6 tests,
@@ -129,7 +130,6 @@ by parsing `build/test-results/test/*.xml` directly, is 13. Fixed here rather th
 | Component | What's missing |
 |---|---|
 | Intel pack breadth | Only a ~14-signal seed. Docs call for full per-scam-code (SC-01..SC-05) pattern lists per language. Current pack leans digital-arrest-generic. |
-| Risk UI — verification questions | The question bank exists in the pack (`Q_STATION`, `Q_VERIFY_1930`, `Q_ADD_FAMILY`) but **nothing in the UI surfaces or cycles them.** The bubble spec's "ASK THEM: ❝...❞" one-question-at-a-time feature is unbuilt. |
 | Complaint export | JSON + TXT renderers done and tested. **PDF renderer not built** (needs Android `PdfDocument`, was deferred as Android-specific). DOCX correctly out of scope. |
 | Guardian/family alert | Share-intent mechanism works, but the message is **hardcoded/canned** — no real guardian contact picker or per-contact consent flow. |
 
@@ -158,8 +158,7 @@ The Architecture Diagram (done, see below) is the one exception worth keeping: i
 track status via its own color-coding, not describe a "finished" product, so it doesn't go stale
 the same way — but no further deliverable work happens until the app itself is further along.
 
-1. **Verification-question UI** — surface the pack's `questions` list in the risk card, one at a
-   time, cycling on tap (per `MOBILE_UX_SPEC.md` §3.2). The data already exists; this is UI-only.
+1. ~~Verification-question UI~~ — ✅ **Done**, see §4.
 2. **PDF export** — Android `PdfDocument` renderer for `ComplaintDraft` (parallel to the existing
    TXT/JSON renderers in `core:complaint`).
 3. **Real guardian contact picker** — replace the canned alert message with a system contact picker
@@ -233,3 +232,12 @@ the same way — but no further deliverable work happens until the app itself is
   Net effect: same conclusion the *first* pause reached before deadline-urgency reasoning
   (unconfirmed) overrode it — worth remembering next time a "hackathons need deliverables early"
   instinct shows up without checking whether it's actually true for this project.
+- **2026-07-07 (same session, back to app work)** — Closed Next Up #1: verification-question UI.
+  Added `QuestionSelector` to `core:reasoning` (pure Kotlin, 5 new tests) rather than putting
+  selection logic directly in the Android ViewModel, so it stays unit-testable. Wired into
+  `SessionViewModel`/`MainActivity` — one question shown at a time, tap cycles, matches
+  `MOBILE_UX_SPEC.md` §3.2. Verified via `gradle clean test` (18/18 pass, fresh XML) AND live on
+  the `vaarta_test` emulator: demo call correctly surfaced the ISOLATION-stage question first
+  ("I am adding my son/daughter..."), tapping cycled to the AUTHORITY-stage one ("Which police
+  station..."), matching `QuestionSelectorTest`'s predicted order exactly. Both unit-level and
+  device-level evidence agree — no daylight between "tests pass" and "the feature actually works."
