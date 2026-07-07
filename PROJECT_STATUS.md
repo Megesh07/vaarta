@@ -106,15 +106,23 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Component | Evidence |
 |---|---|
 | `core:common` — event model, intel-pack model, text normalization | Compiles; used by all other modules |
-| `core:reasoning` — Tier-0 deterministic engine (signal matching, stage grammar, scoring, hysteresis) | **8 unit tests green** (`RiskEngineTest.kt`) |
+| `core:reasoning` — Tier-0 deterministic engine (signal matching, stage grammar, scoring, hysteresis) | **6 unit tests green** (`RiskEngineTest.kt`) |
 | `core:reasoning` — text-mode eval harness | **2 tests green** (`EvalTest.kt`): scam script reaches SCAM_PATTERN by min 3; genuine police call never does |
+| `core:reasoning` — pack data-invariant | **1 test green** (`PackParityTest.kt`): every signal has a Manual Mode cue |
 | `core:complaint` — slot-based complaint builder + JSON/TXT renderers | **4 tests green** (`ComplaintBuilderTest.kt`) |
 | `tools:demo` — CLI rig, real engine end-to-end | Runs; verified output (risk trace + generated complaint) |
 | `app` — Manual Mode chips, risk card (4 states), demo-call button, family-alert share, complaint share | **Manually verified live** on the `vaarta_test` emulator: tapped "Run demo scam call" → card correctly went OBSERVING → SCAM_PATTERN (100/100), "Alert family" button appeared, counter-fact line appeared |
 | Intel pack `core-scam-v1.json` | 14 signals + 3 questions, EN/HI/Hinglish, loaded and matched correctly in tests + live run |
+| Manual Mode ↔ signal parity | **Closed.** All 14 signals now have a `manualCue`; enforced by `PackParityTest.kt` so it can't silently regress |
 
-**Total: 14 automated tests, 0 failures.** Plus one manual end-to-end verification on a real
-Android environment (emulator).
+**Total: 13 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
+build banner — see §7's evidence rule). Plus one manual end-to-end verification on a real Android
+environment (emulator).
+
+**Correction (2026-07-07):** earlier notes in this file's history and in conversation said "14"
+then implied "15" total tests — both were arithmetic slips (RiskEngineTest has always had 6 tests,
+not 8; it was momentarily miscounted right after it was first written). The true count, verified
+by parsing `build/test-results/test/*.xml` directly, is 13. Fixed here rather than propagated.
 
 ### 🟡 Partially built (real gaps, not hidden)
 
@@ -124,7 +132,6 @@ Android environment (emulator).
 | Risk UI — verification questions | The question bank exists in the pack (`Q_STATION`, `Q_VERIFY_1930`, `Q_ADD_FAMILY`) but **nothing in the UI surfaces or cycles them.** The bubble spec's "ASK THEM: ❝...❞" one-question-at-a-time feature is unbuilt. |
 | Complaint export | JSON + TXT renderers done and tested. **PDF renderer not built** (needs Android `PdfDocument`, was deferred as Android-specific). DOCX correctly out of scope. |
 | Guardian/family alert | Share-intent mechanism works, but the message is **hardcoded/canned** — no real guardian contact picker or per-contact consent flow. |
-| Manual Mode ↔ signal parity | 3 of 14 signals have no matching Manual Mode chip: `SIG_LEGITIMACY_THEATER`, `SIG_IDENTITY_PHISH`, `SIG_ESCALATION_DOCS`. This violates `IMPLEMENTATION_GUARDRAILS.md` ALWAYS #10 (every audio-derived signal needs a Manual Mode equivalent) — a known, tracked gap, not an oversight. |
 
 ### ❌ Not built (correctly deferred per ADR-0001, or genuinely not started)
 
@@ -138,28 +145,30 @@ Android environment (emulator).
 
 ## 5. Next Up (prioritized backlog — start at the top)
 
-**OPEN DECISION (paused 2026-07-07, resume here):** we're ~75% through the locked app scope
-(§4 below) but at 0% on the hackathon's own required deliverables (Architecture Diagram,
-Presentation Deck, Demo Video) — the prototype is demo-able today even though those three are
-unstarted. Three options were on the table when we paused: (a) finish the remaining ~25% of app
-features first, (b) stop feature work and produce the diagram/deck/video from what already works,
-(c) both in parallel (small app fixes + start the diagram, since diagram work doesn't depend on
-app code). **No option was chosen yet — ask the user which before doing either.** Don't assume;
-this was an explicit pause, not a decision.
+**Open decision from 2026-07-07 — RESOLVED (2026-07-07, later session):** the user asked for the
+professional-engineering call rather than picking one of the three options. Decision made: close
+the one small, *named, concrete defect* first (Manual Mode parity — a guardrail violation, not a
+nice-to-have — done, see §4), then pivot immediately to the required deliverables (Architecture
+Diagram next) rather than the remaining UI/feature polish. Rationale: unstarted *required
+submission artifacts* are a bigger risk than remaining feature completeness on an already-demoable
+prototype. This is now in progress — see the change log for what's landed.
 
-1. **Manual Mode parity fix** — add chips/cues for `SIG_LEGITIMACY_THEATER`, `SIG_IDENTITY_PHISH`,
-   `SIG_ESCALATION_DOCS` in the pack + `SessionViewModel.cues`. Small, closes a guardrail gap.
-2. **Verification-question UI** — surface the pack's `questions` list in the risk card, one at a
+1. **Architecture Diagram** — in progress. Required hackathon deliverable, currently 0%, does not
+   depend on further app code.
+2. **Presentation Deck** — not started. Required deliverable.
+3. **Demo Video** — not started. Required deliverable; the app is demo-able today (Manual Mode +
+   demo-call button + complaint export all live-verified) — doesn't need to wait on more features.
+4. **Verification-question UI** — surface the pack's `questions` list in the risk card, one at a
    time, cycling on tap (per `MOBILE_UX_SPEC.md` §3.2). The data already exists; this is UI-only.
-3. **PDF export** — Android `PdfDocument` renderer for `ComplaintDraft` (parallel to the existing
+5. **PDF export** — Android `PdfDocument` renderer for `ComplaintDraft` (parallel to the existing
    TXT/JSON renderers in `core:complaint`).
-4. **Real guardian contact picker** — replace the canned alert message with a system contact picker
+6. **Real guardian contact picker** — replace the canned alert message with a system contact picker
    + stored preference (still share-intent only, per the locked `SEND_SMS` decision).
-5. **Intel pack breadth** — grow signal/pattern coverage per `SCAM_INTELLIGENCE.md` §5, still EN/HI/Hinglish only for MVP.
-6. **Real device test** — install `app-debug.apk` on the owner's physical Android phone via `adb install`, confirm parity with emulator behavior.
-7. **Stretch spike: on-device ASR** — sherpa-onnx feasibility spike per `docs/AUDIO_PIPELINE.md` /
+7. **Intel pack breadth** — grow signal/pattern coverage per `SCAM_INTELLIGENCE.md` §5, still EN/HI/Hinglish only for MVP.
+8. **Real device test** — install `app-debug.apk` on the owner's physical Android phone via `adb install`, confirm parity with emulator behavior.
+9. **Stretch spike: on-device ASR** — sherpa-onnx feasibility spike per `docs/AUDIO_PIPELINE.md` /
    `INDIAN_LANGUAGE_SUPPORT.md` §4. Gated, not a blocker — Manual Mode already carries the product.
-8. **Stretch: real call detection + overlay bubble** — `CallScreeningService` + `SYSTEM_ALERT_WINDOW`, makes it feel like a real in-call product even before ASR lands.
+10. **Stretch: real call detection + overlay bubble** — `CallScreeningService` + `SYSTEM_ALERT_WINDOW`, makes it feel like a real in-call product even before ASR lands.
 
 ## 6. Process rules to follow (do not skip)
 
@@ -202,3 +211,12 @@ this was an explicit pause, not a decision.
   alive, `MainActivity` resumed) before concluding it was a test-script timing issue, not an app
   bug. Re-ran with a longer wait and got the correct SCAM_PATTERN 100/100 result again. No app code
   changed in this pass — process/tooling only.
+- **2026-07-07 (new session)** — Resumed via `PROJECT_STATUS.md` cold-start (§0), confirmed repo
+  state unchanged (clean, `main`, 5 commits). Resolved the open decision: closed the Manual Mode
+  parity gap (added `manualCue` for `SIG_LEGITIMACY_THEATER`/`SIG_IDENTITY_PHISH`/
+  `SIG_ESCALATION_DOCS` in the pack + matching chips in `SessionViewModel`), added
+  `PackParityTest.kt` so this specific gap is now structurally regression-proof, verified via clean
+  rebuild (13/13 tests, counted from fresh XML — see §4's correction note) and a fresh APK build.
+  Also corrected a real test-count error propagated earlier in this file/conversation (claimed
+  14-then-15 total tests at various points; true count via XML is 13). Pivoting next to the
+  Architecture Diagram — the highest-priority zero-progress item per the resolved decision.
