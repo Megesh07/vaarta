@@ -7,6 +7,7 @@ import ai.vaarta.core.complaint.ComplaintInput
 import ai.vaarta.core.complaint.ComplaintRenderers
 import ai.vaarta.core.complaint.DetectedSignal
 import ai.vaarta.core.reasoning.PackLoader
+import ai.vaarta.core.reasoning.QuestionSelector
 import ai.vaarta.core.reasoning.RiskEngine
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.RiskState
@@ -24,7 +25,9 @@ class SessionViewModel : ViewModel() {
     private val pack = PackLoader.fromResource("/packs/core-scam-v1.json")
     private val langs = listOf("en", "hi_latn", "hi")
     private var engine = RiskEngine(pack, langs)
+    private val questionSelector = QuestionSelector(pack)
     private var clockMs = 0L
+    private var questionIndex = 0
 
     private val idle = RiskState(0, RiskLevel.OBSERVING, Stage.NONE, emptyList())
 
@@ -36,6 +39,13 @@ class SessionViewModel : ViewModel() {
 
     private val _complaint = MutableStateFlow<String?>(null)
     val complaint: StateFlow<String?> = _complaint.asStateFlow()
+
+    /**
+     * The one verification question currently shown (MOBILE_UX_SPEC.md §3.2) — null when no stage
+     * has been reached yet (OBSERVING). Resolved text only; the app never needs the raw Question.
+     */
+    private val _currentQuestion = MutableStateFlow<String?>(null)
+    val currentQuestion: StateFlow<String?> = _currentQuestion.asStateFlow()
 
     /**
      * Manual Mode cues (id -> label) — MOBILE_UX_SPEC.md §3.3.
@@ -58,7 +68,7 @@ class SessionViewModel : ViewModel() {
 
     fun tapCue(cueId: String) {
         clockMs += 15_000
-        _state.value = engine.ingest(RiskEvent.ManualCue(cueId, clockMs))
+        applyState(engine.ingest(RiskEvent.ManualCue(cueId, clockMs)))
         _tapped.value = _tapped.value + cueId
         _complaint.value = null
     }
@@ -66,7 +76,8 @@ class SessionViewModel : ViewModel() {
     fun reset() {
         engine = RiskEngine(pack, langs)
         clockMs = 0
-        _state.value = idle
+        questionIndex = 0
+        applyState(idle)
         _tapped.value = emptySet()
         _complaint.value = null
     }
@@ -88,7 +99,22 @@ class SessionViewModel : ViewModel() {
             last = engine.ingest(RiskEvent.Transcript(text, t, t + 3_000, isFinal = true, confidence = 0.9f))
         }
         clockMs = 155_000
-        _state.value = last
+        applyState(last)
+    }
+
+    /** Tap = next suggestion (MOBILE_UX_SPEC.md §3.2) — cycles among questions relevant to the current stage. */
+    fun cycleQuestion() {
+        questionIndex++
+        _currentQuestion.value = questionSelector.select(_state.value.stage, questionIndex)?.let {
+            questionSelector.textFor(it, "en")
+        }
+    }
+
+    private fun applyState(newState: RiskState) {
+        _state.value = newState
+        _currentQuestion.value = questionSelector.select(newState.stage, questionIndex)?.let {
+            questionSelector.textFor(it, "en")
+        }
     }
 
     fun generateComplaint() {

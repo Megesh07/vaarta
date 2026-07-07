@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -79,6 +80,7 @@ fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit) {
     val state by vm.state.collectAsState()
     val tapped by vm.tapped.collectAsState()
     val complaint by vm.complaint.collectAsState()
+    val question by vm.currentQuestion.collectAsState()
     val scroll = rememberScrollState()
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -90,6 +92,8 @@ fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit) {
             Text("Digital-arrest scam protection — MVP", color = Color.Gray, fontSize = 13.sp)
 
             RiskCard(state)
+
+            question?.let { q -> QuestionCard(text = q, onCycle = { vm.cycleQuestion() }) }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { vm.runDemoCall() }) { Text("▶  Run demo scam call") }
@@ -134,6 +138,23 @@ fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit) {
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/** MOBILE_UX_SPEC.md §3.2 — exactly one suggested question visible; tap cycles to the next. */
+@Composable
+private fun QuestionCard(text: String, onCycle: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onCycle),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF3F8)),
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text("ASK THEM", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
+            Spacer(Modifier.height(4.dp))
+            Text("❝ $text ❞", fontSize = 15.sp, color = Color(0xFF1E293B))
+            Spacer(Modifier.height(4.dp))
+            Text("⟳ tap for another question", fontSize = 11.sp, color = Color.Gray)
         }
     }
 }
