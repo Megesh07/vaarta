@@ -3,6 +3,7 @@ package ai.vaarta
 import ai.vaarta.core.common.RiskEvent
 import ai.vaarta.core.common.Stage
 import ai.vaarta.core.complaint.ComplaintBuilder
+import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.core.complaint.ComplaintInput
 import ai.vaarta.core.complaint.ComplaintRenderers
 import ai.vaarta.core.complaint.DetectedSignal
@@ -40,6 +41,11 @@ class SessionViewModel : ViewModel() {
     private val _complaint = MutableStateFlow<String?>(null)
     val complaint: StateFlow<String?> = _complaint.asStateFlow()
 
+    /** The structured draft behind [complaint]'s text — needed for PDF export, which the
+     * ViewModel doesn't render itself (no Android Context here by design). */
+    private val _complaintDraft = MutableStateFlow<ComplaintDraft?>(null)
+    val complaintDraft: StateFlow<ComplaintDraft?> = _complaintDraft.asStateFlow()
+
     /**
      * The one verification question currently shown (MOBILE_UX_SPEC.md §3.2) — null when no stage
      * has been reached yet (OBSERVING). Resolved text only; the app never needs the raw Question.
@@ -71,6 +77,7 @@ class SessionViewModel : ViewModel() {
         applyState(engine.ingest(RiskEvent.ManualCue(cueId, clockMs)))
         _tapped.value = _tapped.value + cueId
         _complaint.value = null
+        _complaintDraft.value = null
     }
 
     fun reset() {
@@ -80,6 +87,7 @@ class SessionViewModel : ViewModel() {
         applyState(idle)
         _tapped.value = emptySet()
         _complaint.value = null
+        _complaintDraft.value = null
     }
 
     /** Rig-mode demo: play a scripted digital-arrest call through the real engine. */
@@ -121,6 +129,7 @@ class SessionViewModel : ViewModel() {
         val fired = engine.sessionSignals()
         if (fired.isEmpty()) {
             _complaint.value = "No warning signs detected yet — tap cues or run the demo call first."
+            _complaintDraft.value = null
             return
         }
         val start = 1_720_000_000_000L
@@ -134,8 +143,8 @@ class SessionViewModel : ViewModel() {
             finalScore = _state.value.score,
             detectedSignals = fired.map { DetectedSignal(it.signalId, it.category, it.stage, it.atMs, it.explain) },
         )
-        _complaint.value = ComplaintRenderers.toText(
-            ComplaintBuilder.assemble(input, generatedAtEpochMs = start + clockMs + 20_000),
-        )
+        val draft = ComplaintBuilder.assemble(input, generatedAtEpochMs = start + clockMs + 20_000)
+        _complaintDraft.value = draft
+        _complaint.value = ComplaintRenderers.toText(draft)
     }
 }

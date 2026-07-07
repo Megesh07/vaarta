@@ -1,13 +1,16 @@
 package ai.vaarta
 
+import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.RiskState
+import ai.vaarta.export.PdfExporter
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -46,7 +49,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                VaartaScreen(vm, onShare = ::shareText)
+                VaartaScreen(vm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf)
             }
         }
     }
@@ -57,6 +60,18 @@ class MainActivity : ComponentActivity() {
             putExtra(Intent.EXTRA_TEXT, text)
         }
         startActivity(Intent.createChooser(send, "Share via"))
+    }
+
+    /** PdfExporter needs a Context, so PDF generation happens here, not in the ViewModel. */
+    private fun exportAndSharePdf(draft: ComplaintDraft) {
+        val file = PdfExporter.export(this, draft)
+        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(send, "Share complaint PDF"))
     }
 }
 
@@ -76,10 +91,11 @@ private fun levelText(level: RiskLevel): String = when (level) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit) {
+fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit, onExportPdf: (ComplaintDraft) -> Unit) {
     val state by vm.state.collectAsState()
     val tapped by vm.tapped.collectAsState()
     val complaint by vm.complaint.collectAsState()
+    val complaintDraft by vm.complaintDraft.collectAsState()
     val question by vm.currentQuestion.collectAsState()
     val scroll = rememberScrollState()
 
@@ -133,7 +149,12 @@ fun VaartaScreen(vm: SessionViewModel, onShare: (String) -> Unit) {
                     Column(Modifier.padding(12.dp)) {
                         Text(text, fontSize = 11.sp)
                         Spacer(Modifier.height(10.dp))
-                        Button(onClick = { onShare(text) }) { Text("Share / Export") }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { onShare(text) }) { Text("Share as text") }
+                            complaintDraft?.let { draft ->
+                                OutlinedButton(onClick = { onExportPdf(draft) }) { Text("Export PDF") }
+                            }
+                        }
                     }
                 }
             }
