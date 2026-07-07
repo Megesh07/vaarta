@@ -153,8 +153,12 @@ Diagram next) rather than the remaining UI/feature polish. Rationale: unstarted 
 submission artifacts* are a bigger risk than remaining feature completeness on an already-demoable
 prototype. This is now in progress — see the change log for what's landed.
 
-1. **Architecture Diagram** — in progress. Required hackathon deliverable, currently 0%, does not
-   depend on further app code.
+1. **Architecture Diagram** — ✅ **Done** (v1). `docs/diagrams/vaarta-architecture-v1.svg`,
+   self-contained (no external CSS dependency, opens standalone in any browser). Deliberately
+   honest, not aspirational: every module is color-coded by real build status (green = built &
+   tested, amber = partial, gray = not built/deferred) rather than presenting the full designed
+   pipeline as if it were done. Matches §4's status matrix exactly — if they ever disagree, that's
+   a bug in one of them, fix both together.
 2. **Presentation Deck** — not started. Required deliverable.
 3. **Demo Video** — not started. Required deliverable; the app is demo-able today (Manual Mode +
    demo-call button + complaint export all live-verified) — doesn't need to wait on more features.
@@ -218,5 +222,7 @@ prototype. This is now in progress — see the change log for what's landed.
   `PackParityTest.kt` so this specific gap is now structurally regression-proof, verified via clean
   rebuild (13/13 tests, counted from fresh XML — see §4's correction note) and a fresh APK build.
   Also corrected a real test-count error propagated earlier in this file/conversation (claimed
-  14-then-15 total tests at various points; true count via XML is 13). Pivoting next to the
-  Architecture Diagram — the highest-priority zero-progress item per the resolved decision.
+  14-then-15 total tests at various points; true count via XML is 13). Produced the Architecture
+  Diagram (`docs/diagrams/vaarta-architecture-v1.svg`) — validated as well-formed XML, deliberately
+  color-coded by real build status rather than showing the full designed pipeline as done. Next:
+  Presentation Deck and Demo Video, both still at 0%.
