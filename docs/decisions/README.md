@@ -16,6 +16,7 @@ A code comment or a PR description is **not** an ADR.
 | ADR | Title | Status |
 |-----|-------|--------|
 | [0001](0001-mvp-scope-lock.md) | MVP scope lock — hackathon / portfolio build, $0 constraint | Accepted |
+| [0002](0002-live-ai-voice-assist.md) | Live AI voice-assist — mic+speakerphone, Gemini Live, amends NEVER #3 | Accepted |
 
 ## Process
 

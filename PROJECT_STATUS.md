@@ -158,17 +158,28 @@ The Architecture Diagram (done, see below) is the one exception worth keeping: i
 track status via its own color-coding, not describe a "finished" product, so it doesn't go stale
 the same way — but no further deliverable work happens until the app itself is further along.
 
-1. ~~Verification-question UI~~ — ✅ **Done**, see §4.
-2. ~~PDF export~~ — ✅ **Done**, see §4.
-3. **Real guardian contact picker** — replace the canned alert message with a system contact picker
-   + stored preference (still share-intent only, per the locked `SEND_SMS` decision).
-4. **Intel pack breadth** — grow signal/pattern coverage per `SCAM_INTELLIGENCE.md` §5, still EN/HI/Hinglish only for MVP.
-5. **Real device test** — install `app-debug.apk` on the owner's physical Android phone via `adb install`, confirm parity with emulator behavior.
-6. **Stretch spike: on-device ASR** — sherpa-onnx feasibility spike per `docs/AUDIO_PIPELINE.md` /
-   `INDIAN_LANGUAGE_SUPPORT.md` §4. Gated, not a blocker — Manual Mode already carries the product.
-7. **Stretch: real call detection + overlay bubble** — `CallScreeningService` + `SYSTEM_ALERT_WINDOW`, makes it feel like a real in-call product even before ASR lands.
-8. **Deferred to the end (do once, not iteratively):** Presentation Deck, Demo Video — build these
-   after the items above land, describing the final MVP state, not a mid-way snapshot.
+**MAJOR REPRIORITIZATION (2026-07-07, ADR-0002):** the owner made clear the *core value* is
+**live, in-call AI help** — hear the scammer live, understand words + tone, instantly suggest what
+to say back. Research settled the platform reality (can't tap the call stream; mic+speakerphone is
+the only path; Gemini Live free tier delivers live audio+tone understanding) and amended NEVER #3
+to allow rail-guarded live LLM suggestions. This live-AI capability is now **THE headline feature**
+and jumps to the top. The previously-planned polish items drop below it. Full plan: ADR-0002.
+
+**Live AI voice-assist — build in phases (each independently verifiable):**
+1. **Phase A — Audio foundation** — mic capture, speakerphone-route detection, VAD, RAM ring buffer
+   (AUDIO_PIPELINE.md is the spec). No AI yet; no API key needed. **← current focus.**
+2. **Phase B — Live AI assist** — Gemini Live integration behind opt-in consent + feature flag;
+   suggestion card in UI; ALL ADR-0002 rails (schema-validate, banned-phrase filter, injection
+   defense, length/latency cap, fails-closed). Needs a free Gemini API key for live testing.
+3. **Phase C — Floating bubble + call detection** — `SYSTEM_ALERT_WINDOW` overlay over the dialer +
+   `CallScreeningService`, so it's "tap the floating icon during a real call."
+4. **Phase D — Hardening** — fallback drills, prompt-injection red-team, latency vs budget, eval.
+
+**Then the smaller items (unchanged, just lower priority than live AI):**
+5. **Real guardian contact picker** — system contact picker + stored preference (share-intent only).
+6. **Intel pack breadth** — grow coverage per `SCAM_INTELLIGENCE.md` §5, EN/HI/Hinglish for MVP.
+7. **Real device test** — sideload `app-debug.apk` on the owner's physical Android phone.
+8. **Deferred to the very end (do once):** Presentation Deck, Demo Video — describe the final state.
 
 ## 6. Process rules to follow (do not skip)
 
@@ -254,3 +265,14 @@ the same way — but no further deliverable work happens until the app itself is
   confirmed `%PDF-1.4` header + `%%EOF` trailer, 39,244 bytes. Four independent signals the PDF is
   real and valid; page-by-page visual render specifically was not confirmed (no `pdftoppm` in this
   environment) — that's the one honestly-open edge of this verification.
+- **2026-07-07 (same session, live-AI pivot)** — Owner clarified the core requirement: live in-call
+  AI help (hear scammer live → understand words+tone → instantly suggest the reply), not a bare
+  score or post-call analysis. Did proper web research on the two crux questions: (1) live call-audio
+  access — confirmed HARD limit, no app can tap the call stream (Play ban since 2022), only mic+
+  speakerphone works, Twilio rejected ($0/backend/legal/latency); (2) free live-AI tech — found
+  Gemini Live API (free tier, streams audio, natively understands tone/emotion). Wrote ADR-0002
+  capturing the architecture + a scoped amendment to GUARDRAILS NEVER #3 (LLM may now make live
+  rail-guarded SUGGESTIONS, never the score) + mandatory safety rails, and reflected the amendment
+  in the guardrail doc itself. Reprioritized §5: live-AI voice-assist (Phases A–D) is now the
+  headline build; polish items dropped below it. No code yet this step — research + decision +
+  planning, deliberately, before building the biggest/riskiest part of the project.
