@@ -98,13 +98,4 @@ Deliberately **out of MVP scope**: on-device LLM, Play Store publishing, DOCX ex
 languages beyond EN/HI/Hinglish, and the challenge's counterfeit-currency / fraud-graph /
 geospatial pillars — VAARTA is one deep module of that broader "AI for Digital Public Safety" space.
 
-## Contributors
-
-Thanks to everyone who has contributed to VAARTA:
-
-| Contributor | GitHub |
-|---|---|---|
-| Megesh | [@Megesh07](https://github.com/Megesh07) | 
-| Rajat Giri | [@RGscripts](https://github.com/RGscripts) |
-
 Contributions of all kinds are welcome — see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) to get started.
