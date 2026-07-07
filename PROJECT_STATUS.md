@@ -276,3 +276,16 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   in the guardrail doc itself. Reprioritized §5: live-AI voice-assist (Phases A–D) is now the
   headline build; polish items dropped below it. No code yet this step — research + decision +
   planning, deliberately, before building the biggest/riskiest part of the project.
+- **2026-07-07 (same session, Phase B core + AI proven)** — Owner provided a Gemini API key (stored
+  in git-ignored `secrets.properties`; flagged for rotation since it was pasted in chat). Verified
+  it: authenticates (HTTP 200), exposes `gemini-2.5-flash-native-audio-latest` (the real Live API
+  model — supports `bidiGenerateContent`) + text models. Built + tested the safety core of Phase B
+  first (no key needed): `LiveSuggestion` schema + `SuggestionSafetyFilter` (6 tests, blocks
+  advise-to-pay/legal-advice/accusation, allows good questions). Then PROVED the specialized
+  intelligence end-to-end via a plain REST call before any Android code: specialized prompt +
+  grounding + structured-output schema turned a real scam line into a safe isolation-breaker ("I
+  will confirm this with the 1930 cyber helpline first.", confidence 0.9) in 1.77s, passing the
+  filter. Key impl finding recorded in ADR-0002: thinking must be OFF (`thinkingBudget=0`) for
+  latency + to not blow the token budget. **The whole AI approach is now de-risked at $0 before the
+  Android/streaming build.** Next: wire this proven `generateContent` call into the app as an
+  "AI-suggested" card (text-mode first, emulator-testable), then the live-audio streaming layer.

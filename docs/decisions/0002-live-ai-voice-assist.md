@@ -117,6 +117,20 @@ Hinglish/Indic audio accuracy unproven until tested on a real device. Sources:
 ai.google.dev/gemini-api/docs/live-api/tools, .../structured-output, softcery/deepsense 2026
 native-vs-cascaded latency analyses.
 
+**Verified against the real key (2026-07-07):** the provided key authenticates (HTTP 200) and has
+access to **`gemini-2.5-flash-native-audio-latest`** — the model advertising `bidiGenerateContent`,
+i.e. the Live API streaming model (the blog-named `gemini-3.1-flash-live-preview` is NOT what this
+key exposes; use the native-audio model). Text models (`gemini-2.5-flash`, `gemini-3-flash-preview`,
+etc.) are available for the fallback/text path. **End-to-end intelligence proven via REST** before
+any app code: the specialized prompt below + structured-output schema, given the scam line "…transfer
+all your funds to this RBI verification account… do not tell anyone…", returned
+`{"suggestedReply":"I will confirm this with the 1930 cyber helpline first.","category":
+"Isolation-breaker","confidence":0.9}` in **1.77s** — a safe, on-domain isolation-breaker that passes
+`SuggestionSafetyFilter`. **Critical impl finding:** `gemini-2.5-flash` has *thinking on by default*,
+which consumed the entire output-token budget (380 thought tokens → truncated) and adds seconds of
+latency; **live suggestions MUST set `thinkingConfig.thinkingBudget = 0`** (dropped latency to 1.77s,
+`finishReason: STOP`).
+
 **Specialization (owner requirement: "specialized, not general intelligence alone").** Fine-tuning
 is unavailable on the free tier and unnecessary here. We specialize the base model via four layers,
 which is the standard $0 approach and is what makes it VAARTA's assistant rather than generic Gemini:
