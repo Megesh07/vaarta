@@ -13,11 +13,25 @@ VAARTA protects people from digital-arrest scams. Contributions are welcome — 
 
 ## 2. Development setup
 
-- **Requirements:** JDK 17+, Android Studio (current stable), Android SDK 36, NDK (for ASR JNI), a physical device on Android 10+ (emulators cannot exercise telephony/audio paths meaningfully).
-- Clone → `./gradlew :app:assembleDebug` → install the `.debug`-suffixed app (installs alongside any release build).
-- Model packs for local dev: `./gradlew downloadDevModels` (fetches the current benchmarked ASR models per `docs/decisions/asr-*.md`; not checked into git).
-- Intel packs: edit YAML in `intel-packs/`, then `./gradlew :intel-packs:validate compilePacks` (runs schema, banned-phrase lint, and text-mode eval).
-- Two-phone rig (for audio/ASR/eval work): see TESTING_STRATEGY.md §2 and `tools/corpus/README` (created at implementation).
+**This section describes the setup for the MVP as actually built (ADR-0001/0002). Some of the
+architecture below in this doc predates that scope lock and describes a later/fuller vision — where
+they conflict, the MVP scope lock wins; propose a docs amendment instead of trusting the older text.**
+
+- **Requirements:** JDK 17+, Android SDK (platform 35, build-tools 35+). Android Studio is optional
+  — the whole project has been built and tested from the CLI via the Gradle wrapper. A physical
+  device is only needed to validate the live-audio layer under real call conditions; the emulator
+  (with `-allow-host-audio` to route your PC's mic in) covers everything else, including a first
+  pass at live audio — see [PROJECT_STATUS.md](../PROJECT_STATUS.md) for the exact method.
+- Clone → `./gradlew :app:assembleDebug` → `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
+- Live-AI layer (optional, opt-in): copy `secrets.properties.example` → `secrets.properties` at the
+  repo root and add a free Gemini key ([README.md](../README.md) has the full walkthrough). Without
+  it, the app builds and runs fully — the AI toggle just doesn't appear.
+- Intel packs live as JSON at `core/reasoning/src/main/resources/packs/` (not YAML, and not a
+  separate `intel-packs/` module — that's planned, not current). Every signal with a `manualCue`
+  must have a matching entry in `SessionViewModel.cues` — enforced by `PackParityTest`.
+- There is no CI configured yet and no two-phone rig / `tools/corpus/` — those are future-roadmap
+  items, not required for a working local setup today. Run `./gradlew test` before every PR; that's
+  the current bar.
 
 ## 3. Branch & PR workflow
 
@@ -58,8 +72,8 @@ VAARTA protects people from digital-arrest scams. Contributions are welcome — 
 
 ## 7. Conduct & licensing
 - Be kind; many contributors here have family members who were victims. No shaming of victims, ever, anywhere in the project.
-- Contributor code of conduct: Contributor Covenant v2.1 (file added at repo bootstrap).
-- License: to be finalized at repo bootstrap (M0) — decision record required weighing open-source trust benefits vs. clone/abuse risk (RISK_REGISTER.md R-11). Contributions before that are accepted under an interim CLA noted in the PR template.
+- Contributor code of conduct: Contributor Covenant v2.1 — see [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) (added at repo bootstrap, 2026-07-07).
+- License: **MIT** — see [LICENSE](../LICENSE) (finalized at repo bootstrap, 2026-07-07, superseding the open decision this section used to describe).
 
 ## 8. Getting help
 Open a discussion issue with the `question` label; maintainers triage weekly (see IMPLEMENTATION_ROADMAP.md standing rules). Read the DEBUGGING_PLAYBOOK.md before filing device-specific bugs — your answer may already be there.
