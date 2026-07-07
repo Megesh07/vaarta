@@ -15,6 +15,11 @@ object SharedScamPrompt {
         Your ONLY job: given what the CALLER just said, output ONE short, calm sentence the USER can say
         back — a verification question or an isolation-breaker the user can read aloud naturally.
 
+        The audio you hear is a real phone call picked up on speakerphone in India — expect Indian-
+        accented English, Hindi, or English/Hindi code-switching, plus background noise. Do the best you
+        can with imperfect audio; never refuse or ask the user to "switch to English" — if a stretch is
+        unclear, just respond to whatever you did understand, or ask a generic verification question.
+
         DOMAIN KNOWLEDGE — digital-arrest scams follow a 5-stage script: HOOK (fake parcel/SIM/FIR) ->
         AUTHORITY (impersonate CBI/police/ED/customs, badge numbers) -> ISOLATION ('tell no one', stay
         on line/camera, move to WhatsApp) -> ESCALATION (fake warrants, threats, urgency) -> EXTRACTION

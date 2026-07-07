@@ -34,9 +34,25 @@ class AudioCapture(private val onPcm: (ByteArray, Int) -> Unit) {
             running = true
             thread(name = "vaarta-audio", isDaemon = true) {
                 val buf = ByteArray(CHUNK_BYTES)
+                var chunks = 0
                 while (running) {
                     val n = rec.read(buf, 0, buf.size)
-                    if (n > 0) onPcm(buf, n)
+                    if (n > 0) {
+                        if (chunks < 40) {
+                            // DIAGNOSTIC (temporary): confirm real signal vs. zeroed host audio.
+                            var peak = 0
+                            var i = 0
+                            while (i < n - 1) {
+                                val sample = ((buf[i + 1].toInt() shl 8) or (buf[i].toInt() and 0xFF)).toShort().toInt()
+                                val abs = if (sample < 0) -sample else sample
+                                if (abs > peak) peak = abs
+                                i += 2
+                            }
+                            Log.w("AudioCapture", "chunk ${chunks} bytes=$n peak=$peak")
+                            chunks++
+                        }
+                        onPcm(buf, n)
+                    }
                 }
             }
             true

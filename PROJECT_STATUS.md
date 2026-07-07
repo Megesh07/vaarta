@@ -116,15 +116,20 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Manual Mode ↔ signal parity | **Closed.** All 14 signals now have a `manualCue`; enforced by `PackParityTest.kt` so it can't silently regress |
 | Risk UI — verification questions | **Closed.** `QuestionSelector` (core:reasoning, 5 tests) picks the highest-relevance question for the current stage; app shows one at a time with tap-to-cycle. Live-verified on the emulator: demo call correctly surfaced the ISOLATION-stage question first, tap cycled to the AUTHORITY-stage one. |
 | Complaint export — PDF | **Closed.** `PdfExporter` (app, Android `PdfDocument` — can't be pure-Kotlin-tested, no unit tests for this one, noted honestly) paints `ComplaintRenderers.toText`'s output onto paginated A4 pages. Live-verified on the emulator: tapped Export PDF → Android share sheet opened offering a real `vaarta_complaint.pdf` with a **Print** option (OS only offers that for content it successfully parsed as a valid document) → pulled the file via `adb run-as` and confirmed `%PDF-1.4` header + `%%EOF` trailer, 39,244 bytes. Page-by-page visual render was not separately confirmed (no `pdftoppm` in this environment) — noted as the one unverified edge of this check. |
+| Live AI suggestion, text-mode (`GeminiClient`, ADR-0002 Phase B) | **Closed.** Specialized system prompt + structured-output schema + `SuggestionSafetyFilter`, fails closed. Live-verified on the emulator: ran demo call with AI opted in → real Gemini reply appeared, contextual to the scammer's last line, filter-passed. |
+| Live audio capture (`AudioCapture`) | **Closed, PC-verified.** 16kHz mono PCM16 via `AudioRecord`, VOICE_RECOGNITION→MIC fallback. Verified on the `vaarta_test` emulator booted with `-allow-host-audio`: `dumpsys audio` showed an active un-silenced recording session, and temporary diagnostic peak-logging confirmed real, dynamic, non-zero PCM reaching the app (cross-checked independently against an `ffmpeg` host recording of the same acoustic signal). |
+| Live audio → AI suggestion streaming (`GeminiLiveClient`, ADR-0002 Phase B) | **Closed, PC-verified for this half.** OkHttp WebSocket, the protocol proven in `tools:demo:liveProbe`. Live-verified end-to-end on PC: mic audio streamed to Gemini Live produced real, safe, contextual suggestions rendered in `AiSuggestionCard` (e.g. correctly referenced India's 1930 cybercrime helpline, unprompted, in response to a synthetic scam script). One real bug found live-testing and fixed (per-fragment `.trim()` was jamming streamed words together — see 2026-07-07 PC-test changelog entry). |
 
-**Total: 18 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
-build banner — see §7's evidence rule). Plus manual end-to-end verification on a real Android
-environment (emulator) for both Manual Mode/demo-call flow and the question-cycling UI.
+**Total: 24 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
+build banner — see §7's evidence rule; re-verified 2026-07-07 after the live-audio fixes). Plus
+manual end-to-end verification on a real Android environment (emulator) for Manual Mode/demo-call,
+question-cycling, PDF export, text-mode AI suggestion, and (2026-07-07) the live-audio pipeline.
 
 **Correction (2026-07-07):** earlier notes in this file's history and in conversation said "14"
-then implied "15" total tests — both were arithmetic slips (RiskEngineTest has always had 6 tests,
-not 8; it was momentarily miscounted right after it was first written). The true count, verified
-by parsing `build/test-results/test/*.xml` directly, is 13. Fixed here rather than propagated.
+then implied "15", then "18" total tests — all were stale counts as tests were added along the way
+(`SuggestionSafetyFilterTest` alone added 6). The true count, verified by parsing
+`build/test-results/test/*.xml` directly after each build, is now 24. Fixed here rather than
+propagated — always re-count from fresh XML, never trust a remembered number.
 
 ### 🟡 Partially built (real gaps, not hidden)
 
@@ -132,11 +137,12 @@ by parsing `build/test-results/test/*.xml` directly, is 13. Fixed here rather th
 |---|---|
 | Intel pack breadth | Only a ~14-signal seed. Docs call for full per-scam-code (SC-01..SC-05) pattern lists per language. Current pack leans digital-arrest-generic. |
 | Guardian/family alert | Share-intent mechanism works, but the message is **hardcoded/canned** — no real guardian contact picker or per-contact consent flow. |
+| Live audio → deterministic engine (`inputTranscription` path) | Coded and wired (matches the same proven protocol as the working suggestion half), but **unverified**: PC acoustic-loopback testing (speaker→air→laptop mic) couldn't deliver clean enough audio for Gemini's `inputTranscription` to reliably transcribe English scam speech — got Tamil and noise instead of the real content in testing. Needs a real-phone speakerphone test (electrical audio path, no acoustic loopback) to fairly judge whether the risk score updates live from real caller speech. This is the #1 item in §5. |
 
 ### ❌ Not built (correctly deferred per ADR-0001, or genuinely not started)
 
 - Real call detection (`CallScreeningService`) — app has no idea a call is happening; only runs via manual taps/demo button.
-- Live audio capture + VAD + on-device ASR — zero code. This is the biggest remaining piece and the product's core unproven risk (see `docs/RISK_REGISTER.md` R-01).
+- On-device ASR — not used; ASR happens server-side via Gemini Live's transcription (see the partial-build row above for its current verification status).
 - Overlay bubble over the dialer (`SYSTEM_ALERT_WINDOW`) — current UI is a normal full-screen activity, not an in-call floating bubble.
 - Persistence (Room/SQLCipher) — nothing saved between app opens; RAM-only.
 - Tier-1 (on-device LLM) / Tier-2 (cloud LLM polish) — correctly out of scope (cost + design).
@@ -166,19 +172,26 @@ to allow rail-guarded live LLM suggestions. This live-AI capability is now **THE
 and jumps to the top. The previously-planned polish items drop below it. Full plan: ADR-0002.
 
 **Live AI voice-assist — build in phases (each independently verifiable):**
-1. **Phase A — Audio foundation** — mic capture, speakerphone-route detection, VAD, RAM ring buffer
-   (AUDIO_PIPELINE.md is the spec). No AI yet; no API key needed. **← current focus.**
-2. **Phase B — Live AI assist** — Gemini Live integration behind opt-in consent + feature flag;
-   suggestion card in UI; ALL ADR-0002 rails (schema-validate, banned-phrase filter, injection
-   defense, length/latency cap, fails-closed). Needs a free Gemini API key for live testing.
-3. **Phase C — Floating bubble + call detection** — `SYSTEM_ALERT_WINDOW` overlay over the dialer +
+1. ~~Phase A — Audio foundation~~ **DONE** — `AudioCapture` built, live-verified on PC (real,
+   dynamic, non-zero PCM confirmed via diagnostic peak logging + independent `ffmpeg` cross-check).
+2. ~~Phase B — Live AI assist~~ **DONE and PROVEN on PC for the AI-suggestion half** — `GeminiLiveClient`
+   + all ADR-0002 rails live-verified end-to-end (see 2026-07-07 PC-test changelog entry): real WS
+   streaming, safety-filtered contextual suggestions rendered in-app. The inputTranscription→score
+   half is coded and matches the proven protocol, but is **unverified** — PC acoustic-loopback audio
+   quality wasn't clean enough to judge it fairly (see below).
+3. **→ current focus: Real device test** — sideload `app-debug.apk` on the owner's physical Android
+   phone and repeat the live-listening test on an actual call (or a second phone dialing in) with
+   speakerphone. This is now priority #1, specifically to validate the one thing PC testing
+   structurally can't: does the caller's real speech (electrical path via speakerphone mic, not
+   speaker→air→laptop-mic acoustic loopback) reach `inputTranscription` cleanly enough to move the
+   deterministic risk score live? Everything else in Phase B already has PC evidence.
+4. **Phase C — Floating bubble + call detection** — `SYSTEM_ALERT_WINDOW` overlay over the dialer +
    `CallScreeningService`, so it's "tap the floating icon during a real call."
-4. **Phase D — Hardening** — fallback drills, prompt-injection red-team, latency vs budget, eval.
+5. **Phase D — Hardening** — fallback drills, prompt-injection red-team, latency vs budget, eval.
 
 **Then the smaller items (unchanged, just lower priority than live AI):**
-5. **Real guardian contact picker** — system contact picker + stored preference (share-intent only).
-6. **Intel pack breadth** — grow coverage per `SCAM_INTELLIGENCE.md` §5, EN/HI/Hinglish for MVP.
-7. **Real device test** — sideload `app-debug.apk` on the owner's physical Android phone.
+6. **Real guardian contact picker** — system contact picker + stored preference (share-intent only).
+7. **Intel pack breadth** — grow coverage per `SCAM_INTELLIGENCE.md` §5, EN/HI/Hinglish for MVP.
 8. **Deferred to the very end (do once):** Presentation Deck, Demo Video — describe the final state.
 
 ## 6. Process rules to follow (do not skip)
@@ -314,3 +327,60 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   the device.** Next (big, needs the physical phone to test): Android mic capture (AudioRecord 16kHz
   PCM16) + foreground service + `GeminiLiveClient` (OkHttp WebSocket streaming) + a "live listening"
   UI mode. Reminder unchanged: rotate the API key.
+- **2026-07-07 (same session, live-audio layer BUILT)** — Wrote `AudioCapture` (AudioRecord, 16kHz
+  mono PCM16, VOICE_RECOGNITION→MIC fallback, dedicated thread, no disk writes) and `GeminiLiveClient`
+  (OkHttp WebSocket, the proven `liveProbe` protocol, regex-extracted in/out transcription, fails
+  closed on any WS error). Wired into `SessionViewModel`/`MainActivity`: mic-permission launcher,
+  "Start live listening" → "● Live: STATUS" UI, caller transcript → deterministic engine (score stays
+  deterministic, ADR-0002), AI transcript → `SuggestionSafetyFilter` → `AiSuggestionCard`. Compiled
+  clean (`assembleDebug` BUILD SUCCESSFUL). **Correction to the note directly above:** it said this
+  needed the physical phone — checking the actual PC hardware first (this machine has a real mic) and
+  the emulator's `-help-all` output showed `-allow-host-audio` (routes the PC's real mic into the
+  emulator's virtual one), so the entire pipeline turned out to be PC-testable after all. Don't repeat
+  that "needs the phone" assumption without checking — see next entry for the actual PC test.
+- **2026-07-07 (same session, live-audio PC TEST — proven + one real bug found and fixed)** — Booted
+  `vaarta_test` with `-allow-host-audio` (boot log confirmed: "Warning: Allowing host microphone
+  input."), installed, granted `RECORD_AUDIO` via `adb`, started live listening. Verified with actual
+  evidence, layer by layer, not assumptions:
+  - **Mic bridge real, not zeroed:** `dumpsys audio` showed an active, un-silenced `VOICE_RECOGNITION`
+    recording session (`src:VOICE_RECOGNITION not silenced`). Independently confirmed the PC's
+    acoustic loopback (speaker→air→built-in mic) actually carries signal: recorded 7s with `ffmpeg`
+    from "Microphone Array (Realtek Audio)" while a synthetic scam line played via Windows TTS
+    (`System.Speech.Synthesis`) — `volumedetect` showed max -14.1 dB (real signal, not silence floor).
+    Then added temporary bounded diagnostic logging (`AudioCapture`, first 40 chunks, peak amplitude
+    only) and confirmed the app's own `AudioRecord` reads real, dynamic, non-zero PCM (peaks
+    swinging ~2–3700 out of 32767) — the emulator↔host audio bridge genuinely works.
+  - **WebSocket + AI suggestion pipeline: proven live, end-to-end.** Playing the synthetic scam script
+    ("officer Sharma... CBI... arrest warrant... transfer the money") produced a real, safe,
+    contextual AI reply rendered in the `AiSuggestionCard` — e.g. "I will confirm this with the 1930
+    cyber helpline first." (India's real cybercrime helpline, from the system prompt's domain
+    knowledge, unprompted). 300+ WS messages exchanged in one session; setup/turn handling solid.
+  - **Real bug found and fixed:** `GeminiLiveClient.unescape()` called `.trim()` on every streamed
+    text *fragment* before appending to the suggestion buffer, stripping the leading space Gemini's
+    streaming API puts at fragment boundaries — words jammed together ("IamVAARTA,yourspecialized...").
+    Fix: only trim once, on the fully assembled buffer at turn-end; per-fragment spacing is now
+    preserved. Verified fixed: a rebuilt/reinstalled run rendered a clean "I am not clear, could you
+    please state the name again?" with correct spacing.
+  - **Real (test-environment) limitation found, not a code bug:** `inputTranscription` — the path that
+    feeds the deterministic engine's score from the caller's words — was unreliable over acoustic
+    loopback. Raw WS logs showed it mis-transcribing the English TTS speech as Tamil in one case and
+    as noise ("70") in another, and the model itself said "I can't directly understand that language.
+    Please switch to English" on one turn. This traces to real audio degradation inherent to the test
+    method (speaker→open air→laptop mic, plus audible fan noise — three lossy hops that a real phone
+    call on speakerphone doesn't have), not a parsing or wiring defect: the regex extraction correctly
+    handled every message shape it was given, `AudioCapture` is proven feeding real signal, and the
+    model's own reasoning (not reliant on the transcription side-channel) tracked context well enough
+    to reference the correct scam pattern and helpline. Added a language-robustness instruction to
+    `SharedScamPrompt` (audio is Indian-accented/Hindi-English code-switched; don't refuse on unclear
+    audio) — reduced outright refusals but did not fix the underlying ASR-quality problem, as expected.
+  - **Honest bottom line:** mic capture, host-audio bridge, WS streaming, and the AI-suggestion half of
+    ADR-0002 are PROVEN on PC with direct evidence. The inputTranscription→risk-score half is UNVERIFIED
+    on PC — not because the code is wrong (nothing found on inspection contradicts the design) but
+    because this PC's acoustic-loopback test method can't deliver clean enough audio to judge it. The
+    real device test (speakerphone → phone mic, electrical path, one hop, no loopback) is now the only
+    way to actually validate that path, and moves to the top of §5 for that specific reason — not
+    because PC testing was skipped, but because it was carried as far as it can honestly go.
+  - Removed the raw-WS-message diagnostic log added mid-investigation (too verbose to leave — logged
+    full audio payloads) after it served its purpose; kept the bounded 40-chunk `AudioCapture` peak
+    log (matches the project's existing "DIAGNOSTIC (temporary)" convention in `GeminiClient`).
+  - Re-ran `gradle clean test` after all fixes: **24/24 tests green**, fresh XML, no regressions.

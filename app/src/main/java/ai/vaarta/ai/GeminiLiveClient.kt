@@ -82,8 +82,11 @@ class GeminiLiveClient(
                 }
                 else -> {
                     // Caller's words → deterministic engine.
-                    INPUT_RE.findAll(msg).forEach { onCallerText(unescape(it.groupValues[1])) }
-                    // AI suggestion streams in fragments → accumulate, flush at turn end.
+                    INPUT_RE.findAll(msg).forEach { onCallerText(unescape(it.groupValues[1]).trim()) }
+                    // AI suggestion streams in fragments → accumulate, flush at turn end. Each
+                    // fragment's own leading/trailing space is significant (e.g. "I am" + " a
+                    // specialized") — trimming per-fragment here would jam words together, so we
+                    // only trim once, on the fully assembled buffer below.
                     OUTPUT_RE.findAll(msg).forEach { suggestionBuffer.append(unescape(it.groupValues[1])) }
                     if (msg.contains("generationComplete") || msg.contains("\"turnComplete\":true")) {
                         val full = suggestionBuffer.toString().trim()
@@ -111,7 +114,7 @@ class GeminiLiveClient(
     }
 
     private fun unescape(s: String): String =
-        s.replace("\\n", " ").replace("\\\"", "\"").replace("\\\\", "\\").trim()
+        s.replace("\\n", " ").replace("\\\"", "\"").replace("\\\\", "\\")
 
     private companion object {
         val INPUT_RE = Regex("\"inputTranscription\"\\s*:\\s*\\{[^}]*\"text\"\\s*:\\s*\"([^\"]*)\"")
