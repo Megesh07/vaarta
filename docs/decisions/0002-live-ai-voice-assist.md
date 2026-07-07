@@ -99,6 +99,40 @@ self-run streaming-ASR → text-LLM path if Gemini Live proves unsuitable.
 - The deterministic engine, Manual Mode, question bank, and complaint generator already built remain
   valid and become the safety net beneath the AI layer — none of that work is wasted.
 
+## Method validation (2026 research) — why Gemini Live, and how we specialize it
+
+Verified against the two realistic architectures for live audio → suggestion:
+
+| | Native audio (**Gemini Live**) | Cascaded (STT → text-LLM) |
+|---|---|---|
+| Tone/emotion | Yes — responds to tone/pacing/affect | No — transcription strips it |
+| Latency | ~1–3s (Flash Live ~2.98s, higher end) | 1.5–3s, two hops |
+| Control | system instruction + grounding + structured output + function calling, in-session | controllable + custom STT vocab |
+| $0 | single free API | two free-tier deps chained |
+
+**Chosen: Gemini Live** — the only free option that natively hears tone (owner's explicit
+requirement), single dependency, full control surface. Honest caveats: ~2–3s latency (so the
+deterministic suggestion renders instantly, the AI one a beat later); free audio sessions ~15 min;
+Hinglish/Indic audio accuracy unproven until tested on a real device. Sources:
+ai.google.dev/gemini-api/docs/live-api/tools, .../structured-output, softcery/deepsense 2026
+native-vs-cascaded latency analyses.
+
+**Specialization (owner requirement: "specialized, not general intelligence alone").** Fine-tuning
+is unavailable on the free tier and unnecessary here. We specialize the base model via four layers,
+which is the standard $0 approach and is what makes it VAARTA's assistant rather than generic Gemini:
+1. **Hard-scoped system instruction** — only a scam-verification assistant; explicit never-dos
+   (no legal/financial advice, never "pay/don't pay", never accuse a specific caller).
+2. **Grounded on our own knowledge base** — inject `SCAM_INTELLIGENCE.md` domain knowledge (5-stage
+   script, 9 signal categories, verification questions, the one counter-fact) as context so it
+   reasons over our curated intelligence, not just its training.
+3. **Structured output / function calling** — output constrained to `{suggested_reply, why,
+   category, confidence}`; it cannot ramble or free-associate.
+4. **Few-shot exemplars** — real scam-line → ideal-reply pairs for in-domain pattern matching.
+Bonus: Gemini Live's input transcript is fed to the **deterministic engine for the score** (score
+stays deterministic per this ADR); AI-grade understanding + rule-grade safety from one stream.
+How we measure specialization working: a curated eval set of scam lines → expected suggestion
+category (Phase D), same discipline as the existing text-mode eval.
+
 ## Alternatives considered
 
 | Option | Why not chosen |
