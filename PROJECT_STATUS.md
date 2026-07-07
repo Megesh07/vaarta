@@ -145,34 +145,32 @@ by parsing `build/test-results/test/*.xml` directly, is 13. Fixed here rather th
 
 ## 5. Next Up (prioritized backlog — start at the top)
 
-**Open decision from 2026-07-07 — RESOLVED (2026-07-07, later session):** the user asked for the
-professional-engineering call rather than picking one of the three options. Decision made: close
-the one small, *named, concrete defect* first (Manual Mode parity — a guardrail violation, not a
-nice-to-have — done, see §4), then pivot immediately to the required deliverables (Architecture
-Diagram next) rather than the remaining UI/feature polish. Rationale: unstarted *required
-submission artifacts* are a bigger risk than remaining feature completeness on an already-demoable
-prototype. This is now in progress — see the change log for what's landed.
+**Open decision from 2026-07-07 — RESOLVED, then CORRECTED same day.** First resolution: close the
+Manual Mode parity gap, then pivot to required deliverables (Architecture Diagram, Deck, Video)
+ahead of remaining feature work. That reasoning assumed hackathon-deadline urgency that was never
+actually confirmed. When challenged, the user clarified: **there is no fixed deadline**, and making
+a Presentation Deck / Demo Video *now*, describing a ~75%-done app, produces throwaway work — the
+moment the verification-question UI, PDF export, or guardian picker land, that deck/video goes
+stale and has to be redone. **Corrected decision: finish the product first. Deck and Demo Video are
+deferred to the end, made once, describing the more complete app — not iterated alongside it.**
 
-1. **Architecture Diagram** — ✅ **Done** (v1). `docs/diagrams/vaarta-architecture-v1.svg`,
-   self-contained (no external CSS dependency, opens standalone in any browser). Deliberately
-   honest, not aspirational: every module is color-coded by real build status (green = built &
-   tested, amber = partial, gray = not built/deferred) rather than presenting the full designed
-   pipeline as if it were done. Matches §4's status matrix exactly — if they ever disagree, that's
-   a bug in one of them, fix both together.
-2. **Presentation Deck** — not started. Required deliverable.
-3. **Demo Video** — not started. Required deliverable; the app is demo-able today (Manual Mode +
-   demo-call button + complaint export all live-verified) — doesn't need to wait on more features.
-4. **Verification-question UI** — surface the pack's `questions` list in the risk card, one at a
+The Architecture Diagram (done, see below) is the one exception worth keeping: it's designed to
+track status via its own color-coding, not describe a "finished" product, so it doesn't go stale
+the same way — but no further deliverable work happens until the app itself is further along.
+
+1. **Verification-question UI** — surface the pack's `questions` list in the risk card, one at a
    time, cycling on tap (per `MOBILE_UX_SPEC.md` §3.2). The data already exists; this is UI-only.
-5. **PDF export** — Android `PdfDocument` renderer for `ComplaintDraft` (parallel to the existing
+2. **PDF export** — Android `PdfDocument` renderer for `ComplaintDraft` (parallel to the existing
    TXT/JSON renderers in `core:complaint`).
-6. **Real guardian contact picker** — replace the canned alert message with a system contact picker
+3. **Real guardian contact picker** — replace the canned alert message with a system contact picker
    + stored preference (still share-intent only, per the locked `SEND_SMS` decision).
-7. **Intel pack breadth** — grow signal/pattern coverage per `SCAM_INTELLIGENCE.md` §5, still EN/HI/Hinglish only for MVP.
-8. **Real device test** — install `app-debug.apk` on the owner's physical Android phone via `adb install`, confirm parity with emulator behavior.
-9. **Stretch spike: on-device ASR** — sherpa-onnx feasibility spike per `docs/AUDIO_PIPELINE.md` /
+4. **Intel pack breadth** — grow signal/pattern coverage per `SCAM_INTELLIGENCE.md` §5, still EN/HI/Hinglish only for MVP.
+5. **Real device test** — install `app-debug.apk` on the owner's physical Android phone via `adb install`, confirm parity with emulator behavior.
+6. **Stretch spike: on-device ASR** — sherpa-onnx feasibility spike per `docs/AUDIO_PIPELINE.md` /
    `INDIAN_LANGUAGE_SUPPORT.md` §4. Gated, not a blocker — Manual Mode already carries the product.
-10. **Stretch: real call detection + overlay bubble** — `CallScreeningService` + `SYSTEM_ALERT_WINDOW`, makes it feel like a real in-call product even before ASR lands.
+7. **Stretch: real call detection + overlay bubble** — `CallScreeningService` + `SYSTEM_ALERT_WINDOW`, makes it feel like a real in-call product even before ASR lands.
+8. **Deferred to the end (do once, not iteratively):** Presentation Deck, Demo Video — build these
+   after the items above land, describing the final MVP state, not a mid-way snapshot.
 
 ## 6. Process rules to follow (do not skip)
 
@@ -224,5 +222,14 @@ prototype. This is now in progress — see the change log for what's landed.
   Also corrected a real test-count error propagated earlier in this file/conversation (claimed
   14-then-15 total tests at various points; true count via XML is 13). Produced the Architecture
   Diagram (`docs/diagrams/vaarta-architecture-v1.svg`) — validated as well-formed XML, deliberately
-  color-coded by real build status rather than showing the full designed pipeline as done. Next:
-  Presentation Deck and Demo Video, both still at 0%.
+  color-coded by real build status rather than showing the full designed pipeline as done.
+- **2026-07-07 (same session, correction)** — Started building the Presentation Deck next (per the
+  prior entry's stated plan), got as far as invoking the pptx-creation skill before the user
+  challenged the sequencing: there is no fixed deadline, so a deck/video describing a ~75%-done app
+  is throwaway work — it goes stale the moment more app features land and would need redoing.
+  Correct call, acted on immediately: aborted the deck attempt (nothing was written to disk,
+  confirmed via `git status`), reverted the priority order in §5 back to finishing app features
+  first. Deck and Demo Video are deferred to the very end, built once against the final MVP state.
+  Net effect: same conclusion the *first* pause reached before deadline-urgency reasoning
+  (unconfirmed) overrode it — worth remembering next time a "hackathons need deliverables early"
+  instinct shows up without checking whether it's actually true for this project.
