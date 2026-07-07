@@ -102,9 +102,9 @@ geospatial pillars — VAARTA is one deep module of that broader "AI for Digital
 
 Thanks to everyone who has contributed to VAARTA:
 
-| Contributor | GitHub | Role |
+| Contributor | GitHub |
 |---|---|---|
-| Megesh | [@Megesh07](https://github.com/Megesh07) | Creator & Maintainer |
-| Rajat Giri | [@RGscripts](https://github.com/RGscripts) | Contributor |
+| Megesh | [@Megesh07](https://github.com/Megesh07) | 
+| Rajat Giri | [@RGscripts](https://github.com/RGscripts) |
 
 Contributions of all kinds are welcome — see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) to get started.
