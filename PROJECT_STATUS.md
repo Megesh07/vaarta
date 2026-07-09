@@ -119,6 +119,7 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Live AI suggestion, text-mode (`GeminiClient`, ADR-0002 Phase B) | **Closed.** Specialized system prompt + structured-output schema + `SuggestionSafetyFilter`, fails closed. Live-verified on the emulator: ran demo call with AI opted in → real Gemini reply appeared, contextual to the scammer's last line, filter-passed. |
 | Live audio capture (`AudioCapture`) | **Closed, PC-verified.** 16kHz mono PCM16 via `AudioRecord`, VOICE_RECOGNITION→MIC fallback. Verified on the `vaarta_test` emulator booted with `-allow-host-audio`: `dumpsys audio` showed an active un-silenced recording session, and temporary diagnostic peak-logging confirmed real, dynamic, non-zero PCM reaching the app (cross-checked independently against an `ffmpeg` host recording of the same acoustic signal). |
 | Live audio → AI suggestion streaming (`GeminiLiveClient`, ADR-0002 Phase B) | **Closed, PC-verified for this half.** OkHttp WebSocket, the protocol proven in `tools:demo:liveProbe`. Live-verified end-to-end on PC: mic audio streamed to Gemini Live produced real, safe, contextual suggestions rendered in `AiSuggestionCard` (e.g. correctly referenced India's 1930 cybercrime helpline, unprompted, in response to a synthetic scam script). One real bug found live-testing and fixed (per-fragment `.trim()` was jamming streamed words together — see 2026-07-07 PC-test changelog entry). |
+| Recorded-audio scam analyzer (`GeminiClient.analyzeAudio` + `AudioScamAnalyzer`, ADR-0003 Phase 4D) | **Closed, verified end-to-end on the emulator (2026-07-09).** Pick any audio clip → `generateContent` transcribes + classifies it → transcript replayed through the deterministic `RiskEngine` (score ownership unchanged) → `HybridAlert` + reused web-grounding → shared `StatusBanner`/`ChatThread` verdict → optional save as `SessionSource.RECORDING`. Gate A proved the free key does inline-audio understanding (HTTP 200, accurate transcript). Live emulator run: a synthetic digital-arrest clip scored **100/100 SCAM_PATTERN** (deterministic, not AI), web-grounded as "Digital Arrest Scam" with 3 real cited sources, saved + replayed from encrypted history with sources intact. Fails closed on any error. |
 
 **Total: 24 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
 build banner — see §7's evidence rule; re-verified 2026-07-07 after the live-audio fixes). Plus
@@ -141,9 +142,9 @@ propagated — always re-count from fresh XML, never trust a remembered number.
 
 ### ❌ Not built (correctly deferred per ADR-0001, or genuinely not started)
 
-- Real call detection (`CallScreeningService`) — app has no idea a call is happening; only runs via manual taps/demo button.
+- Real call detection (`CallScreeningService`) — app has no idea a call is happening; only runs via manual taps/demo button. **Deliberately deferred** (Android-15 FGS-start + Play-policy, ADR-0003 Phase 4C addendum).
 - On-device ASR — not used; ASR happens server-side via Gemini Live's transcription (see the partial-build row above for its current verification status).
-- Overlay bubble over the dialer (`SYSTEM_ALERT_WINDOW`) — current UI is a normal full-screen activity, not an in-call floating bubble.
+- ~~Overlay bubble over the dialer (`SYSTEM_ALERT_WINDOW`)~~ **BUILT (Phase 4C, 2026-07-09)** — `OverlayService` (FGS type=microphone) draws a draggable overlay bubble → ~45% panel with the shared `ChatThread`, verified on the emulator. Auto-appear-on-call is the deferred part (above).
 - Persistence (Room/SQLCipher) — nothing saved between app opens; RAM-only.
 - Tier-1 (on-device LLM) / Tier-2 (cloud LLM polish) — correctly out of scope (cost + design).
 - Multi-language beyond EN/HI/Hinglish seed.
@@ -185,14 +186,25 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
    structurally can't: does the caller's real speech (electrical path via speakerphone mic, not
    speaker→air→laptop-mic acoustic loopback) reach `inputTranscription` cleanly enough to move the
    deterministic risk score live? Everything else in Phase B already has PC evidence.
-4. **Phase C — Floating bubble + call detection** — `SYSTEM_ALERT_WINDOW` overlay over the dialer +
-   `CallScreeningService`, so it's "tap the floating icon during a real call."
-5. **Phase D — Hardening** — fallback drills, prompt-injection red-team, latency vs budget, eval.
+4. ~~**Phase C — Floating bubble**~~ **DONE (overlay half), verified on the emulator (2026-07-09).**
+   `OverlayService` (FGS type=microphone) hosts the extracted `CopilotSession` and draws a draggable
+   `TYPE_APPLICATION_OVERLAY` bubble → ~45% panel with the shared `ChatThread`. User-initiated flow
+   (grant overlay + mic → Start → bubble over dialer → Stop). **Auto-call-detection
+   (`CallScreeningService`) remains DEFERRED** by Android-15 FGS/Play-policy design (ADR-0003 Phase 4C
+   addendum). Not yet verified on physical hardware (OEM variance, R-05).
+5. ~~**Phase 4D — recorded-audio scam analyzer**~~ **DONE, verified on the emulator (2026-07-09).**
+   Pick a recording → transcribe + classify (Gate A proved the free key does inline-audio understanding)
+   → deterministic re-score of the transcript + web grounding + shared verdict UI → optional save as a
+   RECORDING. See the §8 changelog entry and ADR-0003 Phase 4D addendum.
+6. **Phase D — Hardening** — fallback drills, prompt-injection red-team, latency vs budget, eval. Still
+   the standing next-up for the live-AI track. The one thing the emulator structurally can't prove
+   remains the **physical-phone live-call test** (caller speech through speakerphone → transcription →
+   score; OEM overlay/FGS variance R-05) — worth doing before any public demo.
 
 **Then the smaller items (unchanged, just lower priority than live AI):**
-6. **Real guardian contact picker** — system contact picker + stored preference (share-intent only).
-7. **Intel pack breadth** — grow coverage per `SCAM_INTELLIGENCE.md` §5, EN/HI/Hinglish for MVP.
-8. **Deferred to the very end (do once):** Presentation Deck, Demo Video — describe the final state.
+7. **Real guardian contact picker** — system contact picker + stored preference (share-intent only).
+8. **Intel pack breadth** — grow coverage per `SCAM_INTELLIGENCE.md` §5, EN/HI/Hinglish for MVP.
+9. **Deferred to the very end (do once):** Presentation Deck, Demo Video — describe the final state.
 
 ## 6. Process rules to follow (do not skip)
 
@@ -217,6 +229,127 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-09 (later same day)** — **Phase 4D: recorded-audio scam analyzer (ADR-0003 Phase 4D
+  addendum).** Added the after-the-fact case to the live copilot: analyze a *recording* of a call.
+  Built + **verified end-to-end on the `vaarta_test` emulator**, no crash at any step:
+  - **Gate A first (de-risk at $0):** a headless probe (`tools:demo:audioProbe`, key from git-ignored
+    `secrets.properties`) sent a synthetic digital-arrest clip (Windows-TTS WAV, 1.59 MB) inline as
+    base64 to `gemini-2.5-flash` → **HTTP 200 in ~8.3 s, accurate transcript, correct classification.**
+    Folded one finding into the real prompt (enum-constrain `concern`, else the model returns free text).
+  - **Score ownership unchanged (ADR-0002 D1):** the AI transcribes + gives an *advisory* concern; the
+    authoritative score comes from replaying the transcribed CALLER turns through the deterministic
+    `RiskEngine`, and `HybridAlert` lets the AI raise the alert but never lower the deterministic floor.
+  - **New code:** `GeminiClient.analyzeAudio` (inline base64, `responseSchema`, thinking off, 60 s
+    timeout, fails closed; `MAX_INLINE_AUDIO_BYTES = 14 MB`), `AudioAnalyzePrompt` (untrusted-audio
+    framing), `CoachingWireParser.parseAudioAnalysis` + `Speaker.fromWire` + `AudioAnalysis`/`AudioTurn`
+    models (core:reasoning, pure/unit-tested), `AudioScamAnalyzer` (Context-free pipeline; `assemble()`
+    split from the network for testability; CALLER+UNKNOWN turns scored so ambiguity fails toward
+    catching a scam), `recording/AudioAnalyzerViewModel` (reads the picked `Uri`, Idle/Running/Done/Error,
+    friendly error copy). UI: home "🎧 Analyze a recorded call" (AI-configured only) → `GetContent`
+    picker (no storage permission) → `AnalyzeScreen` (shared `StatusBanner` + `ChatThread`, "Share this
+    warning" for HIGH_RISK+, "Save to history" as `SessionSource.RECORDING`). Shared `CoachBubble` now
+    shows the "SAY THIS" header/chips only when there are replies (a recording verdict has none).
+  - **Verified (adb + screenshots):** home button → SAF picker → picked the pushed clip → Running →
+    verdict **"This matches a known scam" Risk 100/100** (deterministic engine scored the transcript),
+    **web-grounded "Digital Arrest Scam" + 3 real cited sources** (thehindu.com ×2, livemint.com),
+    plain-language summary → Save → the RECORDING appears in history with its scam-type and its Detail
+    screen **replays the full thread including the sources** (SQLCipher JSON round-trip intact).
+  - **Tests: 76 core tests green** (from 70) — +6 `parseAudioAnalysis` cases (well-formed, tolerant
+    speaker mapping, blank-turn drop, fail-closed on empty/malformed, unknown-concern → OBSERVING).
+  - **Consent (ADR-0004 kept):** analysis is RAM-only until the user taps Save; the clip is never
+    stored (only the transcript/verdict the user chooses to keep).
+  - **Honest gaps:** `AudioScamAnalyzer.assemble` has no standalone JVM test (combines already-tested
+    `RiskEngine` + `HybridAlert`; covered by the on-device run); inline-only (clips >14 MB rejected with
+    a message, Files API deferred); diarization is the model's guess (why scoring fails toward "caller");
+    unusual container mimes may fail-closed as "unsupported format" — verified for WAV so far.
+- **2026-07-09 (later same day)** — **Phase 4C: floating overlay + session-in-service (ADR-0003 Phase
+  C addendum).** The copilot now runs as a floating in-call window, not just a full-screen activity.
+  Built + **verified end-to-end on the `vaarta_test` emulator**:
+  - **4C-1 — extracted `CopilotSession`** (pure refactor, zero behaviour change): the whole pipeline
+    (engine ownership, `OwnWordsGate`, live reconnect, hybrid ratchet, grounding cap, demo) moved out of
+    `SessionViewModel` into a plain `CopilotSession(scope: CoroutineScope)` holder so the *same* logic
+    runs behind the in-app UI (ViewModel wraps it on `viewModelScope`) **or** inside the service (own
+    scope). `SessionViewModel` is now a thin wrapper; `MainActivity` observes `vm.session.<flow>`.
+    Verified: compiles + **70 core tests still green** + emulator demo path unchanged.
+  - **Shared `ChatView.kt`** — moved `StatusBanner`/`ScamIdCard`/`ChatThread`/bubbles into one file
+    (`internal`) so the app screen, history detail, AND the overlay panel render the identical thread.
+  - **`OverlayService`** — foreground service, `foregroundServiceType="microphone"`, is itself the
+    `LifecycleOwner`/`ViewModelStoreOwner`/`SavedStateRegistryOwner` a non-Activity `ComposeView` needs.
+    Draggable `TYPE_APPLICATION_OVERLAY` bubble (steady risk-colour ring) ↔ ~45% panel hosting the
+    shared `ChatThread`. Manifest: `SYSTEM_ALERT_WINDOW` + `FOREGROUND_SERVICE(_MICROPHONE)` +
+    `POST_NOTIFICATIONS` + `<service … type=microphone>`. App wiring: "🪟 Use as a floating window"
+    → overlay-permission handoff → mic → `OverlayService.start()` + `moveTaskToBack`.
+  - **Verified (adb + dumpsys + screenshots), no crash at any step:** FGS runs with `types=0x00000080`
+    (microphone) and platform-approved `Background started FGS: Allowed … uidState: TOP`; the bubble
+    draws over the launcher (`TYPE_APPLICATION_OVERLAY`); tap **expands** to the panel showing the
+    shared `StatusBanner` + live `LISTENING` status + calm empty-state; **▾ Hide collapses** back to the
+    bubble; **Stop tears everything down** (service gone, overlay windows gone).
+  - **Real bug found + fixed while verifying:** a `View.OnTouchListener` on an overlay `ComposeView`
+    never received the tap (expand didn't fire) — switched tap+drag to Compose `pointerInput`
+    (`detectTapGestures`/`detectDragGestures`), which dispatches reliably. Fixed + re-verified.
+  - **Consent (ADR-0004 kept):** stopping does NOT auto-persist; the live session is published via
+    `OverlayService.activeSession` for the app's explicit "Save this call" action.
+  - **Honest gaps:** overlay thread verified with empty-state/banner/live-status but not *populated with
+    live caller turns in the overlay* (emulator booted `-no-audio`; `ChatThread` rendering is the same
+    composable proven in 4A, live-audio→thread is the PC-verified path); auto-call-detect DEFERRED by
+    design; physical-hardware OEM overlay/FGS variance (R-05) unverified; no JVM unit test for the
+    Android-framework `OverlayService`/`CopilotSession` (covered by the on-device run).
+- **2026-07-09** — **Phase 4B: encrypted saved history (ADR-0004).** Added opt-in, on-device,
+  encrypted-at-rest call history — the first deliberate, scoped reversal of the RAM-only stance (P2),
+  gated by explicit "Save this call" consent. Built + **verified end-to-end on the emulator**:
+  - **New module `core:data`** (Android library; Room + SQLCipher + KSP): `CallSessionEntity` /
+    `TurnEntity` (+ `Converters`), `HistoryDao`, `VaartaDatabase`, `HistoryRepository`. Turns written
+    live (crash-safe), session finalized on stop. Depends only on `core:common` (acyclic).
+  - **`DatabaseKeyManager`** — SQLCipher passphrase is a random 32-byte value minted first-launch and
+    sealed by a non-exportable **Android Keystore** AES-256/GCM key (wrapped blob in SharedPreferences).
+    No hardcoded key; deprecated `security-crypto` deliberately avoided.
+  - **App:** `HistoryViewModel` (AndroidViewModel; `SessionViewModel` stays RAM-only + Context-free),
+    `history/ChatHistoryMapping.kt` (ChatItem↔Turn, coach replies/sources as boundary JSON so
+    `core:data` never sees `core:reasoning` types). New screens in `MainActivity`: Home "🕘 History" +
+    "💾 Save this call", **Saved-calls list** (retention Keep/7d/30d, per-row + delete-all), **read-only
+    Detail** replay (reuses `ChatThread`/`VerdictHeader`).
+  - **Verified:** `libsqlcipher.so` loads; Keystore key created (`vaarta_db_key.xml`); DB file is
+    **encrypted** (no plaintext `SQLite format 3` header); a saved session **survived app restart AND
+    reinstall**, loaded from the list, and the detail screen replayed the full thread (JSON round-trip
+    intact). 70 core unit tests still green.
+  - **Real bug found + fixed while testing:** the header drew *under* the status bar (top taps hit the
+    system bar, not the app) — added `statusBarsPadding()` to all three screens.
+  - **Honest gap:** `core:data` crypto/Room round-trip has no JVM unit test (needs instrumentation);
+    covered by the on-device end-to-end verification above. ADR-0004 written; PRIVACY/RISK doc-table
+    edits still pending (task #24, pre-commit).
+- **2026-07-08** — **Live conversation copilot + hybrid web-grounded intelligence (ADR-0003).** Turned
+  the single-suggestion layer into a turn-by-turn copilot and added live web-search scam
+  identification, under a new hybrid "safety ratchet". Built + verified this session:
+  - **Phase 1 (safety/intelligence core, headless):** `CoachingModels` (Reply/ReplyKind/CoachingResponse/
+    CoachTurn/Source/GroundedAssessment); **overhauled `SuggestionSafetyFilter`** — now catches
+    OTP/Aadhaar/PAN/bank-detail disclosure, isolation compliance, payment synonyms, compliance verbs,
+    remote-access, in **English + Hindi/Hinglish**, polarity-aware ("I won't transfer" stays allowed),
+    and filters the `why` field; `OwnWordsGate` (self-echo defense — stops the user's read-aloud reply
+    from pinning the score, a real pre-existing bug); `nextStage`; `HybridAlert` (safety ratchet);
+    `CoachPrompt` + `GroundedClassifyPrompt`; `GeminiClient.coach()` + `classify()`; `CoachingWireParser`.
+  - **Phase 2 (copilot UI + live wiring):** real-ms clock (fixed the synthetic-clock bug that froze
+    decay/hysteresis), fragment coalescing into turns, feed pipeline, live-lifecycle bug fixes
+    (ERROR-restart-wedge, reset-doesn't-stop-live, late-fragment-after-stop), auto-reconnect for the
+    ~15-min session cap. **Live coaching verified on the physical phone** — correct per-turn warnings,
+    correct next-stage prediction, graded VERIFY/REFUSE/EXIT replies, all safety-filtered.
+  - **Phase 3 (hybrid + grounding + redesign):** `HybridAlert` combines the deterministic floor with
+    the AI's advisory concern by `max()` — the AI can RAISE the alert (novel scams) but never lower it;
+    reassurance only on cited consensus; scam-variant labels require a cited source. Web grounding is a
+    **two-call design** forced by probed API reality (2.5 grounding is free but can't combine with
+    structured output; Gemini-3 grounding is paid) — grounded classification + structured coach, both
+    free on `gemini-2.5-flash`, merged in the ViewModel; sources parsed from Gemini grounding metadata
+    (prose-first prompt + 1024 tokens confirmed to return real cited sources: livemint, niti.gov.in…).
+    Language-consistency instruction added. **UI redesigned** (all-ages, uncluttered): hybrid risk
+    banner, web-grounded scam-ID card with tappable sources, "say this" hero + graded replies, demoted
+    "earlier in this call" history, Manual Mode/complaint kept reachable but secondary — verified
+    rendering on the emulator demo path.
+  - **Tests:** 68 core:reasoning/complaint tests green (from 24), incl. `HybridAlertTest` (AI can raise
+    never lower; "scammer talks AI to safe" cannot drop the alert; reassurance needs cited consensus),
+    expanded safety-filter + grounded-parser + self-echo suites. Deterministic eval gates unchanged.
+  - **Docs:** ADR-0003 written. **Still to land in the copilot commit:** PRIVACY_SECURITY.md C6 (note
+    the web-search query) + data-inventory row + `docs/data-safety.json`; RISK_REGISTER row (grounding
+    manipulation/hallucination). **Still open:** live end-to-end verification of the grounded scam-ID
+    card on a real call (needs the phone reconnected); Gate 0 (real caller's voice surviving AEC).
 - **2026-07-07** — Initial MVP build. Toolchain provisioned from scratch (JDK, Gradle, Android SDK,
   emulator — all $0). `core:common`, `core:reasoning` (Tier-0 engine), `core:complaint` built and
   tested (14 tests green). Android `:app` built, installed, and manually verified live on the

@@ -34,3 +34,14 @@ tasks.register<JavaExec>("liveProbe") {
     classpath = sourceSets["main"].runtimeClasspath
     systemProperty("gemini.key", geminiKey)
 }
+
+// Gate A probe for Phase 4D: can generateContent accept an inline audio clip and return a
+// transcript + scam classification on the free tier? Reads the same git-ignored key.
+tasks.register<JavaExec>("audioProbe") {
+    group = "verification"
+    description = "Send an inline audio clip to Gemini generateContent and print the analysis JSON."
+    mainClass.set("ai.vaarta.tools.demo.AudioProbeKt")
+    classpath = sourceSets["main"].runtimeClasspath
+    systemProperty("gemini.key", geminiKey)
+    systemProperty("audio.file", project.findProperty("audioFile") ?: System.getProperty("audio.file") ?: "")
+}

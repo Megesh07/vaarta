@@ -1,6 +1,10 @@
 package ai.vaarta.core.reasoning
 
+import ai.vaarta.core.common.IntelPack
+import ai.vaarta.core.common.MatchMode
 import ai.vaarta.core.common.RiskEvent
+import ai.vaarta.core.common.Signal
+import ai.vaarta.core.common.SignalCategory
 import ai.vaarta.core.common.Stage
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -67,5 +71,38 @@ class RiskEngineTest {
         val e = engine()
         val s = e.ingest(t("you are under digital a rest do not tell anyone", 5_000))
         assertTrue(s.topSignals.any { it.signalId == "SIG_ISOLATION_SECRECY" || it.signalId == "SIG_LEGAL_THREAT" })
+    }
+
+    // --- ADR-0003: prove the userSafe guard actually excludes a signal from scoring. It is a
+    // static, pack-level "never score this, regardless of speaker" flag (AI_REASONING_ENGINE.md
+    // §4.3) — appropriate ONLY for phrases that are inherently user-only, like the docs' own "1930"
+    // example. This test constructs a throwaway pack rather than flipping the flag on a real
+    // core-scam-v1.json signal: SIG_AUTHORITY_POLICE_ED_CUSTOMS and SIG_EXTRACTION_TRANSFER are two
+    // of the strongest actual scam signals, and marking them userSafe would blind the engine to a
+    // real scammer saying the exact same words. The self-echo problem those two signals cause when
+    // the USER says them is instead handled dynamically by OwnWordsGate (see CoachingSupportTest).
+
+    private fun userSafePack() = IntelPack(
+        packId = "test-usersafe",
+        version = "1",
+        signals = listOf(
+            Signal(
+                id = "SIG_TEST_USER_SAFE",
+                category = SignalCategory.LEGAL_THREAT,
+                stage = Stage.AUTHORITY,
+                weight = 50,
+                patterns = mapOf("en" to listOf("1930")),
+                match = MatchMode.EXACT,
+                userSafe = true,
+            ),
+        ),
+    )
+
+    @Test
+    fun `userSafe signal never fires regardless of who says it`() {
+        val e = RiskEngine(userSafePack(), langs)
+        val s = e.ingest(t("I will call the 1930 helpline", 5_000))
+        assertEquals(0, s.score, "userSafe signal must be excluded from scoring")
+        assertTrue(s.topSignals.isEmpty())
     }
 }

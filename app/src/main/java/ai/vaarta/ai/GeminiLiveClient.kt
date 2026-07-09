@@ -81,8 +81,12 @@ class GeminiLiveClient(
                     onStatus(Status.LISTENING)
                 }
                 else -> {
-                    // Caller's words → deterministic engine.
-                    INPUT_RE.findAll(msg).forEach { onCallerText(unescape(it.groupValues[1]).trim()) }
+                    // Caller's words → deterministic engine. Do NOT trim per fragment: Gemini streams
+                    // input transcription as deltas whose own leading/trailing spaces are significant
+                    // ("what is" + " your name"); trimming each one deletes the inter-word spaces and
+                    // jams "whatisyourname" (Phase 4A readability fix). The ViewModel trims once on the
+                    // assembled turn — same discipline as the OUTPUT path below.
+                    INPUT_RE.findAll(msg).forEach { onCallerText(unescape(it.groupValues[1])) }
                     // AI suggestion streams in fragments → accumulate, flush at turn end. Each
                     // fragment's own leading/trailing space is significant (e.g. "I am" + " a
                     // specialized") — trimming per-fragment here would jam words together, so we

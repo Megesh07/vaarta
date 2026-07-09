@@ -9,6 +9,15 @@
          and the demo without it. Speakerphone + mic is the only compliant call-audio path (ADR-0002). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- Floating in-call copilot (Phase 4C, ADR-0003 Phase C). The overlay window draws the bubble +
+         panel over the dialer; the foreground service (type=microphone) keeps live listening alive
+         while the user is in the phone app. All opt-in: the overlay grant is user-driven via Settings,
+         and the mic FGS only runs after RECORD_AUDIO is granted and the user taps Start. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="false"
         android:label="@string/app_name"
@@ -36,6 +45,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- The live-copilot foreground service (Phase 4C). type=microphone because it owns the mic
+             capture for the whole in-call session; not exported (started only by MainActivity). -->
+        <service
+            android:name=".OverlayService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
     </application>
 
 </manifest>
