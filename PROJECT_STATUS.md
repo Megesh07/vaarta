@@ -196,10 +196,12 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
    Pick a recording → transcribe + classify (Gate A proved the free key does inline-audio understanding)
    → deterministic re-score of the transcript + web grounding + shared verdict UI → optional save as a
    RECORDING. See the §8 changelog entry and ADR-0003 Phase 4D addendum.
-6. **Phase D — Hardening** — fallback drills, prompt-injection red-team, latency vs budget, eval. Still
-   the standing next-up for the live-AI track. The one thing the emulator structurally can't prove
-   remains the **physical-phone live-call test** (caller speech through speakerphone → transcription →
-   score; OEM overlay/FGS variance R-05) — worth doing before any public demo.
+6. **Phase D — Hardening** — 🟡 *in progress.* **Prompt-injection red-team of the AI safety filter is
+   DONE** (2026-07-09, see §8 + ADR-0003 Phase D addendum): found + closed 6 real false-accept gaps in
+   `SuggestionSafetyFilter`, now pinned by a 9-case `SuggestionSafetyRedTeamTest`. Remaining under this
+   heading: broader fallback drills + latency-vs-budget eval. The one thing the emulator structurally
+   can't prove remains the **physical-phone live-call test** (caller speech through speakerphone →
+   transcription → score; OEM overlay/FGS variance R-05) — worth doing before any public demo.
 
 **Then the smaller items (unchanged, just lower priority than live AI):**
 7. **Real guardian contact picker** — system contact picker + stored preference (share-intent only).
@@ -229,6 +231,20 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-09 (later same day)** — **Phase D: AI safety hardening — prompt-injection red-team
+  (ADR-0003 Phase D addendum).** Red-teamed `SuggestionSafetyFilter`, the last line before an AI reply
+  reaches the user. Wrote an adversarial battery (`SuggestionSafetyRedTeamTest`) and ran it against the
+  *current* filter first — **6 of 9 attack categories were genuine false-accepts** (bare imperative
+  payment "Transfer the money…", "make the transfer" synonyms, "you must/need to…" obligation framing,
+  OTP/verification-code synonyms, "do as they say / listen to the officer", bare imperative app-install).
+  Closed all six **polarity-safely** — imperatives fire only sentence-initially or after an affirmative
+  lead-in, so refusals ("I will not transfer…") and questions ("why would they need me to transfer
+  money?") stay accepted; disclosure-code synonyms stay gated on an affirmative lead-in. Re-ran:
+  **all 9 attacks now rejected, every "must stay accepted" guard still passes.** Core tests **76 → 85**;
+  the battery is now a permanent regression suite. Honest scope: it's a deny list (defense-in-depth),
+  deliberately not attempting adversarial-unicode/letter-spacing defeat — the real backstops for a total
+  miss remain HybridAlert (alert can only be raised, never lowered) + fail-closed to the deterministic
+  question. `assembleDebug` green.
 - **2026-07-09 (later same day)** — **Phase 4D: recorded-audio scam analyzer (ADR-0003 Phase 4D
   addendum).** Added the after-the-fact case to the live copilot: analyze a *recording* of a call.
   Built + **verified end-to-end on the `vaarta_test` emulator**, no crash at any step:
