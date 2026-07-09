@@ -99,3 +99,4 @@ languages beyond EN/HI/Hinglish, and the challenge's counterfeit-currency / frau
 geospatial pillars — VAARTA is one deep module of that broader "AI for Digital Public Safety" space.
 
 Contributions of all kinds are welcome — see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) to get started.
+
