@@ -4,6 +4,9 @@ import ai.vaarta.core.reasoning.Reply
 import ai.vaarta.core.reasoning.ReplyKind
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.Source
+import ai.vaarta.ui.theme.VaartaTheme
+import ai.vaarta.ui.theme.riskColor
+import ai.vaarta.ui.theme.stateLabel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,43 +27,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// --- Design tokens + the shared WhatsApp-style chat view (Phase 4A) ---
-//
-// These presentational composables are the "ChatView" the product design names as a single reusable
-// component (docs/decisions/0003 + the Phase-4 architecture): the in-app live screen, the read-only
-// history detail, AND the floating overlay panel (Phase 4C) all render the exact same thread through
-// them, so the look can never drift between surfaces. `internal` so every file in :app can reuse them.
+// --- The shared WhatsApp-style chat view (design system §6). Every surface — the in-app live screen,
+// the read-only history detail, and the floating overlay panel — renders the exact same thread through
+// these, so the look can never drift. All colour flows through VaartaTheme, so light/dark is automatic.
 
-internal val REASSURE_GREEN = Color(0xFF2E7D32)
+/** The risk-ramp fill for a level — one place, from the theme (design system §4). */
+@Composable
+internal fun levelColor(level: RiskLevel): Color = VaartaTheme.colors.riskColor(level)
 
-internal fun levelColor(level: RiskLevel): Color = when (level) {
-    RiskLevel.OBSERVING -> Color(0xFF475569)
-    RiskLevel.CAUTION -> Color(0xFFF59E0B)
-    RiskLevel.HIGH_RISK -> Color(0xFFEA580C)
-    RiskLevel.SCAM_PATTERN -> Color(0xFFDC2626)
+/** Plain-language state line (kept for the overlay banner + history verdict). */
+internal fun levelText(level: RiskLevel): String = stateLabel(level)
+
+private data class ReplyStyle(val label: String, val accent: Color, val tint: Color, val ink: Color)
+
+@Composable
+private fun replyStyle(kind: ReplyKind): ReplyStyle {
+    val c = VaartaTheme.colors
+    return when (kind) {
+        ReplyKind.VERIFY -> ReplyStyle("Ask", c.verify, c.verifyTint, c.verifyInk)
+        ReplyKind.REFUSE -> ReplyStyle("Refuse", c.refuse, c.refuseTint, c.refuseInk)
+        ReplyKind.EXIT -> ReplyStyle("End the call", c.exit, c.exitTint, c.exitInk)
+    }
 }
 
-internal fun levelText(level: RiskLevel): String = when (level) {
-    RiskLevel.OBSERVING -> "Listening & checking…"
-    RiskLevel.CAUTION -> "Some warning signs"
-    RiskLevel.HIGH_RISK -> "Strong scam signs"
-    RiskLevel.SCAM_PATTERN -> "This matches a known scam"
-}
-
-private data class ReplyStyle(val label: String, val accent: Color, val tint: Color)
-
-private fun replyStyle(kind: ReplyKind): ReplyStyle = when (kind) {
-    ReplyKind.VERIFY -> ReplyStyle("Ask", Color(0xFF1565C0), Color(0xFFE3F0FB))
-    ReplyKind.REFUSE -> ReplyStyle("Refuse", Color(0xFFB71C1C), Color(0xFFFBE7E7))
-    ReplyKind.EXIT -> ReplyStyle("End the call", REASSURE_GREEN, Color(0xFFE6F3E7))
-}
-
-/** The hybrid alert banner (ADR-0003): plain language + score. Green when the AI+rules agree the call
- *  is genuine (reassure); otherwise the deterministic/raised risk level. */
+/** The hybrid alert banner (kept for the overlay panel): plain language + score, green when reassured. */
 @Composable
 internal fun StatusBanner(level: RiskLevel, score: Int, reassure: Boolean, aiRaised: Boolean) {
-    val color = if (reassure) REASSURE_GREEN else levelColor(level)
-    val headline = if (reassure) "This looks like a genuine call" else levelText(level)
+    val c = VaartaTheme.colors
+    val color = if (reassure) c.safe else c.riskColor(level)
+    val headline = if (reassure) "This looks like a genuine call" else stateLabel(level)
     Card(colors = CardDefaults.cardColors(containerColor = color)) {
         Column(Modifier.fillMaxWidth().padding(20.dp)) {
             Text(headline, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -75,23 +70,23 @@ internal fun StatusBanner(level: RiskLevel, score: Int, reassure: Boolean, aiRai
     }
 }
 
-/** Web-grounded scam-variant identification with tappable cited sources (ADR-0003). Only shown when
- *  source-backed — never a bare AI claim. */
+/** Web-grounded scam-variant identification with tappable cited sources. Only shown when source-backed. */
 @Composable
 internal fun ScamIdCard(scamType: String, sources: List<Source>, onOpenUrl: (String) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF1FB))) {
+    val c = VaartaTheme.colors
+    Card(colors = CardDefaults.cardColors(containerColor = c.indigoTint)) {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
-            Text("IDENTIFIED FROM THE LIVE WEB", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0C447C))
+            Text("IDENTIFIED FROM THE LIVE WEB", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigoInk)
             Spacer(Modifier.height(3.dp))
-            Text(scamType, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF042C53))
+            Text(scamType, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = c.indigoInk)
             if (sources.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
-                Text("Matches ${sources.size} recent report${if (sources.size == 1) "" else "s"}:", fontSize = 12.sp, color = Color(0xFF0C447C))
+                Text("Matches ${sources.size} recent report${if (sources.size == 1) "" else "s"}:", fontSize = 12.sp, color = c.indigoInk)
                 for (s in sources.take(3)) {
                     Text(
                         "🔗 ${s.title}",
                         fontSize = 12.sp,
-                        color = Color(0xFF1565C0),
+                        color = c.verify,
                         modifier = Modifier.padding(top = 3.dp).clickable { onOpenUrl(s.uri) },
                     )
                 }
@@ -101,10 +96,9 @@ internal fun ScamIdCard(scamType: String, sources: List<Source>, onOpenUrl: (Str
 }
 
 /**
- * The live WhatsApp-style thread (Phase 4A). Chronological, caller left / you-and-coach right. Uses a
- * plain [Column] (the screen is already one vertical scroll — a nested LazyColumn would crash on
- * unbounded height); a real call is a few dozen turns, so no virtualization is needed. Newest is at
- * the bottom; the enclosing scroll auto-follows via the caller's LaunchedEffect on chat size.
+ * The live WhatsApp-style thread. Chronological, caller left / you-and-coach right. Uses a plain
+ * [Column] (the screen is already one vertical scroll); a real call is a few dozen turns, so no
+ * virtualization is needed. Newest at the bottom.
  */
 @Composable
 internal fun ChatThread(items: List<ChatItem>, onOpenUrl: (String) -> Unit = {}) {
@@ -122,15 +116,16 @@ internal fun ChatThread(items: List<ChatItem>, onOpenUrl: (String) -> Unit = {})
 /** Scammer's words — left bubble. */
 @Composable
 private fun CallerBubble(text: String) {
+    val c = VaartaTheme.colors
     Row(Modifier.fillMaxWidth()) {
         Surface(
-            color = Color(0xFFF1F1F1),
+            color = c.callerBubble,
             shape = RoundedCornerShape(12.dp, 12.dp, 12.dp, 3.dp),
             modifier = Modifier.fillMaxWidth(0.85f),
         ) {
             Column(Modifier.padding(11.dp)) {
-                Text("Caller", fontSize = 11.sp, color = Color(0xFF757575))
-                Text(text, fontSize = 15.sp, color = Color(0xFF1E1E1E))
+                Text("Caller", fontSize = 11.sp, color = c.muted)
+                Text(text, fontSize = 15.sp, color = c.ink)
             }
         }
     }
@@ -139,15 +134,16 @@ private fun CallerBubble(text: String) {
 /** The user's own spoken words — right bubble, lighter than a coach suggestion. */
 @Composable
 private fun YouBubble(text: String) {
+    val c = VaartaTheme.colors
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Surface(
-            color = Color(0xFFF7F5FC),
+            color = c.indigoTint,
             shape = RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp),
             modifier = Modifier.fillMaxWidth(0.85f),
         ) {
             Column(Modifier.padding(11.dp)) {
-                Text("You said", fontSize = 11.sp, color = Color(0xFF7E57C2))
-                Text(text, fontSize = 15.sp, color = Color(0xFF1E1E1E))
+                Text("You said", fontSize = 11.sp, color = c.indigoInk)
+                Text(text, fontSize = 15.sp, color = c.ink)
             }
         }
     }
@@ -155,36 +151,36 @@ private fun YouBubble(text: String) {
 
 /**
  * VAARTA's coaching — right side, highlighted. Warning as a small line, then the primary reply
- * ("say this", large) + alternates as chips, and the web-grounded scam-ID with tappable sources when
- * present. Replies are display-only — never auto-played (ADR-0002 S8: audio would leak to the scammer).
+ * ("say this", large) + alternates, and the web-grounded scam-ID with tappable sources when present.
+ * Replies are display-only — never auto-played (ADR-0002 S8: audio would leak to the scammer).
  */
 @Composable
 internal fun CoachBubble(item: ChatItem.Coach, onOpenUrl: (String) -> Unit) {
+    val c = VaartaTheme.colors
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Surface(
-            color = Color(0xFFEDE7F6),
+            color = c.indigoTint,
             shape = RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp),
             modifier = Modifier.fillMaxWidth(0.9f),
         ) {
             Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (item.scamType != null) {
-                    Text("🌐  ${item.scamType}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0C447C))
+                    Text("🌐  ${item.scamType}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = c.indigoInk)
                     for (s in item.sources.take(3)) {
                         Text(
                             "🔗 ${s.title}",
                             fontSize = 11.sp,
-                            color = Color(0xFF1565C0),
+                            color = c.verify,
                             modifier = Modifier.clickable { onOpenUrl(s.uri) },
                         )
                     }
                 }
                 if (item.warning.isNotBlank()) {
-                    Text("⚠️  ${item.warning}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF4527A0))
+                    Text("⚠️  ${item.warning}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = c.indigoInk)
                 }
-                // Replies are the live copilot's "say this" coaching; a recorded-call verdict (Phase 4D)
-                // has none (the call is already over), so show the header + chips only when present.
+                // A recorded-call verdict (Phase 4D) has no live replies — show the header + chips only when present.
                 if (item.replies.isNotEmpty()) {
-                    Text("SAY THIS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4527A0))
+                    Text("SAY THIS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigo)
                     item.replies.forEachIndexed { i, reply -> ReplyLine(reply, primary = i == 0) }
                 }
             }
@@ -204,7 +200,7 @@ private fun ReplyLine(reply: Reply, primary: Boolean) {
                 "❝ ${reply.text} ❞",
                 fontSize = if (primary) 16.sp else 13.sp,
                 fontWeight = if (primary) FontWeight.Medium else FontWeight.Normal,
-                color = Color(0xFF1E1E1E),
+                color = style.ink,
             )
         }
     }

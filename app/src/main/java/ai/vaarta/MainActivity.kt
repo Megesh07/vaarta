@@ -11,6 +11,8 @@ import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.history.SessionDetail
 import ai.vaarta.recording.AudioAnalyzerViewModel
+import ai.vaarta.ui.RiskHero
+import ai.vaarta.ui.theme.VaartaTheme
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -85,7 +87,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            VaartaTheme {
                 VaartaApp(vm, historyVm, analyzerVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
             }
         }
@@ -251,19 +253,26 @@ fun VaartaScreen(
                 Text("VAARTA", fontSize = 26.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
                 if (liveStatus != null) {
-                    Text("● Live: $liveStatus", color = Color(0xFF4527A0), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text("● Live: $liveStatus", color = VaartaTheme.colors.indigo, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 } else {
                     Text(
                         "🕘 History",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF4527A0),
+                        color = VaartaTheme.colors.indigo,
                         modifier = Modifier.clickable(onClick = onOpenHistory),
                     )
                 }
             }
 
-            StatusBanner(level = displayedLevel, score = state.score, reassure = reassure, aiRaised = aiRaised)
+            RiskHero(
+                level = displayedLevel,
+                score = state.score,
+                reassure = reassure,
+                aiRaised = aiRaised,
+                detectedStages = state.topSignals.map { it.stage },
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
 
             if (scamType != null) {
                 ScamIdCard(scamType = scamType!!, sources = scamSources, onOpenUrl = onOpenUrl)
@@ -289,7 +298,7 @@ fun VaartaScreen(
                         if (granted) vm.session.startLiveListening() else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4527A0)),
+                    colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.indigo),
                 ) { Text("🎙  Start live protection", fontSize = 16.sp) }
                 // The real in-call mode: float over the dialer as a bubble (Phase 4C).
                 OutlinedButton(
@@ -322,7 +331,7 @@ fun VaartaScreen(
                     AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
                 }
             } else {
-                Text("🔊  Put the call on speaker so VAARTA can hear the caller.", fontSize = 13.sp, color = Color.Gray)
+                Text("🔊  Put the call on speaker so VAARTA can hear the caller.", fontSize = 13.sp, color = VaartaTheme.colors.muted)
                 OutlinedButton(onClick = { vm.session.stopLiveListening() }, modifier = Modifier.fillMaxWidth()) {
                     Text("■  Stop protection")
                 }
@@ -334,7 +343,7 @@ fun VaartaScreen(
                         onShare("VAARTA alert: I may be on a scam call right now. Please call me back. (${levelText(displayedLevel)})")
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.scam),
                 ) { Text("🔔  Alert my family", fontSize = 16.sp) }
                 Text("No agency arrests anyone over a phone or video call.", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
@@ -372,14 +381,14 @@ fun VaartaScreen(
 private fun QuestionCard(text: String, onCycle: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onCycle),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF3F8)),
+        colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint),
     ) {
         Column(Modifier.padding(14.dp)) {
-            Text("ASK THEM", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
+            Text("ASK THEM", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VaartaTheme.colors.muted)
             Spacer(Modifier.height(4.dp))
-            Text("❝ $text ❞", fontSize = 16.sp, color = Color(0xFF1E293B))
+            Text("❝ $text ❞", fontSize = 16.sp, color = VaartaTheme.colors.ink)
             Spacer(Modifier.height(4.dp))
-            Text("⟳ tap for another question", fontSize = 11.sp, color = Color.Gray)
+            Text("⟳ tap for another question", fontSize = 11.sp, color = VaartaTheme.colors.muted)
         }
     }
 }
@@ -387,7 +396,7 @@ private fun QuestionCard(text: String, onCycle: () -> Unit) {
 /** Opt-in consent for the cloud AI layer (ADR-0002/0003) — OFF by default, honest about what it does. */
 @Composable
 private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F0FA))) {
+    Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint)) {
         Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("🤖  AI live coach", fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -395,7 +404,7 @@ private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
                     "Opt-in. Sends the caller's words to Google (and searches the web for current scams) " +
                         "to coach your reply. Off = fully on-device. Never replaces the safe question.",
                     fontSize = 11.sp,
-                    color = Color.Gray,
+                    color = VaartaTheme.colors.muted,
                 )
             }
             Switch(checked = enabled, onCheckedChange = onToggle)
@@ -424,26 +433,26 @@ private fun HistoryScreen(
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = Color(0xFF4527A0), modifier = Modifier.clickable(onClick = onBack))
+                Text("‹ Back", fontSize = 15.sp, color = VaartaTheme.colors.indigo, modifier = Modifier.clickable(onClick = onBack))
                 Spacer(Modifier.weight(1f))
                 Text("Saved calls", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
-            Text("Stored only on this phone, encrypted. Nothing is uploaded.", fontSize = 12.sp, color = Color.Gray)
+            Text("Stored only on this phone, encrypted. Nothing is uploaded.", fontSize = 12.sp, color = VaartaTheme.colors.muted)
 
             RetentionRow(retentionDays = retentionDays, onSet = { historyVm.setRetentionDays(it) })
 
             if (sessions.isEmpty()) {
                 Spacer(Modifier.height(32.dp))
-                Text("No saved calls yet.", fontSize = 15.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth())
+                Text("No saved calls yet.", fontSize = 15.sp, color = VaartaTheme.colors.muted, modifier = Modifier.fillMaxWidth())
                 Text(
                     "After a call, tap “Save this call to history” to keep the thread here.",
-                    fontSize = 13.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth(),
+                    fontSize = 13.sp, color = VaartaTheme.colors.muted, modifier = Modifier.fillMaxWidth(),
                 )
             } else {
                 if (sessions.size > 1) {
                     OutlinedButton(
                         onClick = { historyVm.deleteAll() },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB71C1C)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VaartaTheme.colors.scam),
                     ) { Text("Delete all") }
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -466,10 +475,10 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete:
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(levelText(level), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = levelColor(level))
-                session.scamType?.let { Text(it, fontSize = 12.sp, color = Color(0xFF334155)) }
-                Text(historyDateFmt.format(Date(session.startedAtMs)), fontSize = 11.sp, color = Color.Gray)
+                session.scamType?.let { Text(it, fontSize = 12.sp, color = VaartaTheme.colors.muted) }
+                Text(historyDateFmt.format(Date(session.startedAtMs)), fontSize = 11.sp, color = VaartaTheme.colors.muted)
             }
-            Text("✕", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.clickable(onClick = onDelete).padding(8.dp))
+            Text("✕", fontSize = 16.sp, color = VaartaTheme.colors.muted, modifier = Modifier.clickable(onClick = onDelete).padding(8.dp))
         }
     }
 }
@@ -479,7 +488,7 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete:
 private fun RetentionRow(retentionDays: Int, onSet: (Int) -> Unit) {
     val options = listOf(0 to "Keep", 7 to "7 days", 30 to "30 days")
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Auto-delete:", fontSize = 13.sp, color = Color(0xFF334155))
+        Text("Auto-delete:", fontSize = 13.sp, color = VaartaTheme.colors.muted)
         for ((days, label) in options) {
             FilterChip(selected = retentionDays == days, onClick = { onSet(days) }, label = { Text(label) })
         }
@@ -503,20 +512,20 @@ private fun DetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = Color(0xFF4527A0), modifier = Modifier.clickable(onClick = onBack))
+                Text("‹ Back", fontSize = 15.sp, color = VaartaTheme.colors.indigo, modifier = Modifier.clickable(onClick = onBack))
                 Spacer(Modifier.weight(1f))
                 if (d != null) {
-                    Text("✕ Delete", fontSize = 14.sp, color = Color(0xFFB71C1C), modifier = Modifier.clickable {
+                    Text("✕ Delete", fontSize = 14.sp, color = VaartaTheme.colors.scam, modifier = Modifier.clickable {
                         historyVm.delete(d.id); onBack()
                     })
                 }
             }
             if (d == null) {
-                Text("Loading…", color = Color.Gray)
+                Text("Loading…", color = VaartaTheme.colors.muted)
             } else {
                 VerdictHeader(d)
                 if (d.chat.isEmpty()) {
-                    Text("This call has no saved turns.", color = Color.Gray)
+                    Text("This call has no saved turns.", color = VaartaTheme.colors.muted)
                 } else {
                     ChatThread(d.chat, onOpenUrl)
                 }
@@ -552,27 +561,27 @@ private fun AnalyzeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = Color(0xFF4527A0), modifier = Modifier.clickable(onClick = onBack))
+                Text("‹ Back", fontSize = 15.sp, color = VaartaTheme.colors.indigo, modifier = Modifier.clickable(onClick = onBack))
                 Spacer(Modifier.weight(1f))
                 Text("Analyze a recording", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
 
             when (val s = state) {
                 AudioAnalyzerViewModel.UiState.Idle ->
-                    Text("Pick a recording from the home screen to analyze.", fontSize = 14.sp, color = Color.Gray)
+                    Text("Pick a recording from the home screen to analyze.", fontSize = 14.sp, color = VaartaTheme.colors.muted)
 
                 AudioAnalyzerViewModel.UiState.Running -> {
                     Spacer(Modifier.height(40.dp))
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        CircularProgressIndicator(color = Color(0xFF4527A0))
+                        CircularProgressIndicator(color = VaartaTheme.colors.indigo)
                         Text("Transcribing and checking the recording…", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text("This can take up to a minute for a longer clip.", fontSize = 12.sp, color = Color.Gray)
+                        Text("This can take up to a minute for a longer clip.", fontSize = 12.sp, color = VaartaTheme.colors.muted)
                     }
                 }
 
                 is AudioAnalyzerViewModel.UiState.Error -> {
-                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFBE7E7))) {
-                        Text(s.message, modifier = Modifier.padding(16.dp), fontSize = 14.sp, color = Color(0xFFB71C1C))
+                    Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.scamTint)) {
+                        Text(s.message, modifier = Modifier.padding(16.dp), fontSize = 14.sp, color = VaartaTheme.colors.scam)
                     }
                     OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("‹ Back") }
                 }
@@ -583,7 +592,7 @@ private fun AnalyzeScreen(
                     Text(
                         "Analyzed from a recording. The risk score is computed on-device from the transcript; " +
                             "the AI transcribed and helped classify it.",
-                        fontSize = 11.sp, color = Color.Gray,
+                        fontSize = 11.sp, color = VaartaTheme.colors.muted,
                     )
                     if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
 
@@ -591,7 +600,7 @@ private fun AnalyzeScreen(
                         Button(
                             onClick = { onShare("VAARTA: I analyzed a call recording and it looks like a scam (${levelText(r.level)}).") },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                            colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.scam),
                         ) { Text("🔔  Share this warning", fontSize = 16.sp) }
                     }
 
