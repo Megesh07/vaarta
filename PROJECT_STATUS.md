@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-07 · **Updated by:** implementation session (AI-assisted)
+**Last updated:** 2026-07-14 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -230,6 +230,28 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   other way around.
 
 ## 8. Change log
+
+- **2026-07-14 — v2 UX reshape, Phase 1: navigation + Home + Help; Manual Mode removed.** First
+  phase of the "intelligence-everywhere" redesign (spec:
+  `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`, plan:
+  `docs/superpowers/plans/2026-07-14-vaarta-v2-phase1-nav-home.md`; branch `vaarta-v2-ux`). Built +
+  **verified on the `vaarta_test` emulator** (screenshots):
+  - **Manual Mode UI deleted** (owner: it gave the same canned answer to everyone — no intelligence).
+    Removed `ui/ManualModeGrid.kt`, `signalVisualForCue`, and `CopilotSession`'s `cues`/`tapped`/
+    `tapCue`. **The deterministic `RiskEngine` is untouched** — it stays as the invisible anti-
+    hallucination safety floor (`HybridAlert` can raise but never lower it). Demo call still reaches
+    **SCAM_PATTERN** live, confirming the floor survived the removal.
+  - **3-tab shell** (`ui/VaartaNav.kt`): MD3 `Scaffold` + `NavigationBar` → Home / History / Help,
+    no `navigation-compose` dependency (stays $0/lean). Live copilot, recording analyzer, and saved-
+    call detail render as full-screen **sub-screens** (bottom bar hidden, own Back).
+  - **Clean Home** (`ui/HomeScreen.kt`): one dominant **panic action** ("I'm on a scam call right
+    now" → a "Do this now" sheet: don't pay / never share OTP / hang up / call 1930), two calm action
+    cards (live · recording), and a trending-scams placeholder (real AI feed lands in Phase 4).
+  - **Help tab** (`ui/HelpScreen.kt`): Call 1930, open cybercrime.gov.in, complaint draft (moved off
+    the live screen, reuses `core:complaint` + `PdfExporter`), and warn-family share.
+  - `assembleDebug` green; core tests unaffected (no `core:*` logic touched this phase).
+  - **Next:** Phase 2 — the reusable "Understand this call" screen (verdict → clean transcript →
+    download → multimodal chat). See the plan's build order (§10 of the spec).
 
 - **2026-07-09 (later same day)** — **Phase D: AI safety hardening — prompt-injection red-team
   (ADR-0003 Phase D addendum).** Red-teamed `SuggestionSafetyFilter`, the last line before an AI reply
