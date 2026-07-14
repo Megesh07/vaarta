@@ -10,7 +10,6 @@ import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.reasoning.Source
 import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
-import ai.vaarta.history.SessionDetail
 import ai.vaarta.recording.AudioAnalyzerViewModel
 import ai.vaarta.ui.RiskHero
 import ai.vaarta.ui.VaartaNav
@@ -190,6 +189,24 @@ fun VaartaScreen(
         if (chat.isNotEmpty()) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 
+    // Auto-save a live call to Conversations when it ends with content (v2 — no manual Save tap needed;
+    // starting protection is the consent, and the user can delete any conversation). Demos aren't saved
+    // (they never set liveStatus).
+    var wasLive by remember { mutableStateOf(false) }
+    var savedLive by remember { mutableStateOf(false) }
+    LaunchedEffect(liveStatus) {
+        if (liveStatus != null) {
+            wasLive = true
+            savedLive = false
+        } else if (wasLive && !savedLive && chat.isNotEmpty()) {
+            historyVm.save(SessionSource.LIVE, state.score, displayedLevel.name, scamType, chat) {
+                Toast.makeText(context, "Saved to your conversations", Toast.LENGTH_SHORT).show()
+            }
+            savedLive = true
+            wasLive = false
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll).padding(16.dp),
@@ -260,17 +277,6 @@ fun VaartaScreen(
                         onClick = { recordingPicker.launch("audio/*") },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("🎧  Analyze a recorded call") }
-                }
-                // Explicit opt-in to persist (ADR-0004): only after a call, only on the user's tap.
-                if (chat.isNotEmpty()) {
-                    OutlinedButton(
-                        onClick = {
-                            historyVm.save(SessionSource.LIVE, state.score, displayedLevel.name, scamType, chat) {
-                                Toast.makeText(context, "Saved to history", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text("💾  Save this call to history") }
                 }
                 if (vm.session.aiConfigured) {
                     AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
@@ -462,46 +468,6 @@ private fun RetentionRow(retentionDays: Int, onSet: (Int) -> Unit) {
     }
 }
 
-/** Read-only replay of a saved call: verdict header + the same WhatsApp-style thread + delete. */
-@Composable
-internal fun DetailScreen(
-    historyVm: HistoryViewModel,
-    onBack: () -> Unit,
-    onOpenUrl: (String) -> Unit,
-) {
-    val detail by historyVm.detail.collectAsState()
-    val scroll = rememberScrollState()
-    val d = detail
-
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = VaartaTheme.colors.indigo, modifier = Modifier.clickable(onClick = onBack))
-                Spacer(Modifier.weight(1f))
-                if (d != null) {
-                    Text("✕ Delete", fontSize = 14.sp, color = VaartaTheme.colors.scam, modifier = Modifier.clickable {
-                        historyVm.delete(d.id); onBack()
-                    })
-                }
-            }
-            if (d == null) {
-                Text("Loading…", color = VaartaTheme.colors.muted)
-            } else {
-                VerdictHeader(d)
-                if (d.chat.isEmpty()) {
-                    Text("This call has no saved turns.", color = VaartaTheme.colors.muted)
-                } else {
-                    ChatThread(d.chat, onOpenUrl)
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-    }
-}
-
 // --- Phase 4D: recorded-call analyzer screen ---
 
 /**
@@ -555,6 +521,13 @@ internal fun AnalyzeScreen(
 
                 is AudioAnalyzerViewModel.UiState.Done -> {
                     val r = s.result
+                    // Auto-save the analyzed recording to Conversations (v2 — keyed on the result so it
+                    // saves once per analysis; the user picked the clip, which is the consent).
+                    LaunchedEffect(r) {
+                        historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
+                            Toast.makeText(context, "Saved to your conversations", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                     RiskHero(
                         level = r.level,
                         score = r.score,
@@ -578,14 +551,12 @@ internal fun AnalyzeScreen(
                         ) { Text("🔔  Share this warning", fontSize = 16.sp) }
                     }
 
-                    OutlinedButton(
-                        onClick = {
-                            historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
-                                Toast.makeText(context, "Saved to history", Toast.LENGTH_SHORT).show()
-                            }
-                        },
+                    Text(
+                        "✓  Saved to your conversations",
+                        fontSize = 13.sp,
+                        color = VaartaTheme.colors.muted,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("💾  Save to history") }
+                    )
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -593,20 +564,3 @@ internal fun AnalyzeScreen(
     }
 }
 
-/** The saved call's final verdict — the steady risk banner + scam-ID, replayed from storage. */
-@Composable
-private fun VerdictHeader(d: SessionDetail) {
-    val level = levelFromName(d.finalLevel)
-    Card(colors = CardDefaults.cardColors(containerColor = levelColor(level))) {
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Text(levelText(level), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text("Risk ${d.finalScore} / 100", color = Color.White, fontSize = 15.sp)
-            d.scamType?.let {
-                Spacer(Modifier.height(4.dp))
-                Text("🌐  $it", color = Color.White, fontSize = 13.sp)
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(historyDateFmt.format(Date(d.startedAtMs)), color = Color.White, fontSize = 12.sp)
-        }
-    }
-}

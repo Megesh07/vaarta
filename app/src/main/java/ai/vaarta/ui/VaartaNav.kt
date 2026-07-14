@@ -1,13 +1,11 @@
 package ai.vaarta.ui
 
 import ai.vaarta.AnalyzeScreen
-import ai.vaarta.DetailScreen
 import ai.vaarta.HistoryScreen
 import ai.vaarta.SessionViewModel
 import ai.vaarta.VaartaScreen
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
-import ai.vaarta.core.data.db.SessionSource
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.recording.AudioAnalyzerViewModel
 import androidx.compose.foundation.layout.padding
@@ -28,7 +26,6 @@ sealed interface SubScreen {
     data object None : SubScreen
     data object Live : SubScreen
     data object Analyze : SubScreen
-    data object Detail : SubScreen
     data object Chat : SubScreen
 }
 
@@ -66,15 +63,11 @@ fun VaartaNav(
                 onBack = { analyzerVm.reset(); sub = SubScreen.None },
                 onShare = onShare, onOpenUrl = onOpenUrl,
             )
-            SubScreen.Detail -> DetailScreen(
-                historyVm = historyVm,
-                onBack = { historyVm.closeDetail(); sub = SubScreen.None; tab = VaartaTab.HISTORY },
-                onOpenUrl = onOpenUrl,
-            )
             SubScreen.Chat -> ConversationScreen(
                 vm = conversationVm,
                 onBack = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
                 onOpenUrl = onOpenUrl,
+                onShare = onShare,
             )
             SubScreen.None -> Unit
         }
@@ -117,13 +110,7 @@ fun VaartaNav(
             VaartaTab.HISTORY -> HistoryScreen(
                 historyVm = historyVm,
                 onNewChat = { conversationVm.newChat(); sub = SubScreen.Chat },
-                onOpen = { session ->
-                    if (session.source == SessionSource.CHAT) {
-                        conversationVm.open(session.id); sub = SubScreen.Chat
-                    } else {
-                        historyVm.openDetail(session.id); sub = SubScreen.Detail
-                    }
-                },
+                onOpen = { session -> conversationVm.open(session.id); sub = SubScreen.Chat },
                 modifier = Modifier.padding(pad),
             )
             VaartaTab.HELP -> HelpScreen(

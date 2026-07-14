@@ -231,19 +231,28 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
-- **2026-07-14 — v2 Phase 3 (part 1 of 2): multimodal chat composer.** `GeminiClient.chat` now takes
-  image/audio attachments (inline_data — the same proven path as `analyzeAudio`, Phase 4D); new
-  `ChatAttachment` model; `ConversationScreen` composer gained **🎤 voice** (device
-  `RecognizerIntent` speech-to-text), **🖼️ image** and **🎧 audio** SAF pickers with removable pending
-  chips; `ConversationViewModel.send(text, attachments)` persists a short marker per attachment (media
-  itself never stored). `assembleDebug` green; **composer verified rendering on the emulator**.
-  - **Verified on emulator:** composer renders (🎤/🖼️/🎧 + field + Send); text chat unchanged.
-  - **Pending device verify:** full pick→answer for image/audio (SAF picker is hard to drive via adb;
-    the inline path is mechanically identical to the emulator-verified `analyzeAudio`) and 🎤 voice
-    (emulator has no speech recogniser) — to confirm on the owner's phone.
-  - **Still TODO (Phase 3 part 2):** call/recording **context header** (verdict + clean transcript +
-    Download) on the conversation screen + retire `DetailScreen`; **auto-save** live calls and
-    recordings as conversations (no manual Save tap).
+- **2026-07-14 — v2 Phase 3 (complete): multimodal chat + call context + auto-save.**
+  - **Multimodal composer** (part 1): `GeminiClient.chat` takes image/audio attachments (inline_data —
+    same proven path as `analyzeAudio`); `ChatAttachment` model; composer gained **🎤 voice** (device
+    `RecognizerIntent`), **🖼️ image** and **🎧 audio** SAF pickers + removable chips;
+    `send(text, attachments)` persists only a marker per attachment (media never stored). **Composer
+    verified rendering on the emulator.**
+  - **Call/recording context header + Download + merged screen** (part 2): opening a saved live call
+    or recording now uses `ConversationScreen` (not a separate read-only detail) — **verdict banner
+    (StatusBanner) + scam-type + "⬇ Download transcript" + the clean transcript + a chat composer to
+    "ask about this call"**, grounded in the call's transcript. **`DetailScreen`/`VerdictHeader` and
+    `HistoryViewModel`'s detail machinery removed (dead code cleanup).** **Verified on emulator:**
+    opened the migrated "Digital Arrest Scam" recording → banner "This matches a known scam 100/100",
+    sources, transcript, Download link, composer all render.
+  - **Auto-save** (part 2): live calls auto-save to Conversations when they end with content
+    (no manual Save tap; starting protection is the consent), recordings auto-save on analysis
+    completion (`LaunchedEffect` keyed on the result). Manual Save buttons removed.
+  - **Pending device verify (owner's phone):** full image/audio pick→answer (SAF picker hard to drive
+    via adb; inline path == emulator-verified `analyzeAudio`), 🎤 voice (no emulator recogniser), and
+    live-call auto-save firing (emulator has no call audio). Recording auto-save is by-construction
+    (same emulator-verified `save()` path, called automatically). `assembleDebug` green.
+  - **Known minor polish:** opening a saved call auto-scrolls to the newest turn (chat behaviour), so
+    the verdict banner starts scrolled up — deliberate for chat, a scroll-up shows the header/Download.
 
 - **2026-07-14 — v2 Phase 2: unified Conversations + text chat.** Plan:
   `docs/superpowers/plans/2026-07-14-vaarta-v2-phase2-conversations-chat.md`. Built +

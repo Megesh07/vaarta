@@ -1,6 +1,7 @@
 package ai.vaarta.ui
 
 import ai.vaarta.ChatThread
+import ai.vaarta.StatusBanner
 import ai.vaarta.ai.ChatAttachment
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.ui.theme.VaartaTheme
@@ -61,6 +62,7 @@ fun ConversationScreen(
     vm: ConversationViewModel,
     onBack: () -> Unit,
     onOpenUrl: (String) -> Unit,
+    onShare: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = VaartaTheme.colors
@@ -68,6 +70,7 @@ fun ConversationScreen(
     val scope = rememberCoroutineScope()
     val turns by vm.turns.collectAsState()
     val sending by vm.sending.collectAsState()
+    val header by vm.header.collectAsState()
     var input by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<List<ChatAttachment>>(emptyList()) }
     val scroll = rememberScrollState()
@@ -117,14 +120,27 @@ fun ConversationScreen(
             Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("‹ Back", fontSize = 15.sp, color = c.indigo, modifier = Modifier.clickable(onClick = onBack))
                 Spacer(Modifier.padding(horizontal = 6.dp))
-                Text("Ask VAARTA", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = c.ink)
+                Text(if (header != null) "About this call" else "Ask VAARTA", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = c.ink)
             }
 
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                if (turns.isEmpty()) {
+                header?.let { h ->
+                    Spacer(Modifier.padding(top = 4.dp))
+                    StatusBanner(h.level, h.score, reassure = false, aiRaised = false)
+                    h.scamType?.let {
+                        Text("🌐  $it", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = c.indigoInk)
+                    }
+                    Text(
+                        "⬇  Download transcript",
+                        fontSize = 13.sp,
+                        color = c.indigo,
+                        modifier = Modifier.clickable { onShare(vm.transcriptText()) }.padding(vertical = 4.dp),
+                    )
+                }
+                if (turns.isEmpty() && header == null) {
                     Spacer(Modifier.padding(top = 24.dp))
                     Text("🛡️", fontSize = 40.sp)
                     Spacer(Modifier.padding(top = 8.dp))
