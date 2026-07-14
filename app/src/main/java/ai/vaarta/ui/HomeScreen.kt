@@ -50,6 +50,7 @@ fun HomeScreen(
     aiConfigured: Boolean,
     onStartLive: () -> Unit,
     onAnalyzeRecording: () -> Unit,
+    onAskVaarta: () -> Unit,
     onOpenUrl: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -104,12 +105,18 @@ fun HomeScreen(
                 }
             }
 
-            // Two calm action cards.
+            // Calm action cards — what the user reaches for.
             ActionCard(
                 emoji = "🎙️",
                 title = "Help me on a call",
                 subtitle = "VAARTA listens on speaker and coaches you live",
                 onClick = onStartLive,
+            )
+            ActionCard(
+                emoji = "💬",
+                title = "Ask VAARTA",
+                subtitle = "Chat about a message or call — is it a scam?",
+                onClick = onAskVaarta,
             )
             if (aiConfigured) {
                 ActionCard(

@@ -6,6 +6,7 @@ import ai.vaarta.core.data.db.SessionSource
 import ai.vaarta.core.reasoning.Reply
 import ai.vaarta.core.reasoning.ReplyKind
 import ai.vaarta.core.reasoning.RiskLevel
+import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.reasoning.Source
 import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
@@ -82,12 +83,13 @@ class MainActivity : ComponentActivity() {
     private val vm: SessionViewModel by viewModels()
     private val historyVm: HistoryViewModel by viewModels()
     private val analyzerVm: AudioAnalyzerViewModel by viewModels()
+    private val conversationVm: ConversationViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             VaartaTheme {
-                VaartaNav(vm, historyVm, analyzerVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                VaartaNav(vm, historyVm, analyzerVm, conversationVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
             }
         }
     }
@@ -343,29 +345,36 @@ private fun levelFromName(name: String): RiskLevel =
 @Composable
 internal fun HistoryScreen(
     historyVm: HistoryViewModel,
-    onBack: () -> Unit,
-    onOpen: (Long) -> Unit,
+    onNewChat: () -> Unit,
+    onOpen: (CallSessionEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sessions by historyVm.sessions.collectAsState()
     val retentionDays by historyVm.retentionDays.collectAsState()
+    val now = System.currentTimeMillis()
+    val weekAgo = now - 7L * 24 * 60 * 60 * 1000
+    val thisWeek = sessions.filter { it.startedAtMs >= weekAgo }
+    val earlier = sessions.filter { it.startedAtMs < weekAgo }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = VaartaTheme.colors.indigo, modifier = Modifier.clickable(onClick = onBack))
+                Text("Conversations", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text("Saved calls", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = onNewChat,
+                    colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.indigo),
+                ) { Text("＋ New chat") }
             }
-            Text("Stored only on this phone, encrypted. Nothing is uploaded.", fontSize = 12.sp, color = VaartaTheme.colors.muted)
+            Text("Chats, live calls and recordings — stored only on this phone, encrypted.", fontSize = 12.sp, color = VaartaTheme.colors.muted)
 
             RetentionRow(retentionDays = retentionDays, onSet = { historyVm.setRetentionDays(it) })
 
             if (sessions.isEmpty()) {
                 Spacer(Modifier.height(32.dp))
-                Text("No saved calls yet.", fontSize = 15.sp, color = VaartaTheme.colors.muted, modifier = Modifier.fillMaxWidth())
+                Text("No conversations yet.", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = VaartaTheme.colors.ink, modifier = Modifier.fillMaxWidth())
                 Text(
-                    "After a call, tap “Save this call to history” to keep the thread here.",
+                    "Tap ＋ New chat to ask VAARTA about a suspicious call or message — or protect a live call from Home.",
                     fontSize = 13.sp, color = VaartaTheme.colors.muted, modifier = Modifier.fillMaxWidth(),
                 )
             } else {
@@ -376,8 +385,17 @@ internal fun HistoryScreen(
                     ) { Text("Delete all") }
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    items(sessions, key = { it.id }) { session ->
-                        HistoryRow(session = session, onOpen = { onOpen(session.id) }, onDelete = { historyVm.delete(session.id) })
+                    if (thisWeek.isNotEmpty()) {
+                        item { SectionLabel("This week") }
+                        items(thisWeek, key = { it.id }) { s ->
+                            HistoryRow(session = s, onOpen = { onOpen(s) }, onDelete = { historyVm.delete(s.id) })
+                        }
+                    }
+                    if (earlier.isNotEmpty()) {
+                        item { SectionLabel("Earlier") }
+                        items(earlier, key = { it.id }) { s ->
+                            HistoryRow(session = s, onOpen = { onOpen(s) }, onDelete = { historyVm.delete(s.id) })
+                        }
                     }
                 }
             }
@@ -385,18 +403,47 @@ internal fun HistoryScreen(
     }
 }
 
-/** One saved-call row: risk dot + level + scam-ID + when. */
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        color = VaartaTheme.colors.muted,
+        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+    )
+}
+
+/** One conversation row: type glyph + title + (risk + when). */
 @Composable
 private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
     val level = levelFromName(session.finalLevel)
+    val glyph = when (session.source) {
+        SessionSource.CHAT -> "💬"
+        SessionSource.RECORDING -> "🎧"
+        else -> "📞"
+    }
+    val title = session.title
+        ?: session.scamType
+        ?: when (session.source) {
+            SessionSource.CHAT -> "Chat"
+            SessionSource.RECORDING -> "Recording"
+            else -> "Live call"
+        }
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = levelColor(level), shape = RoundedCornerShape(50), modifier = Modifier.size(12.dp)) {}
+            Text(glyph, fontSize = 20.sp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(levelText(level), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = levelColor(level))
-                session.scamType?.let { Text(it, fontSize = 12.sp, color = VaartaTheme.colors.muted) }
-                Text(historyDateFmt.format(Date(session.startedAtMs)), fontSize = 11.sp, color = VaartaTheme.colors.muted)
+                Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = VaartaTheme.colors.ink, maxLines = 2)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (session.source != SessionSource.CHAT && session.finalScore > 0) {
+                        Surface(color = levelColor(level), shape = RoundedCornerShape(50), modifier = Modifier.size(9.dp)) {}
+                        Text(levelText(level), fontSize = 11.sp, color = levelColor(level), fontWeight = FontWeight.SemiBold)
+                        Text("·", fontSize = 11.sp, color = VaartaTheme.colors.muted)
+                    }
+                    Text(historyDateFmt.format(Date(session.startedAtMs)), fontSize = 11.sp, color = VaartaTheme.colors.muted)
+                }
             }
             Text("✕", fontSize = 16.sp, color = VaartaTheme.colors.muted, modifier = Modifier.clickable(onClick = onDelete).padding(8.dp))
         }

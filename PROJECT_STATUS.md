@@ -231,6 +231,30 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-14 — v2 Phase 2: unified Conversations + text chat.** Plan:
+  `docs/superpowers/plans/2026-07-14-vaarta-v2-phase2-conversations-chat.md`. Built +
+  **verified end-to-end on the `vaarta_test` emulator** (screenshots):
+  - **core:data v2 (guarded migration).** `SessionSource += CHAT`, `TurnKind += ASSISTANT`, new
+    nullable `title` column; `@Database(version=2)` + `MIGRATION_1_2` (additive `ALTER TABLE`).
+    **Proven the migration preserved v1 data** — a previously-saved recording ("Digital Arrest Scam")
+    and live call still appear in the list after the upgrade.
+  - **Unified Conversations** (History tab → "Conversations"): grouped **This week / Earlier**, each row
+    a title + type glyph (📞 live / 🎧 recording / 💬 chat) + risk; **＋ New chat**; retention kept.
+  - **Home reorder:** added the **"Ask VAARTA"** action; news feed sits lower (actions lead).
+  - **Real text chat (the heart):** `GeminiClient.chat()` (web-grounded prose + cited sources, fails
+    closed), `ChatPrompt` (scam-help assistant; safety via the prompt + fail-closed — NOT the coaching
+    deny-list, which would wrongly reject educational prose), `ConversationViewModel` (persists as a
+    CHAT conversation, title = first message), `ConversationScreen` (thread + text composer),
+    `ChatItem.Assistant` + `ChatView` bubble + `ChatHistoryMapping` (ASSISTANT ↔ Assistant).
+  - **Verified:** New chat → English + Hindi questions → grounded, accurate, SAFE answers (hang up /
+    never share OTP / don't pay / report 1930+cybercrime.gov.in); saved with a derived title; reopened
+    from the encrypted DB and replayed intact. **Language bug found + fixed live** — an English question
+    first answered in Hindi; tightened `ChatPrompt` to match the user's language; re-verified English→English.
+  - **Tests:** core:reasoning green incl. new `ChatModelsTest` (title derivation). `assembleDebug` green.
+  - **Deferred to Phase 3 (explicit):** multimodal composer (🎤 voice / 🖼️ image / 🎧 audio), the
+    call/recording context header + Download on the conversation screen, and auto-save of live/recording
+    as conversations. Article summarizer = Phase 5.
+
 - **2026-07-14 — v2 UX reshape, Phase 1: navigation + Home + Help; Manual Mode removed.** First
   phase of the "intelligence-everywhere" redesign (spec:
   `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`, plan:

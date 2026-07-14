@@ -31,6 +31,9 @@ interface HistoryDao {
     @Query("SELECT * FROM call_session WHERE id = :id")
     suspend fun getSession(id: Long): CallSessionEntity?
 
+    @Query("UPDATE call_session SET title = :title WHERE id = :id")
+    suspend fun setTitle(id: Long, title: String)
+
     @Query("SELECT * FROM turn WHERE session_id = :sessionId ORDER BY at_ms ASC, id ASC")
     suspend fun getTurns(sessionId: Long): List<TurnEntity>
 

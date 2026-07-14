@@ -108,6 +108,7 @@ internal fun ChatThread(items: List<ChatItem>, onOpenUrl: (String) -> Unit = {})
                 is ChatItem.Caller -> CallerBubble(item.text)
                 is ChatItem.You -> YouBubble(item.text)
                 is ChatItem.Coach -> CoachBubble(item, onOpenUrl)
+                is ChatItem.Assistant -> AssistantBubble(item, onOpenUrl)
             }
         }
     }
@@ -182,6 +183,35 @@ internal fun CoachBubble(item: ChatItem.Coach, onOpenUrl: (String) -> Unit) {
                 if (item.replies.isNotEmpty()) {
                     Text("SAY THIS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigo)
                     item.replies.forEachIndexed { i, reply -> ReplyLine(reply, primary = i == 0) }
+                }
+            }
+        }
+    }
+}
+
+/** A free-form VAARTA chat answer — left bubble, "VAARTA" label, plain prose + tappable sources. */
+@Composable
+internal fun AssistantBubble(item: ChatItem.Assistant, onOpenUrl: (String) -> Unit) {
+    val c = VaartaTheme.colors
+    Row(Modifier.fillMaxWidth()) {
+        Surface(
+            color = c.callerBubble,
+            shape = RoundedCornerShape(12.dp, 12.dp, 12.dp, 3.dp),
+            modifier = Modifier.fillMaxWidth(0.92f),
+        ) {
+            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("🛡️  VAARTA", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigoInk)
+                Text(item.text, fontSize = 15.sp, color = c.ink)
+                if (item.sources.isNotEmpty()) {
+                    Text("Sources:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = c.muted)
+                    for (s in item.sources.take(3)) {
+                        Text(
+                            "🔗 ${s.title}",
+                            fontSize = 12.sp,
+                            color = c.verify,
+                            modifier = Modifier.clickable { onOpenUrl(s.uri) },
+                        )
+                    }
                 }
             }
         }

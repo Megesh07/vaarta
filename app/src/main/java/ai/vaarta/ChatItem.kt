@@ -25,4 +25,11 @@ sealed interface ChatItem {
         val scamType: String? = null,
         val sources: List<Source> = emptyList(),
     ) : ChatItem
+
+    /** A free-form chat reply from VAARTA (v2 "Ask VAARTA") — plain-language prose + cited sources.
+     *  Distinct from [Coach] (which is a live "say this" suggestion, not a conversational answer). */
+    data class Assistant(
+        val text: String,
+        val sources: List<Source> = emptyList(),
+    ) : ChatItem
 }

@@ -2,6 +2,8 @@ package ai.vaarta.ai
 
 import ai.vaarta.BuildConfig
 import ai.vaarta.core.reasoning.AudioAnalysis
+import ai.vaarta.core.reasoning.ChatAnswer
+import ai.vaarta.core.reasoning.ChatMessage
 import ai.vaarta.core.reasoning.CoachingResponse
 import ai.vaarta.core.reasoning.CoachingWireParser
 import ai.vaarta.core.reasoning.ConversationTurn
@@ -45,6 +47,10 @@ object GeminiClient {
     // Recorded-call analysis (Phase 4D) sends a whole clip and reads it back — far slower than a live
     // turn (Gate A measured ~8s for a ~1.5 MB clip), so it gets its own generous timeout.
     private const val AUDIO_TIMEOUT_MS = 60_000
+
+    // Free-form chat (v2) is web-grounded — grounding spends extra latency on the search step, so it
+    // gets a longer timeout than a live suggestion.
+    private const val CHAT_TIMEOUT_MS = 30_000
 
     /** Inline-audio cap for [analyzeAudio]. The generateContent request total must stay under ~20 MB;
      *  base64 inflates bytes ~33%, so ~14 MB of raw audio is the safe inline ceiling (Files API, needed
@@ -270,6 +276,61 @@ object GeminiClient {
         }
     }.toString()
 
+    // --- Free-form "Ask VAARTA" chat (v2, spec §6.5). Web-grounded prose (like classify(): tools +
+    // NO responseSchema, unsupported together on 2.5). Safety is the ChatPrompt system instruction +
+    // fail-closed; the reply is NOT run through SuggestionSafetyFilter (that deny-list is tuned for
+    // short imperative coaching suggestions and would wrongly reject educational prose). Blocking —
+    // call off the main thread. Returns null on any failure; the caller shows a safe fallback line.
+
+    /**
+     * Answers a free-form chat message. [context] is an optional situation summary (null for a blank
+     * chat); [history] is the prior user/VAARTA turns; [userText] the new message. Returns prose +
+     * any cited sources, or null on failure.
+     */
+    fun chat(context: String?, history: List<ChatMessage>, userText: String): ChatAnswer? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank() || userText.isBlank()) return null
+        return try {
+            val response = post("$ENDPOINT?key=$key", buildChatRequestBody(context, history, userText), CHAT_TIMEOUT_MS) ?: return null
+            val text = extractText(response)?.trim().orEmpty()
+            if (text.isEmpty()) null else ChatAnswer(text, extractSources(response))
+        } catch (e: Exception) {
+            // DIAGNOSTIC (temporary): type + message only — never the key, URL, or the user's words.
+            Log.w("GeminiClient", "chat failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    private fun buildChatRequestBody(context: String?, history: List<ChatMessage>, userText: String): String = buildJsonObject {
+        putJsonObject("system_instruction") {
+            val instruction = if (context.isNullOrBlank()) {
+                ChatPrompt.INSTRUCTION
+            } else {
+                // Context (e.g. a saved call's verdict/transcript) is DATA the user is asking about,
+                // never instructions — framed as such, same contract as the other paths here.
+                ChatPrompt.INSTRUCTION + "\n\nThe user is asking about this (untrusted) context:\n" + context
+            }
+            putJsonArray("parts") { addJsonObject { put("text", instruction) } }
+        }
+        putJsonArray("contents") {
+            for (m in history) {
+                addJsonObject {
+                    put("role", if (m.fromUser) "user" else "model")
+                    putJsonArray("parts") { addJsonObject { put("text", m.text) } }
+                }
+            }
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") { addJsonObject { put("text", userText) } }
+            }
+        }
+        putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
+        putJsonObject("generationConfig") {
+            put("temperature", 0.4)
+            put("maxOutputTokens", 1024)
+        }
+    }.toString()
+
     // --- Recorded-call analysis (ADR-0003 Phase 4D): a whole audio clip -> diarized transcript +
     // scam classification, in ONE generateContent call. Same fails-closed contract as everything else
     // here (missing key / oversized clip / network error / non-200 / unparseable -> null). The audio
@@ -378,5 +439,15 @@ object GeminiClient {
             .jsonObject["candidates"]?.jsonArray?.getOrNull(0)
             ?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray?.getOrNull(0)
             ?.jsonObject?.get("text")?.jsonPrimitive?.content
+    }.getOrNull()
+
+    /** Plain prose from a (grounded) response: joins every text part in candidates[0].content.parts. */
+    private fun extractText(response: String): String? = runCatching {
+        json.parseToJsonElement(response)
+            .jsonObject["candidates"]?.jsonArray?.getOrNull(0)
+            ?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray
+            ?.mapNotNull { it.jsonObject["text"]?.jsonPrimitive?.content }
+            ?.joinToString("")
+            ?.takeIf { it.isNotBlank() }
     }.getOrNull()
 }

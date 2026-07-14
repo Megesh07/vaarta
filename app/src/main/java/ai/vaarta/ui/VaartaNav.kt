@@ -5,7 +5,9 @@ import ai.vaarta.DetailScreen
 import ai.vaarta.HistoryScreen
 import ai.vaarta.SessionViewModel
 import ai.vaarta.VaartaScreen
+import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.core.data.db.SessionSource
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.recording.AudioAnalyzerViewModel
 import androidx.compose.foundation.layout.padding
@@ -27,6 +29,7 @@ sealed interface SubScreen {
     data object Live : SubScreen
     data object Analyze : SubScreen
     data object Detail : SubScreen
+    data object Chat : SubScreen
 }
 
 /**
@@ -40,6 +43,7 @@ fun VaartaNav(
     vm: SessionViewModel,
     historyVm: HistoryViewModel,
     analyzerVm: AudioAnalyzerViewModel,
+    conversationVm: ConversationViewModel,
     onShare: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -67,6 +71,11 @@ fun VaartaNav(
                 onBack = { historyVm.closeDetail(); sub = SubScreen.None; tab = VaartaTab.HISTORY },
                 onOpenUrl = onOpenUrl,
             )
+            SubScreen.Chat -> ConversationScreen(
+                vm = conversationVm,
+                onBack = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
+                onOpenUrl = onOpenUrl,
+            )
             SubScreen.None -> Unit
         }
         return
@@ -84,8 +93,8 @@ fun VaartaNav(
                 NavigationBarItem(
                     selected = tab == VaartaTab.HISTORY,
                     onClick = { tab = VaartaTab.HISTORY },
-                    icon = { Text("🕘") },
-                    label = { Text("History") },
+                    icon = { Text("💬") },
+                    label = { Text("Conversations") },
                 )
                 NavigationBarItem(
                     selected = tab == VaartaTab.HELP,
@@ -101,13 +110,20 @@ fun VaartaNav(
                 aiConfigured = vm.session.aiConfigured,
                 onStartLive = { sub = SubScreen.Live },
                 onAnalyzeRecording = { sub = SubScreen.Analyze },
+                onAskVaarta = { conversationVm.newChat(); sub = SubScreen.Chat },
                 onOpenUrl = onOpenUrl,
                 modifier = Modifier.padding(pad),
             )
             VaartaTab.HISTORY -> HistoryScreen(
                 historyVm = historyVm,
-                onBack = { tab = VaartaTab.HOME },
-                onOpen = { id -> historyVm.openDetail(id); sub = SubScreen.Detail },
+                onNewChat = { conversationVm.newChat(); sub = SubScreen.Chat },
+                onOpen = { session ->
+                    if (session.source == SessionSource.CHAT) {
+                        conversationVm.open(session.id); sub = SubScreen.Chat
+                    } else {
+                        historyVm.openDetail(session.id); sub = SubScreen.Detail
+                    }
+                },
                 modifier = Modifier.padding(pad),
             )
             VaartaTab.HELP -> HelpScreen(
