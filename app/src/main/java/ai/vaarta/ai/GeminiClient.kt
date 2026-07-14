@@ -287,11 +287,19 @@ object GeminiClient {
      * chat); [history] is the prior user/VAARTA turns; [userText] the new message. Returns prose +
      * any cited sources, or null on failure.
      */
-    fun chat(context: String?, history: List<ChatMessage>, userText: String): ChatAnswer? {
+    fun chat(
+        context: String?,
+        history: List<ChatMessage>,
+        userText: String,
+        attachments: List<ChatAttachment> = emptyList(),
+    ): ChatAnswer? {
         val key = BuildConfig.GEMINI_API_KEY
-        if (key.isBlank() || userText.isBlank()) return null
+        // Allow an attachment with no words ("what is this?"), but reject a fully empty send, an
+        // oversized clip, or a missing key — all fail closed.
+        if (key.isBlank() || (userText.isBlank() && attachments.isEmpty())) return null
+        if (attachments.sumOf { it.bytes.size } > MAX_INLINE_AUDIO_BYTES) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildChatRequestBody(context, history, userText), CHAT_TIMEOUT_MS) ?: return null
+            val response = post("$ENDPOINT?key=$key", buildChatRequestBody(context, history, userText, attachments), CHAT_TIMEOUT_MS) ?: return null
             val text = extractText(response)?.trim().orEmpty()
             if (text.isEmpty()) null else ChatAnswer(text, extractSources(response))
         } catch (e: Exception) {
@@ -301,7 +309,12 @@ object GeminiClient {
         }
     }
 
-    private fun buildChatRequestBody(context: String?, history: List<ChatMessage>, userText: String): String = buildJsonObject {
+    private fun buildChatRequestBody(
+        context: String?,
+        history: List<ChatMessage>,
+        userText: String,
+        attachments: List<ChatAttachment>,
+    ): String = buildJsonObject {
         putJsonObject("system_instruction") {
             val instruction = if (context.isNullOrBlank()) {
                 ChatPrompt.INSTRUCTION
@@ -321,7 +334,19 @@ object GeminiClient {
             }
             addJsonObject {
                 put("role", "user")
-                putJsonArray("parts") { addJsonObject { put("text", userText) } }
+                putJsonArray("parts") {
+                    // Text first; attachments (untrusted media the user wants analyzed) as inline_data.
+                    val prompt = userText.ifBlank { "Please look at what I attached — is it a scam? What should I do?" }
+                    addJsonObject { put("text", prompt) }
+                    for (a in attachments) {
+                        addJsonObject {
+                            putJsonObject("inline_data") {
+                                put("mime_type", a.mimeType)
+                                put("data", Base64.getEncoder().encodeToString(a.bytes))
+                            }
+                        }
+                    }
+                }
             }
         }
         putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }

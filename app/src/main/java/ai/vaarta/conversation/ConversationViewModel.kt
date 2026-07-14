@@ -1,6 +1,7 @@
 package ai.vaarta.conversation
 
 import ai.vaarta.ChatItem
+import ai.vaarta.ai.ChatAttachment
 import ai.vaarta.ai.GeminiClient
 import ai.vaarta.core.data.HistoryRepository
 import ai.vaarta.core.data.db.SessionSource
@@ -54,21 +55,30 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun send(text: String) {
+    fun send(text: String, attachments: List<ChatAttachment> = emptyList()) {
         val msg = text.trim()
-        if (msg.isEmpty() || _sending.value) return
-        // Show the user's message immediately; compute chat history BEFORE adding it.
+        if ((msg.isEmpty() && attachments.isEmpty()) || _sending.value) return
+        // The saved/shown user turn is the words plus a short marker per attachment (the media itself
+        // is never persisted — only sent to the model this once).
+        val youText = buildString {
+            if (msg.isNotEmpty()) append(msg)
+            for (a in attachments) {
+                if (isNotEmpty()) append("\n")
+                append("[${a.label}]")
+            }
+        }
+        // Compute chat history BEFORE adding the new turn.
         val priorHistory = _turns.value.mapNotNull { it.toChatMessage() }
-        _turns.value = _turns.value + ChatItem.You(msg)
+        _turns.value = _turns.value + ChatItem.You(youText)
         _sending.value = true
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val id = conversationId
-                ?: repo.startSession(now, SessionSource.CHAT, conversationTitleFrom(msg)).also { conversationId = it }
-            persist(ChatItem.You(msg), id, now)
+                ?: repo.startSession(now, SessionSource.CHAT, conversationTitleFrom(youText)).also { conversationId = it }
+            persist(ChatItem.You(youText), id, now)
 
             val answer = withContext(Dispatchers.IO) {
-                GeminiClient.chat(context = null, history = priorHistory, userText = msg)
+                GeminiClient.chat(context = null, history = priorHistory, userText = msg, attachments = attachments)
             }
             val reply = if (answer != null) ChatItem.Assistant(answer.text, answer.sources) else ChatItem.Assistant(FALLBACK)
             _turns.value = _turns.value + reply
