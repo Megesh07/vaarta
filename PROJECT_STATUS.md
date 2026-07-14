@@ -231,6 +231,20 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-14 — v2 Phase 3 (part 1 of 2): multimodal chat composer.** `GeminiClient.chat` now takes
+  image/audio attachments (inline_data — the same proven path as `analyzeAudio`, Phase 4D); new
+  `ChatAttachment` model; `ConversationScreen` composer gained **🎤 voice** (device
+  `RecognizerIntent` speech-to-text), **🖼️ image** and **🎧 audio** SAF pickers with removable pending
+  chips; `ConversationViewModel.send(text, attachments)` persists a short marker per attachment (media
+  itself never stored). `assembleDebug` green; **composer verified rendering on the emulator**.
+  - **Verified on emulator:** composer renders (🎤/🖼️/🎧 + field + Send); text chat unchanged.
+  - **Pending device verify:** full pick→answer for image/audio (SAF picker is hard to drive via adb;
+    the inline path is mechanically identical to the emulator-verified `analyzeAudio`) and 🎤 voice
+    (emulator has no speech recogniser) — to confirm on the owner's phone.
+  - **Still TODO (Phase 3 part 2):** call/recording **context header** (verdict + clean transcript +
+    Download) on the conversation screen + retire `DetailScreen`; **auto-save** live calls and
+    recordings as conversations (no manual Save tap).
+
 - **2026-07-14 — v2 Phase 2: unified Conversations + text chat.** Plan:
   `docs/superpowers/plans/2026-07-14-vaarta-v2-phase2-conversations-chat.md`. Built +
   **verified end-to-end on the `vaarta_test` emulator** (screenshots):
