@@ -68,45 +68,57 @@ the AI can't be socially-engineered into a dangerous reassurance. This is a $0 s
 
 ---
 
-## 4. Information architecture
+## 4. Information architecture  (revised 2026-07-14 per owner — unified "Conversations")
 
-Bottom **NavigationBar** (MD3), 3 destinations. Single-Activity + Compose `NavHost`.
+Bottom **NavigationBar** (MD3), 3 destinations. Single-Activity + Compose.
 
 ```
 ┌────────────────────────────────────────────┐
 │  (screen content)                           │
 │                                             │
 ├────────────────────────────────────────────┤
-│   🛡️ Home        🕘 History      🆘 Help     │   ← MD3 NavigationBar
+│  🛡️ Home     💬 Conversations     🆘 Help    │   ← MD3 NavigationBar
 └────────────────────────────────────────────┘
 ```
 
-### 4.1 🛡️ Home  (landing — clean, action + education)
-Top → bottom, thumb-zone aware:
-1. **Panic action (hero):** a large, calm primary button — **"I'm on a scam call right now"** →
-   opens an immediate, plain-language *Do this now* sheet: **Don't pay. Never share an OTP. Hang up.
-   Call 1930.** Then offers "Start live help" / "It was a recording — analyze it." This is the single
-   most life-saving control and it is the first thing in the thumb zone.
-2. **Two action cards:** **"Help me on a call"** (live) and **"Check a recording"** (upload/record).
-3. **Scam-awareness feed:** AI-generated, web-grounded cards of *current* India scams. Tap → explainer.
+**Core model: everything is a Conversation.** A live call, an uploaded recording, and a blank
+"New chat" are all the same object — a conversation you can open and keep talking to (ChatGPT-style).
+This removes the old Chat-vs-History split entirely.
 
-### 4.2 🕘 History  (organized, not a graveyard)
-- Grouped sections: **This week / Earlier**, each row = title + scam-type chip + risk ring + source.
-- Retention controls kept (Keep / 7d / 30d, delete). Tap a row → **Understand-this-call** screen.
+### 4.1 🛡️ Home  (landing — ACTIONS first, education lower & clean)
+Top → bottom, thumb-zone aware. Actions lead; the news feed sits **below** them, never clumsy:
+1. **Panic action (hero):** a large button — **"I'm on a scam call right now"** → an immediate
+   *Do this now* sheet: **Don't pay. Never share an OTP. Hang up. Call 1930.** The single most
+   life-saving control, first in the thumb zone.
+2. **Action cards:** **"Help me on a call"** (live) · **"Ask VAARTA"** (opens a new multimodal chat)
+   · **"Check a recording"** (upload/record). These are what the user reaches for.
+3. **Trending scams (lower):** AI-generated, web-grounded cards of *current* India scams, in their
+   own clearly-separated lower section. Tap → article summary (§6.1).
+
+### 4.2 💬 Conversations  (the ChatGPT-style list — replaces History)
+- A **"＋ New chat"** button at top → opens a blank multimodal conversation (§6.5).
+- Below: every saved conversation, newest first, grouped **This week / Earlier**. Each row shows a
+  title (AI-derived), a type glyph (📞 live · 🎧 recording · 💬 chat), a risk ring when it came from a
+  call, and time. Tap → opens that **Conversation screen** (§4.4).
+- Retention controls kept (Keep / 7d / 30d, per-row + delete-all) — ADR-0004 consent preserved.
+- **Live calls auto-save here** the moment a live session ends (see §6.5) — the user no longer has to
+  remember to tap "save"; they can still delete any conversation.
 
 ### 4.3 🆘 Help  (the social-good pillar, always reachable)
 - **How & where to complain:** 1930 helpline (one-tap dial), cybercrime.gov.in (open safely), the
   in-app complaint draft (reuses `core:complaint` + `PdfExporter`).
 - **"What to do if you were scammed"** plain steps. **"Warn my family"** share.
-- **Learn:** entry into the same awareness feed / explainers.
 
-### 4.4 Understand-this-call  (the reusable heart — opened from History OR a fresh analysis)
-Top → bottom:
-1. **Verdict card** — plain-language "what this call was", risk ring, scam-type, cited sources.
-2. **Clean transcript** — rendered as a readable conversation: **Caller** vs **You** turns, timestamps,
-   scam-flagged lines highlighted (not raw text). Elder-legible.
-3. **Download** — export transcript + verdict as PDF/TXT (reuses `PdfExporter` + `FileProvider`).
-4. **Multimodal chat** — a full ChatGPT/Gemini-style assistant *about this call* (§6.5).
+### 4.4 Conversation screen  (the reusable heart — one screen for calls, recordings, and chats)
+Opened from any Conversations row, a fresh analysis, or "New chat" / "Ask VAARTA". Top → bottom:
+1. **Context header (only when it came from a call/recording):** a **verdict card** (plain-language
+   "what this call was", risk ring, scam-type, cited sources) + a **clean transcript** rendered as a
+   readable conversation (**Caller** vs **You**, timestamps, scam-flagged lines highlighted — not raw
+   text), with a **Download** action (transcript + verdict as PDF/TXT via `PdfExporter`). A blank
+   chat has no context header.
+2. **Chat thread + multimodal composer** — a full ChatGPT/Gemini-style assistant (§6.5). For a
+   call/recording it's grounded in that call's context; for a blank chat it's a general scam-help
+   assistant. Everything the user says/attaches persists to this conversation.
 
 ---
 
@@ -145,9 +157,16 @@ One aesthetic, committed. MD3 provides the mechanics; Calm Guardian is the perso
 - **Caching:** last good feed cached locally (encrypted store or app files) with a fetched-date;
   refreshed when online + stale. **Offline / failure → bundled seed** (~10 curated real scam cards
   shipped in assets) so the screen is never empty.
-- **Tap a card →** explainer screen: AI plain-language "what it is / how to spot it / what to do",
-  **tappable cited source links** (open in browser via user action, safely credited), and
-  **"Ask about this"** → drops into the chat (§6.5) seeded with the card as context.
+- **Tap a card → article summary screen:** a clean banner (title + scam-type + source name), then a
+  **plain-language AI summary of the *real* source article** — "what it is / how to spot it / what to
+  do". VAARTA reads the cited source and summarizes it; it does **not** dump the raw page. The source
+  is named and **tappable** (opens in browser on user action, safely credited) so the user can see the
+  genuine article — this attribution is how we answer "are we showing the *right* article?": every
+  card is bound to a real cited URL, shown, not fabricated. `GeminiClient.summarizeArticle(url, title)`
+  is web-grounded + safety-filtered; fails closed to the card's one-line if summarization errors.
+- **"Ask about this"** on the summary → opens a **new Conversation** (§6.5) seeded with the article
+  context. The summary itself is ephemeral (regenerated cheaply on reopen); only a conversation the
+  user actually engages in is saved — no clutter, nothing important lost.
 
 ### 6.2 Live call help + overlay rebuild (phone-tested)
 Underlying pipeline is unchanged and proven: `AudioCapture` (16kHz PCM16) → `GeminiLiveClient` (WS) →
@@ -181,13 +200,16 @@ screen (§4.4), identical to a history item. One screen, two entry points.
   (RAM-only until the user taps Save — ADR-0004 consent kept).
 
 ### 6.5 Multimodal AI chat (the core new intelligence)
-A full ChatGPT/Gemini-style assistant, scoped to a call's context.
+A full ChatGPT/Gemini-style assistant. It works **standalone** (a blank "New chat" / "Ask VAARTA" — a
+general scam-help assistant) **or scoped to a call/recording** (grounded in that conversation's
+verdict + transcript). Same screen, same composer; the only difference is whether a context header is
+present.
 
-- **New:** `GeminiClient.chat(context, history, userMessage, attachments)` — sends the call's
-  transcript + verdict + any prior chat turns + the new message (and inline image/audio attachments)
-  to `gemini-2.5-flash`; web-grounded for scam/complaint questions; **every reply passes
-  `SuggestionSafetyFilter`** (fails closed to a safe deterministic message). Answers **in the user's
-  language** (EN / HI / Hinglish).
+- **New:** `GeminiClient.chat(context: CallContext?, history, userMessage, attachments)` — `context`
+  is null for a blank chat, or the call's transcript + verdict when scoped. Sends prior turns + the new
+  message (and inline image/audio attachments) to `gemini-2.5-flash`; web-grounded for scam/complaint
+  questions; **every reply passes `SuggestionSafetyFilter`** (fails closed to a safe deterministic
+  message). Answers **in the user's language** (EN / HI / Hinglish).
 - **Composer (all $0-feasible):**
   - **Text** — freeform.
   - **🎤 Voice input** — Android `SpeechRecognizer` → text (free, no API cost).
@@ -195,9 +217,13 @@ A full ChatGPT/Gemini-style assistant, scoped to a call's context.
     image understanding (free tier).
   - **🎧 Attach audio** — a clip → reuses the proven inline-audio path (≤14 MB).
   - **Stretch:** general document/PDF attach (deferred; images+audio cover real evidence).
-- **State:** a `ChatViewModel` owns the turn list + streaming/pending/error states; new chat turns on a
-  *saved* call persist to `core:data` (schema addition: chat turns linked to a session); on an unsaved
-  fresh analysis they're RAM-only until Save.
+- **State & persistence:** a `ConversationViewModel` owns the turn list + streaming/pending/error
+  states. **Every conversation is a `core:data` row** (schema: a `Conversation` with a `kind` =
+  live / recording / chat, optional call-context, and its turns). **Live calls auto-persist** when the
+  session ends (the copilot writes turns live, crash-safe, and finalizes on stop — ADR-0004 consent is
+  satisfied by the in-app "VAARTA is protecting this call" state, and the user can delete any
+  conversation). A blank chat is created on first send. Recordings persist on analysis completion.
+  This is what makes the Conversations list (§4.2) a single unified store.
 
 ### 6.6 Complaint + education weave
 - From any HIGH-risk verdict or chat: **"File a complaint"** → existing `core:complaint` draft +
@@ -255,16 +281,26 @@ A full ChatGPT/Gemini-style assistant, scoped to a call's context.
 
 ## 10. Build order (phases — each independently shippable & verifiable)
 
-1. **Nav + Home shell + delete Manual Mode.** 3-tab `NavHost`, MD3 NavigationBar, Home with panic
-   action + 2 action cards + feed placeholder. Existing features re-reachable. *(Emulator-verifiable.)*
-2. **Understand-this-call screen + Download.** Verdict + clean transcript + export; re-home recording
-   analysis + history detail onto it. *(Emulator-verifiable.)*
-3. **Multimodal chat.** `GeminiClient.chat()` + composer (text→voice→image→audio) + persistence.
-   *(Emulator-verifiable except audio-quality edge.)*
-4. **Education feed.** `awarenessFeed()` + explainer + seed fallback + "Ask about this". *(Emulator.)*
-5. **Overlay rebuild.** Expand-from-icon + drag + resize + non-blocking. *(Physical-phone-verified.)*
-6. **Help/Complaint tab + weave.** Complaint draft, 1930 dial, gov link, warn-family. *(Emulator.)*
-7. **Live call help hardening on hardware** + best-effort auto-show. *(Physical-phone-verified.)*
+1. ~~**Nav + Home shell + Help + delete Manual Mode.**~~ **DONE (2026-07-14, emulator-verified.)**
+   3-tab MD3 shell, clean Home (panic + action cards + feed placeholder), Help tab. The Phase-1
+   History tab is the base that Phase 2 evolves into "Conversations".
+2. **Conversation store + Conversations list.** Evolve `core:data` to a unified `Conversation`
+   (kind = live/recording/chat, optional call-context, turns) with a guarded Room migration; rebuild
+   the History tab into **Conversations** (＋ New chat, unified grouped list). Reorder Home to add the
+   **"Ask VAARTA"** action; move the news feed lower. *(Emulator-verifiable — persistence round-trip.)*
+3. **Multimodal chat on the Conversation screen (the heart).** `GeminiClient.chat(context?)` +
+   composer (text → 🎤 voice → 🖼️ image → 🎧 audio) + the call/recording **context header** (verdict +
+   clean transcript + Download). "Ask VAARTA" and every Conversations row open it. *(Emulator — audio
+   attach verifiable; live-audio edge on phone.)*
+4. **Live + recording → auto-save as conversations.** Wire `CopilotSession` (live) and
+   `AudioScamAnalyzer` (recording) to persist as conversations and populate the context header from
+   real calls. *(Emulator; live speech on phone.)*
+5. **Education feed + article summary.** `awarenessFeed()` + `summarizeArticle()` + clean banner +
+   seed fallback + "Ask about this" → new conversation. *(Emulator.)*
+6. **Overlay rebuild.** Corner icon → expand-from-icon → drag + resize + never blocks call controls.
+   *(Physical-phone-verified.)*
+7. **Live-call hardening on hardware** (+ best-effort auto-show) **& Help deepening.**
+   *(Physical-phone-verified.)*
 
 Deck/Demo video remain deferred to the very end (do once), per PROJECT_STATUS §5.
 
