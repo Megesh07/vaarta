@@ -11,7 +11,6 @@ import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.history.SessionDetail
 import ai.vaarta.recording.AudioAnalyzerViewModel
-import ai.vaarta.ui.ManualCueGrid
 import ai.vaarta.ui.RiskHero
 import ai.vaarta.ui.theme.VaartaTheme
 import android.Manifest
@@ -186,7 +185,6 @@ fun VaartaScreen(
     val reassure by vm.session.reassure.collectAsState()
     val scamType by vm.session.scamType.collectAsState()
     val scamSources by vm.session.scamSources.collectAsState()
-    val tapped by vm.session.tapped.collectAsState()
     val complaint by vm.session.complaint.collectAsState()
     val complaintDraft by vm.session.complaintDraft.collectAsState()
     val question by vm.session.currentQuestion.collectAsState()
@@ -345,11 +343,6 @@ fun VaartaScreen(
                 ) { Text("🔔  Alert my family", fontSize = 16.sp) }
                 Text("No agency arrests anyone over a phone or video call.", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
-
-            // Manual Mode — always reachable (P0 peer), demoted into its own section.
-            HorizontalDivider()
-            Text("Manual mode — tap what you hear", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            ManualCueGrid(cues = vm.session.cues, tapped = tapped, onTap = { vm.session.tapCue(it) })
 
             HorizontalDivider()
             OutlinedButton(onClick = { vm.session.generateComplaint() }) { Text("📝  Generate complaint draft") }

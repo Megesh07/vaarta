@@ -77,9 +77,6 @@ class CopilotSession(private val scope: CoroutineScope) {
     private val _state = MutableStateFlow(idle)
     val state: StateFlow<RiskState> = _state.asStateFlow()
 
-    private val _tapped = MutableStateFlow(emptySet<String>())
-    val tapped: StateFlow<Set<String>> = _tapped.asStateFlow()
-
     private val _complaint = MutableStateFlow<String?>(null)
     val complaint: StateFlow<String?> = _complaint.asStateFlow()
 
@@ -380,34 +377,6 @@ class CopilotSession(private val scope: CoroutineScope) {
         stopLiveListening()
     }
 
-    /**
-     * Manual Mode cues (id -> label) — MOBILE_UX_SPEC.md §3.3.
-     * Every signal in the pack that carries a `manualCue` must have a matching entry here
-     * (IMPLEMENTATION_GUARDRAILS.md ALWAYS #10 — audio-derived signals need Manual Mode parity).
-     */
-    val cues: List<Pair<String, String>> = listOf(
-        "CUE_CLAIMS_AUTHORITY" to "Says POLICE / CBI / ED",
-        "CUE_THREATENS_ARREST" to "Threatens ARREST / warrant",
-        "CUE_PARCEL" to "Mentions PARCEL / customs",
-        "CUE_BADGE_CASE_ID" to "Gives badge / case number unprompted",
-        "CUE_ASKS_AADHAAR_OTP" to "Asks for AADHAAR / OTP / account",
-        "CUE_DONT_TELL_ANYONE" to "Says DON'T TELL ANYONE",
-        "CUE_STAY_ON_LINE" to "Says STAY ON THE LINE",
-        "CUE_MOVE_TO_WHATSAPP" to "Move to WHATSAPP / video",
-        "CUE_SENT_FAKE_DOCS" to "Sends warrant / freeze 'document'",
-        "CUE_PRESSURE_STAY" to "Urgency / deadline",
-        "CUE_DEMANDS_MONEY" to "Demands MONEY / UPI",
-    )
-
-    fun tapCue(cueId: String) {
-        val atMs = nowOffsetMs()
-        lastEventAtMs = atMs
-        applyState(engine.ingest(RiskEvent.ManualCue(cueId, atMs)))
-        _tapped.value = _tapped.value + cueId
-        _complaint.value = null
-        _complaintDraft.value = null
-    }
-
     fun reset() {
         // A demo replay or a fresh session can't coexist with an active live call on the same
         // engine/clock without interleaving fragments into a swapped-out session (ADR-0003 bug fix)
@@ -418,7 +387,6 @@ class CopilotSession(private val scope: CoroutineScope) {
         lastEventAtMs = 0
         questionIndex = 0
         applyState(idle)
-        _tapped.value = emptySet()
         _complaint.value = null
         _complaintDraft.value = null
         lastCallerLine = ""
@@ -526,7 +494,7 @@ class CopilotSession(private val scope: CoroutineScope) {
     fun generateComplaint() {
         val fired = engine.sessionSignals()
         if (fired.isEmpty()) {
-            _complaint.value = "No warning signs detected yet — tap cues or run the demo call first."
+            _complaint.value = "No warning signs detected yet — run the demo call or start live protection first."
             _complaintDraft.value = null
             return
         }
