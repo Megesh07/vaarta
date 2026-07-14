@@ -11,6 +11,7 @@ import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.history.SessionDetail
 import ai.vaarta.recording.AudioAnalyzerViewModel
+import ai.vaarta.ui.ManualCueGrid
 import ai.vaarta.ui.RiskHero
 import ai.vaarta.ui.theme.VaartaTheme
 import android.Manifest
@@ -29,8 +30,6 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -170,7 +169,6 @@ fun VaartaApp(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VaartaScreen(
     vm: SessionViewModel,
@@ -351,11 +349,7 @@ fun VaartaScreen(
             // Manual Mode — always reachable (P0 peer), demoted into its own section.
             HorizontalDivider()
             Text("Manual mode — tap what you hear", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((id, label) in vm.session.cues) {
-                    FilterChip(selected = id in tapped, onClick = { vm.session.tapCue(id) }, label = { Text(label) })
-                }
-            }
+            ManualCueGrid(cues = vm.session.cues, tapped = tapped, onTap = { vm.session.tapCue(it) })
 
             HorizontalDivider()
             OutlinedButton(onClick = { vm.session.generateComplaint() }) { Text("📝  Generate complaint draft") }
@@ -588,7 +582,14 @@ private fun AnalyzeScreen(
 
                 is AudioAnalyzerViewModel.UiState.Done -> {
                     val r = s.result
-                    StatusBanner(level = r.level, score = r.score, reassure = r.reassure, aiRaised = r.aiRaised)
+                    RiskHero(
+                        level = r.level,
+                        score = r.score,
+                        reassure = r.reassure,
+                        aiRaised = r.aiRaised,
+                        detectedStages = r.detectedStages,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
                     Text(
                         "Analyzed from a recording. The risk score is computed on-device from the transcript; " +
                             "the AI transcribed and helped classify it.",

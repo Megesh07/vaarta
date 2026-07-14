@@ -1,5 +1,6 @@
 package ai.vaarta.ui.theme
 
+import ai.vaarta.R
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -9,14 +10,21 @@ import androidx.compose.ui.unit.sp
 /**
  * VAARTA type scale (design system §5): large, quiet, few weights — Apple-style deference.
  *
- * NOTE (pan-Indic follow-up): the design specifies **Noto Sans** (Latin + Noto Sans Devanagari / Tamil
- * / Telugu / Kannada / Malayalam …) loaded per chosen language. That is a drop-in — swap [appFont] for
- * a `FontFamily` built from bundled `res/font` Noto files — and does not change any call site, because
- * every style already flows through this [Typography]. Android already ships Noto Sans Devanagari as a
- * system fallback, so Hindi renders correctly today; bundling pins the exact cut and adds the other
- * scripts. Kept as [FontFamily.Default] until the font files land so this increment stays verifiable.
+ * The pan-Indic type family (design system §0): bundled Noto Sans for Latin, with Devanagari (Hindi/
+ * Marathi), Tamil, Kannada, Telugu, and Malayalam pinned as script fallback via
+ * [vaartaFallbackFont] — one look across every language a caller might use, instead of whatever an
+ * OEM happens to substitute for those scripts. minSdk is 29, matching the API this requires.
  */
-private val appFont = FontFamily.Default
+private val appFont = FontFamily(
+    vaartaFallbackFont(
+        R.font.noto_sans,
+        R.font.noto_sans_devanagari,
+        R.font.noto_sans_tamil,
+        R.font.noto_sans_kannada,
+        R.font.noto_sans_telugu,
+        R.font.noto_sans_malayalam,
+    ),
+)
 
 val VaartaType = Typography(
     // Ring number / big display

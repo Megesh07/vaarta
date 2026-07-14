@@ -14,7 +14,6 @@ import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -31,8 +30,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import ai.vaarta.core.reasoning.RiskLevel
+import ai.vaarta.ui.RiskRing
+import ai.vaarta.ui.theme.VaartaTheme
+import ai.vaarta.ui.theme.riskColor
+import ai.vaarta.ui.theme.stateLabel
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,11 +48,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -201,20 +206,22 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         val view = ComposeView(this)
         prepare(view)
         view.setContent {
-            val level by session.displayedLevel.collectAsState()
-            val chatSize by session.chat.collectAsState()
-            // Tap + drag handled in Compose (reliable for overlay ComposeViews; a plain
-            // View.OnTouchListener on a ComposeView does not receive the gestures).
-            BubbleContent(
-                ringColor = levelColor(level),
-                hasNew = chatSize.isNotEmpty(),
-                onTap = { expand() },
-                onDrag = { dx, dy ->
-                    params.x += dx.toInt()
-                    params.y += dy.toInt()
-                    runCatching { windowManager.updateViewLayout(view, params) }
-                },
-            )
+            VaartaTheme {
+                val level by session.displayedLevel.collectAsState()
+                val chatSize by session.chat.collectAsState()
+                // Tap + drag handled in Compose (reliable for overlay ComposeViews; a plain
+                // View.OnTouchListener on a ComposeView does not receive the gestures).
+                BubbleContent(
+                    level = level,
+                    hasNew = chatSize.isNotEmpty(),
+                    onTap = { expand() },
+                    onDrag = { dx, dy ->
+                        params.x += dx.toInt()
+                        params.y += dy.toInt()
+                        runCatching { windowManager.updateViewLayout(view, params) }
+                    },
+                )
+            }
         }
         bubbleView = view
         windowManager.addView(view, params)
@@ -230,11 +237,13 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         val view = ComposeView(this)
         prepare(view)
         view.setContent {
-            PanelContent(
-                session = session,
-                onCollapse = { showBubble() },
-                onStop = { stopEverything() },
-            )
+            VaartaTheme {
+                PanelContent(
+                    session = session,
+                    onCollapse = { showBubble() },
+                    onStop = { stopEverything() },
+                )
+            }
         }
         panelView = view
         windowManager.addView(view, params)
@@ -289,10 +298,13 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
 
 // --- Overlay Compose content (uses the shared ChatView composables) -------------------------------
 
-/** Collapsed logo bubble with a steady risk-color ring (readable even when collapsed). Tap expands;
- *  drag repositions (both via Compose gestures — reliable inside an overlay ComposeView). */
+/** Collapsed bubble — the SAME [RiskRing] used everywhere else, at overlay scale (design system §1):
+ *  colour alone carries risk while listening, the wave glyph marks true idle, and the ring's own
+ *  shield-x takes over at SCAM_PATTERN. Tap expands; drag repositions (both via Compose gestures —
+ *  reliable inside an overlay ComposeView). */
 @Composable
-private fun BubbleContent(ringColor: Color, hasNew: Boolean, onTap: () -> Unit, onDrag: (Float, Float) -> Unit) {
+private fun BubbleContent(level: RiskLevel, hasNew: Boolean, onTap: () -> Unit, onDrag: (Float, Float) -> Unit) {
+    val c = VaartaTheme.colors
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -301,23 +313,16 @@ private fun BubbleContent(ringColor: Color, hasNew: Boolean, onTap: () -> Unit, 
             .pointerInput(Unit) { detectTapGestures { onTap() } }
             .pointerInput(Unit) { detectDragGestures { _, drag -> onDrag(drag.x, drag.y) } },
     ) {
-        Surface(
-            shape = CircleShape,
-            color = Color(0xFF4527A0),
-            modifier = Modifier
-                .size(52.dp)
-                .border(width = 3.dp, color = ringColor, shape = CircleShape),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("🛡", fontSize = 22.sp)
-            }
+        RiskRing(level = level, score = 0, stateText = stateLabel(level), ringSize = 52.dp, stroke = 6.dp, showScore = false)
+        if (level == RiskLevel.OBSERVING) {
+            Icon(painterResource(R.drawable.ic_wave), contentDescription = null, tint = c.riskColor(level), modifier = Modifier.size(18.dp))
         }
         if (hasNew) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .size(12.dp)
-                    .background(Color(0xFFDC2626), CircleShape),
+                    .background(c.scam, CircleShape),
             )
         }
     }
@@ -340,6 +345,7 @@ private fun PanelContent(session: CopilotSession, onCollapse: () -> Unit, onStop
     // Follow the newest turn as the thread grows.
     LaunchedEffect(chat.size) { scroll.animateScrollTo(scroll.maxValue) }
 
+    val c = VaartaTheme.colors
     Surface(
         color = MaterialTheme.colorScheme.background,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -348,10 +354,10 @@ private fun PanelContent(session: CopilotSession, onCollapse: () -> Unit, onStop
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("VAARTA", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("VAARTA", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = c.ink)
                 if (liveStatus != null) {
                     Spacer(Modifier.width(8.dp))
-                    Text("● $liveStatus", color = Color(0xFF4527A0), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("● $liveStatus", color = c.indigo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = onCollapse) { Text("▾ Hide") }
@@ -368,7 +374,7 @@ private fun PanelContent(session: CopilotSession, onCollapse: () -> Unit, onStop
                     Text(
                         "Listening — I'll show what to say.",
                         fontSize = 14.sp,
-                        color = Color.Gray,
+                        color = c.muted,
                         modifier = Modifier.padding(vertical = 12.dp),
                     )
                 } else {
@@ -379,7 +385,7 @@ private fun PanelContent(session: CopilotSession, onCollapse: () -> Unit, onStop
             Button(
                 onClick = onStop,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                colors = ButtonDefaults.buttonColors(containerColor = c.scam),
             ) { Text("■  Stop protection") }
         }
     }
