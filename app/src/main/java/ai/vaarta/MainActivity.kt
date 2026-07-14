@@ -12,6 +12,7 @@ import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.history.SessionDetail
 import ai.vaarta.recording.AudioAnalyzerViewModel
 import ai.vaarta.ui.RiskHero
+import ai.vaarta.ui.VaartaNav
 import ai.vaarta.ui.theme.VaartaTheme
 import android.Manifest
 import android.app.Activity
@@ -86,7 +87,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             VaartaTheme {
-                VaartaApp(vm, historyVm, analyzerVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                VaartaNav(vm, historyVm, analyzerVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
             }
         }
     }
@@ -116,58 +117,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Screen the app is showing. The live copilot is home; history + detail are one tap away (Phase 4B).
- *  A lightweight in-Activity switch, not a nav library — the full hub IA lands with the overlay (4C). */
-private sealed interface Screen {
-    data object Live : Screen
-    data object History : Screen
-    data object Detail : Screen
-    data object Analyze : Screen
-}
-
-/** Top-level host: switches between the live copilot, the saved-history list, a read-only detail, and
- *  the recorded-call analyzer (Phase 4D). */
-@Composable
-fun VaartaApp(
-    vm: SessionViewModel,
-    historyVm: HistoryViewModel,
-    analyzerVm: AudioAnalyzerViewModel,
-    onShare: (String) -> Unit,
-    onExportPdf: (ComplaintDraft) -> Unit,
-    onOpenUrl: (String) -> Unit,
-) {
-    var screen by remember { mutableStateOf<Screen>(Screen.Live) }
-    when (screen) {
-        Screen.Live -> VaartaScreen(
-            vm = vm,
-            historyVm = historyVm,
-            analyzerVm = analyzerVm,
-            onOpenHistory = { screen = Screen.History },
-            onOpenAnalyze = { screen = Screen.Analyze },
-            onShare = onShare,
-            onExportPdf = onExportPdf,
-            onOpenUrl = onOpenUrl,
-        )
-        Screen.History -> HistoryScreen(
-            historyVm = historyVm,
-            onBack = { screen = Screen.Live },
-            onOpen = { id -> historyVm.openDetail(id); screen = Screen.Detail },
-        )
-        Screen.Detail -> DetailScreen(
-            historyVm = historyVm,
-            onBack = { historyVm.closeDetail(); screen = Screen.History },
-            onOpenUrl = onOpenUrl,
-        )
-        Screen.Analyze -> AnalyzeScreen(
-            analyzerVm = analyzerVm,
-            historyVm = historyVm,
-            onBack = { analyzerVm.reset(); screen = Screen.Live },
-            onShare = onShare,
-            onOpenUrl = onOpenUrl,
-        )
-    }
-}
-
 @Composable
 fun VaartaScreen(
     vm: SessionViewModel,
@@ -178,6 +127,7 @@ fun VaartaScreen(
     onShare: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
+    onBack: () -> Unit,
 ) {
     val state by vm.session.state.collectAsState()
     val displayedLevel by vm.session.displayedLevel.collectAsState()
@@ -185,8 +135,6 @@ fun VaartaScreen(
     val reassure by vm.session.reassure.collectAsState()
     val scamType by vm.session.scamType.collectAsState()
     val scamSources by vm.session.scamSources.collectAsState()
-    val complaint by vm.session.complaint.collectAsState()
-    val complaintDraft by vm.session.complaintDraft.collectAsState()
     val question by vm.session.currentQuestion.collectAsState()
     val aiEnabled by vm.session.aiEnabled.collectAsState()
     val aiSuggestion by vm.session.aiSuggestion.collectAsState()
@@ -246,18 +194,17 @@ fun VaartaScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("VAARTA", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "‹ Back",
+                    fontSize = 15.sp,
+                    color = VaartaTheme.colors.indigo,
+                    modifier = Modifier.clickable(onClick = onBack),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("Live protection", fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
                 if (liveStatus != null) {
                     Text("● Live: $liveStatus", color = VaartaTheme.colors.indigo, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                } else {
-                    Text(
-                        "🕘 History",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = VaartaTheme.colors.indigo,
-                        modifier = Modifier.clickable(onClick = onOpenHistory),
-                    )
                 }
             }
 
@@ -343,21 +290,6 @@ fun VaartaScreen(
                 ) { Text("🔔  Alert my family", fontSize = 16.sp) }
                 Text("No agency arrests anyone over a phone or video call.", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
-
-            HorizontalDivider()
-            OutlinedButton(onClick = { vm.session.generateComplaint() }) { Text("📝  Generate complaint draft") }
-            complaint?.let { text ->
-                Card {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(text, fontSize = 11.sp)
-                        Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { onShare(text) }) { Text("Share as text") }
-                            complaintDraft?.let { draft -> OutlinedButton(onClick = { onExportPdf(draft) }) { Text("Export PDF") } }
-                        }
-                    }
-                }
-            }
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -409,15 +341,16 @@ private fun levelFromName(name: String): RiskLevel =
 /** The saved-history list — newest first. Tap a row to open the read-only thread; retention + a
  *  delete-all control sit at the top so the user stays in charge of what's stored (ADR-0004). */
 @Composable
-private fun HistoryScreen(
+internal fun HistoryScreen(
     historyVm: HistoryViewModel,
     onBack: () -> Unit,
     onOpen: (Long) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val sessions by historyVm.sessions.collectAsState()
     val retentionDays by historyVm.retentionDays.collectAsState()
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text("‹ Back", fontSize = 15.sp, color = VaartaTheme.colors.indigo, modifier = Modifier.clickable(onClick = onBack))
@@ -484,7 +417,7 @@ private fun RetentionRow(retentionDays: Int, onSet: (Int) -> Unit) {
 
 /** Read-only replay of a saved call: verdict header + the same WhatsApp-style thread + delete. */
 @Composable
-private fun DetailScreen(
+internal fun DetailScreen(
     historyVm: HistoryViewModel,
     onBack: () -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -531,7 +464,7 @@ private fun DetailScreen(
  * Fails closed: a friendly message on any error, never a fabricated verdict.
  */
 @Composable
-private fun AnalyzeScreen(
+internal fun AnalyzeScreen(
     analyzerVm: AudioAnalyzerViewModel,
     historyVm: HistoryViewModel,
     onBack: () -> Unit,
