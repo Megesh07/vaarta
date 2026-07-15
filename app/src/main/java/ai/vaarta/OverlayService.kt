@@ -13,6 +13,9 @@ import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -21,8 +24,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -46,11 +49,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -113,15 +121,43 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     private var bubbleView: ComposeView? = null
     private var panelView: ComposeView? = null
 
+    // Overlay geometry (px), persisted across expand/collapse so the user's placement sticks. The
+    // panel deliberately spawns in the TOP region and stays fully movable/resizable so it can always
+    // be cleared off the dialer's own hang-up/mute/keypad bar (spec §6.2 — the core Phase-5 fix).
+    private var density = 1f
+    private var bubbleX = 0
+    private var bubbleY = 0
+    private var panelX = 0
+    private var panelY = 0
+    private var panelW = 0
+    private var panelH = 0
+
     override fun onCreate() {
         super.onCreate()
         savedStateController.performAttach()
         savedStateController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        density = resources.displayMetrics.density
+        val (sw, _) = screenSize()
+        // Default: icon parked top-right, a thumb's reach below the status bar.
+        bubbleX = sw - dp(72)
+        bubbleY = dp(96)
         session = CopilotSession(scope)
         activeSessionState.value = session
     }
+
+    private fun dp(v: Int): Int = (v * density).toInt()
+
+    /** Full display bounds in px (the overlay spans the whole screen, not just the app window). */
+    private fun screenSize(): Pair<Int, Int> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val b = windowManager.currentWindowMetrics.bounds
+            b.width() to b.height()
+        } else {
+            val dm = resources.displayMetrics
+            @Suppress("DEPRECATION") (dm.widthPixels to dm.heightPixels)
+        }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -198,10 +234,11 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     private fun showBubble() {
         if (bubbleView != null) return
         removePanel()
+        val (sw, sh) = screenSize()
         val params = baseParams().apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 24
-            y = 220
+            x = bubbleX
+            y = bubbleY
         }
         val view = ComposeView(this)
         prepare(view)
@@ -216,8 +253,15 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
                     hasNew = chatSize.isNotEmpty(),
                     onTap = { expand() },
                     onDrag = { dx, dy ->
-                        params.x += dx.toInt()
-                        params.y += dy.toInt()
+                        params.x = (params.x + dx.toInt()).coerceIn(0, sw - dp(72))
+                        params.y = (params.y + dy.toInt()).coerceIn(0, sh - dp(72))
+                        bubbleX = params.x; bubbleY = params.y
+                        runCatching { windowManager.updateViewLayout(view, params) }
+                    },
+                    onDragEnd = {
+                        // Snap to the nearest side edge (a phone-overlay convention) and remember it.
+                        params.x = if (params.x + dp(72) / 2 < sw / 2) dp(8) else sw - dp(72) - dp(8)
+                        bubbleX = params.x
                         runCatching { windowManager.updateViewLayout(view, params) }
                     },
                 )
@@ -230,9 +274,21 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     private fun expand() {
         removeBubble()
         if (panelView != null) return
+        val (sw, sh) = screenSize()
+        // First expand sizes a compact panel (not full-width); afterwards the user's size is kept.
+        if (panelW == 0) panelW = (sw * 0.9f).toInt()
+        if (panelH == 0) panelH = (sh * 0.5f).toInt()
+        // Grow FROM the icon: anchor on the icon's side, in the upper region so the bottom call
+        // controls stay clear. The user can then drag/resize anywhere.
+        val onRight = bubbleX + dp(72) / 2 > sw / 2
+        panelX = (if (onRight) sw - panelW - dp(8) else dp(8)).coerceIn(0, sw - panelW)
+        panelY = bubbleY.coerceIn(dp(32), (sh * 0.4f).toInt())
+        val origin = TransformOrigin(if (onRight) 1f else 0f, 0f)
+
         val params = baseParams().apply {
-            width = WindowManager.LayoutParams.MATCH_PARENT
-            gravity = Gravity.BOTTOM
+            gravity = Gravity.TOP or Gravity.START
+            x = panelX; y = panelY
+            width = panelW; height = panelH
         }
         val view = ComposeView(this)
         prepare(view)
@@ -240,8 +296,23 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
             VaartaTheme {
                 PanelContent(
                     session = session,
+                    transformOrigin = origin,
                     onCollapse = { showBubble() },
                     onStop = { stopEverything() },
+                    onDrag = { dx, dy ->
+                        val (w, h) = screenSize()
+                        panelX = (panelX + dx.toInt()).coerceIn(0, w - panelW)
+                        panelY = (panelY + dy.toInt()).coerceIn(0, h - panelH)
+                        params.x = panelX; params.y = panelY
+                        runCatching { windowManager.updateViewLayout(view, params) }
+                    },
+                    onResize = { dx, dy ->
+                        val (w, h) = screenSize()
+                        panelW = (panelW + dx.toInt()).coerceIn(dp(220), w - panelX)
+                        panelH = (panelH + dy.toInt()).coerceIn(dp(200), h - panelY)
+                        params.width = panelW; params.height = panelH
+                        runCatching { windowManager.updateViewLayout(view, params) }
+                    },
                 )
             }
         }
@@ -303,7 +374,13 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
  *  shield-x takes over at SCAM_PATTERN. Tap expands; drag repositions (both via Compose gestures —
  *  reliable inside an overlay ComposeView). */
 @Composable
-private fun BubbleContent(level: RiskLevel, hasNew: Boolean, onTap: () -> Unit, onDrag: (Float, Float) -> Unit) {
+private fun BubbleContent(
+    level: RiskLevel,
+    hasNew: Boolean,
+    onTap: () -> Unit,
+    onDrag: (Float, Float) -> Unit,
+    onDragEnd: () -> Unit,
+) {
     val c = VaartaTheme.colors
     Box(
         contentAlignment = Alignment.Center,
@@ -311,7 +388,7 @@ private fun BubbleContent(level: RiskLevel, hasNew: Boolean, onTap: () -> Unit, 
             .padding(6.dp)
             .size(60.dp)
             .pointerInput(Unit) { detectTapGestures { onTap() } }
-            .pointerInput(Unit) { detectDragGestures { _, drag -> onDrag(drag.x, drag.y) } },
+            .pointerInput(Unit) { detectDragGestures(onDragEnd = { onDragEnd() }) { _, drag -> onDrag(drag.x, drag.y) } },
     ) {
         RiskRing(level = level, score = 0, stateText = stateLabel(level), ringSize = 52.dp, stroke = 6.dp, showScore = false)
         if (level == RiskLevel.OBSERVING) {
@@ -328,9 +405,24 @@ private fun BubbleContent(level: RiskLevel, hasNew: Boolean, onTap: () -> Unit, 
     }
 }
 
-/** Expanded ~45%-height panel: compact banner + scam-ID + the shared live thread + controls. */
+/** MD3 emphasized easing — the expressive "expand from the icon" feel (spec §5 motion). */
+private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+
+/**
+ * The expanded panel — a FLOATING, draggable, resizable card that fills its (window-sized) bounds,
+ * grown from the icon via a scale/alpha animation anchored at [transformOrigin]. The header is the
+ * drag surface; a corner handle resizes. It never spawns full-width at the bottom, so the dialer's
+ * own call controls stay reachable (spec §6.2).
+ */
 @Composable
-private fun PanelContent(session: CopilotSession, onCollapse: () -> Unit, onStop: () -> Unit) {
+private fun PanelContent(
+    session: CopilotSession,
+    transformOrigin: TransformOrigin,
+    onCollapse: () -> Unit,
+    onStop: () -> Unit,
+    onDrag: (Float, Float) -> Unit,
+    onResize: (Float, Float) -> Unit,
+) {
     val state by session.state.collectAsState()
     val displayedLevel by session.displayedLevel.collectAsState()
     val aiRaised by session.aiRaised.collectAsState()
@@ -340,53 +432,83 @@ private fun PanelContent(session: CopilotSession, onCollapse: () -> Unit, onStop
     val chat by session.chat.collectAsState()
     val liveStatus by session.liveStatus.collectAsState()
     val scroll = rememberScrollState()
-    val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.45f).dp
 
     // Follow the newest turn as the thread grows.
     LaunchedEffect(chat.size) { scroll.animateScrollTo(scroll.maxValue) }
 
+    // Expand-from-icon: start small + transparent at the icon's corner, spring open to full size.
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown = true }
+    val scale by animateFloatAsState(if (shown) 1f else 0.35f, tween(260, easing = EmphasizedDecelerate), label = "panelScale")
+    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(180), label = "panelAlpha")
+
     val c = VaartaTheme.colors
     Surface(
         color = MaterialTheme.colorScheme.background,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = 12.dp,
-        modifier = Modifier.fillMaxWidth().padding(6.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                scaleX = scale; scaleY = scale; this.alpha = alpha; this.transformOrigin = transformOrigin
+            },
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("VAARTA", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = c.ink)
-                if (liveStatus != null) {
-                    Spacer(Modifier.width(8.dp))
-                    Text("● $liveStatus", color = c.indigo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Box(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Header = drag handle. Dragging anywhere on this row repositions the whole panel.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(Unit) { detectDragGestures { _, drag -> onDrag(drag.x, drag.y) } },
+                ) {
+                    Text("⠿", fontSize = 16.sp, color = c.muted)
+                    Spacer(Modifier.width(6.dp))
+                    Text("VAARTA", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = c.ink)
+                    if (liveStatus != null) {
+                        Spacer(Modifier.width(8.dp))
+                        Text("● $liveStatus", color = c.indigo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = onCollapse) { Text("▾ Hide") }
                 }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = onCollapse) { Text("▾ Hide") }
-            }
 
-            StatusBanner(level = displayedLevel, score = state.score, reassure = reassure, aiRaised = aiRaised)
+                StatusBanner(level = displayedLevel, score = state.score, reassure = reassure, aiRaised = aiRaised)
 
-            if (scamType != null) {
-                ScamIdCard(scamType = scamType!!, sources = scamSources, onOpenUrl = {})
-            }
-
-            Column(Modifier.heightIn(max = maxPanelHeight).verticalScroll(scroll)) {
-                if (chat.isEmpty()) {
-                    Text(
-                        "Listening — I'll show what to say.",
-                        fontSize = 14.sp,
-                        color = c.muted,
-                        modifier = Modifier.padding(vertical = 12.dp),
-                    )
-                } else {
-                    ChatThread(chat)
+                if (scamType != null) {
+                    ScamIdCard(scamType = scamType!!, sources = scamSources, onOpenUrl = {})
                 }
+
+                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll)) {
+                    if (chat.isEmpty()) {
+                        Text(
+                            "Listening — I'll show what to say.",
+                            fontSize = 14.sp,
+                            color = c.muted,
+                            modifier = Modifier.padding(vertical = 12.dp),
+                        )
+                    } else {
+                        ChatThread(chat)
+                    }
+                }
+
+                Button(
+                    onClick = onStop,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = c.scam),
+                ) { Text("■  Stop protection") }
             }
 
-            Button(
-                onClick = onStop,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = c.scam),
-            ) { Text("■  Stop protection") }
+            // Corner resize handle (bottom-end). Drag to grow/shrink within min/max bounds.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(28.dp)
+                    .pointerInput(Unit) { detectDragGestures { _, drag -> onResize(drag.x, drag.y) } },
+            ) {
+                Text("⤡", fontSize = 16.sp, color = c.muted, modifier = Modifier.rotate(90f))
+            }
         }
     }
 }

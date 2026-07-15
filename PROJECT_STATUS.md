@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-14 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-15 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -144,7 +144,7 @@ propagated — always re-count from fresh XML, never trust a remembered number.
 
 - Real call detection (`CallScreeningService`) — app has no idea a call is happening; only runs via manual taps/demo button. **Deliberately deferred** (Android-15 FGS-start + Play-policy, ADR-0003 Phase 4C addendum).
 - On-device ASR — not used; ASR happens server-side via Gemini Live's transcription (see the partial-build row above for its current verification status).
-- ~~Overlay bubble over the dialer (`SYSTEM_ALERT_WINDOW`)~~ **BUILT (Phase 4C, 2026-07-09)** — `OverlayService` (FGS type=microphone) draws a draggable overlay bubble → ~45% panel with the shared `ChatThread`, verified on the emulator. Auto-appear-on-call is the deferred part (above).
+- ~~Overlay bubble over the dialer (`SYSTEM_ALERT_WINDOW`)~~ **BUILT (Phase 4C, 2026-07-09), rebuilt (v2 Phase 5, 2026-07-15)** — `OverlayService` (FGS type=microphone) draws an edge-snapping corner icon that expands-from-icon into a floating card anchored in the top ~40% of the screen (never a bottom sheet / never full-width, so it can't cover call controls), with header-drag + corner-handle resize. Verified on the emulator (screenshots + `dumpsys window` frame data). Auto-appear-on-call is the deferred part (above).
 - Persistence (Room/SQLCipher) — nothing saved between app opens; RAM-only.
 - Tier-1 (on-device LLM) / Tier-2 (cloud LLM polish) — correctly out of scope (cost + design).
 - Multi-language beyond EN/HI/Hinglish seed.
@@ -230,6 +230,41 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   other way around.
 
 ## 8. Change log
+
+- **2026-07-15 — v2 Phase 5 (complete): overlay rebuild — corner icon, expand-from-icon, drag/resize
+  (spec §6.2).** Built + **verified end-to-end on the `vaarta_test` emulator** (screenshots + window
+  frame dumps). Replaces the old `Gravity.BOTTOM` + `MATCH_PARENT` panel that covered the dialer's
+  call controls — the spec's flagged core complaint about the v1 overlay.
+  - **`OverlayService` rewrite:** bubble now starts top-right (`bubbleX/Y`), is draggable, and
+    **snaps to the nearest screen edge on release** (`onDragEnd`, `dp(8)` inset). Expanding scales
+    up **from the icon's position** (MD3 emphasized-decelerate `CubicBezierEasing(0.05f,0.7f,0.1f,1f)`,
+    `graphicsLayer` scale/alpha + `TransformOrigin` picked from which side the icon was on) into a
+    **floating card anchored in the top ~40% of the screen** (never a bottom sheet, never
+    full-height) — sized 90%w/50%h on first expand, then remembers the user's own size/position.
+    Header row is a **drag handle** (`⠿`); a **28dp corner handle** (`⤡`, bottom-end) resizes with
+    min bounds (220×200dp) clamped to the screen.
+  - **Verified live on emulator** (not just compiled): launched via Home → "Help me on a call" →
+    "Use as a floating window" → real permission grants (overlay + mic) → real `OverlayService`
+    foreground start. Confirmed via screenshot + `dumpsys window` frame data: (1) icon renders at
+    the correct default top-right position; (2) dragging the icon across the screen snaps it to the
+    nearest edge; (3) tapping expands into the anchored floating card, not a bottom sheet; (4)
+    dragging the header moves the panel and clamps to screen edges; (5) **dragging the corner handle
+    actually resizes the window** (`Requested w=972 h=1200` → `w=856 h=1090` after a drag, confirmed
+    numerically via `dumpsys window`, not just visually); (6) "Hide" collapses cleanly back to the icon.
+  - **Environment incident, mid-phase:** the Android SDK, Android Studio, and the JDK 17 the project's
+    `jvmToolchain(17)` needs were **all found missing from the machine** (not a tool/session illusion —
+    confirmed absent via File Explorer directly, not just this session's tools). Root cause not
+    conclusively identified (a machine reboot occurred mid-session; disk was critically low at the
+    time). Recovered by reinstalling Android Studio (winget) + Android SDK (cmdline-tools/sdkmanager:
+    platform-tools, platforms;android-35, build-tools;35.0.0, emulator, system-images;android-35;
+    google_apis;x86_64) + a portable Temurin JDK 17 (zip, no-admin, after the MSI installer's UAC
+    prompt was cancelled twice). The `vaarta_test` AVD config itself had survived independently
+    (`~/.android/avd`, separate from the wiped SDK folder) and matched exactly, so it didn't need
+    recreating. `local.properties` was already correct once the SDK path existed again.
+  - `assembleDebug` green (JDK 17 required explicitly — the freshly-installed Android Studio bundles
+    JBR 21, which fails the project's `jvmToolchain(17)` toolchain resolution).
+  - **Deferred to owner's phone:** real incoming-call auto-show behavior and interaction with the
+    actual dialer UI (Phase 7) — this phase proves the overlay's own drag/resize/collapse mechanics.
 
 - **2026-07-15 — v2 Phase 4 (complete): AI education feed + article summarizer (spec §6.1).**
   Built + **verified end-to-end on the `vaarta_test` emulator** (screenshots).
