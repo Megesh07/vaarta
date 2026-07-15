@@ -231,6 +231,40 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-15 — v2 Phase 4 (complete): AI education feed + article summarizer (spec §6.1).**
+  Built + **verified end-to-end on the `vaarta_test` emulator** (screenshots).
+  - **`core:reasoning` (pure, unit-tested):** `AwarenessCard{title,oneLine,scamType,sourceName}` +
+    `ArticleSummary{text,sources}`; `AwarenessWireParser.parseFeed` — tolerant JSON-array parse that
+    **skips grounding citation markers (`[1]`,`[2]`)** via a bracket-depth scan locking onto the first
+    real `[{…}]`, dedupes, caps at 8, **fails closed to empty** on malformed/empty. **+7 tests (96 total,
+    0 failures).**
+  - **`GeminiClient` (grounded, fail-closed):** `awarenessFeed()` → `List<AwarenessCard>` (web-grounded,
+    parsed leniently, null on failure); `summarizeArticle(title, scamType)` → `ArticleSummary` (grounded
+    prose + real cited sources). Shared `buildGroundedBody` (google_search, no schema — same 2.5
+    constraint as `classify`/`chat`). New `AwarenessPrompt` (FEED + SUMMARY_SYSTEM + `summaryQuery`).
+  - **Cache + seed:** `AwarenessStore` caches the last good feed as plain JSON in app files (public
+    non-sensitive headlines — **not** the encrypted DB) with a fetched-date; bundled
+    `assets/awareness_seed.json` (~8 curated real India scams) guarantees the screen is never empty.
+    `AwarenessViewModel` shows cache/seed instantly, then refreshes when stale/online (silent, safe).
+  - **UI:** Home "Trending scams" placeholder → **real tappable cards** (type tag + one-line, refresh
+    spinner). New **`ArticleScreen`**: clean banner (title/type/source) → grounded three-part summary
+    (What it is / How to spot it / What to do) → **tappable real sources** → **"Ask VAARTA about this"**
+    (seeds a new grounded conversation) + **"Warn my family"** share. `SubScreen.Article` in `VaartaNav`;
+    `ConversationViewModel.newChat(seedContext)` for the seeded chat.
+  - **Verified on emulator:** seed feed on cold/offline start → **live web feed loads + caches**
+    (top card became "Impersonation / Digital Arrest", sources Airtel/Wikipedia/NITI Aayog/PIB);
+    article summary is a complete grounded three-part explainer; **"Ask about this" → seeded chat
+    answers in context** ("Should I be worried if they know my name and address?" → parcel-scam-specific,
+    safe, 1930/cybercrime.gov.in).
+  - **Two quality bugs found & fixed during verification:** (1) grounded feed didn't parse because
+    citation markers hijacked the naive first-`[` extractor → robust bracket-scan (test added);
+    (2) the summarize prompt put the topic only in the system instruction → model asked "which scam?";
+    moved the topic into the **user turn**. Also **hardened the chat language rule** — grounding on
+    India topics was replying in Hindi to English questions; added `ChatPrompt.LANGUAGE_REMINDER`
+    appended **after** any context (recency) → re-verified English→English.
+  - `assembleDebug` green. Deferred to owner's phone only: nothing new (feed/summary are network paths
+    fully exercised on the emulator).
+
 - **2026-07-14 — v2 Phase 3 (complete): multimodal chat + call context + auto-save.**
   - **Multimodal composer** (part 1): `GeminiClient.chat` takes image/audio attachments (inline_data —
     same proven path as `analyzeAudio`); `ChatAttachment` model; composer gained **🎤 voice** (device

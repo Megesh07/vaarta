@@ -6,6 +6,8 @@ import ai.vaarta.SessionViewModel
 import ai.vaarta.VaartaScreen
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.core.reasoning.AwarenessCard
+import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.recording.AudioAnalyzerViewModel
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +30,7 @@ sealed interface SubScreen {
     data object Live : SubScreen
     data object Analyze : SubScreen
     data object Chat : SubScreen
+    data class Article(val card: AwarenessCard) : SubScreen
 }
 
 /**
@@ -41,12 +45,14 @@ fun VaartaNav(
     historyVm: HistoryViewModel,
     analyzerVm: AudioAnalyzerViewModel,
     conversationVm: ConversationViewModel,
+    awarenessVm: AwarenessViewModel,
     onShare: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
 ) {
     var tab by remember { mutableStateOf(VaartaTab.HOME) }
     var sub by remember { mutableStateOf<SubScreen>(SubScreen.None) }
+    val feed by awarenessVm.state.collectAsState()
 
     // A sub-screen takes the whole window (no bottom bar) so nothing competes with its back action.
     if (sub != SubScreen.None) {
@@ -68,6 +74,13 @@ fun VaartaNav(
                 onBack = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
                 onOpenUrl = onOpenUrl,
                 onShare = onShare,
+            )
+            is SubScreen.Article -> ArticleScreen(
+                card = (sub as SubScreen.Article).card,
+                onBack = { sub = SubScreen.None; tab = VaartaTab.HOME },
+                onOpenUrl = onOpenUrl,
+                onShare = onShare,
+                onAskAbout = { seed -> conversationVm.newChat(seed); sub = SubScreen.Chat },
             )
             SubScreen.None -> Unit
         }
@@ -105,6 +118,9 @@ fun VaartaNav(
                 onAnalyzeRecording = { sub = SubScreen.Analyze },
                 onAskVaarta = { conversationVm.newChat(); sub = SubScreen.Chat },
                 onOpenUrl = onOpenUrl,
+                feedCards = feed.cards,
+                feedRefreshing = feed.refreshing,
+                onOpenArticle = { card -> sub = SubScreen.Article(card) },
                 modifier = Modifier.padding(pad),
             )
             VaartaTab.HISTORY -> HistoryScreen(

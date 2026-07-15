@@ -1,0 +1,50 @@
+[
+  {
+    "title": "Digital arrest scam",
+    "oneLine": "Fake police, CBI or customs video-call you, claim you are under 'digital arrest', and pressure you to pay to avoid jail. No real agency does this.",
+    "scamType": "Digital arrest",
+    "sourceName": "I4C / Cyber Dost"
+  },
+  {
+    "title": "FedEx / courier parcel scam",
+    "oneLine": "A caller says a parcel in your name holds drugs or fake passports, then transfers you to a 'police officer' who demands money.",
+    "scamType": "Courier",
+    "sourceName": "I4C / Cyber Dost"
+  },
+  {
+    "title": "KYC update scam",
+    "oneLine": "An SMS or call warns your bank, SIM or wallet KYC has expired and will be blocked, tricking you into an OTP or a fake app.",
+    "scamType": "KYC / bank",
+    "sourceName": "RBI Sachet"
+  },
+  {
+    "title": "Electricity bill disconnection",
+    "oneLine": "A text says your power will be cut tonight over an unpaid bill and gives a number to call, where they take remote control of your phone.",
+    "scamType": "Utility",
+    "sourceName": "Cyber Dost"
+  },
+  {
+    "title": "Investment / trading scam",
+    "oneLine": "A WhatsApp or Telegram 'expert' promises huge stock or crypto returns; the app shows fake profits but blocks withdrawals.",
+    "scamType": "Investment",
+    "sourceName": "SEBI"
+  },
+  {
+    "title": "Part-time job / task scam",
+    "oneLine": "You are offered easy money for liking videos or rating hotels, then asked to 'deposit' funds for bigger tasks that never pay out.",
+    "scamType": "Job / task",
+    "sourceName": "I4C"
+  },
+  {
+    "title": "Loan-app harassment",
+    "oneLine": "An instant-loan app grants a small loan, harvests your contacts and photos, then threatens and shames you for repayment.",
+    "scamType": "Loan app",
+    "sourceName": "RBI Sachet"
+  },
+  {
+    "title": "UPI 'wrong payment' refund",
+    "oneLine": "A stranger claims they sent you money by mistake and asks you to refund it or approve a 'collect request' that pulls money from you.",
+    "scamType": "UPI / refund",
+    "sourceName": "NPCI"
+  }
+]

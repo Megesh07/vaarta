@@ -8,6 +8,7 @@ import ai.vaarta.core.reasoning.ReplyKind
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.reasoning.Source
+import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.recording.AudioAnalyzerViewModel
@@ -83,12 +84,13 @@ class MainActivity : ComponentActivity() {
     private val historyVm: HistoryViewModel by viewModels()
     private val analyzerVm: AudioAnalyzerViewModel by viewModels()
     private val conversationVm: ConversationViewModel by viewModels()
+    private val awarenessVm: AwarenessViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             VaartaTheme {
-                VaartaNav(vm, historyVm, analyzerVm, conversationVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
             }
         }
     }

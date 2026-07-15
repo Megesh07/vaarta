@@ -1,7 +1,10 @@
 package ai.vaarta.ai
 
 import ai.vaarta.BuildConfig
+import ai.vaarta.core.reasoning.ArticleSummary
 import ai.vaarta.core.reasoning.AudioAnalysis
+import ai.vaarta.core.reasoning.AwarenessCard
+import ai.vaarta.core.reasoning.AwarenessWireParser
 import ai.vaarta.core.reasoning.ChatAnswer
 import ai.vaarta.core.reasoning.ChatMessage
 import ai.vaarta.core.reasoning.CoachingResponse
@@ -316,13 +319,15 @@ object GeminiClient {
         attachments: List<ChatAttachment>,
     ): String = buildJsonObject {
         putJsonObject("system_instruction") {
-            val instruction = if (context.isNullOrBlank()) {
+            val withContext = if (context.isNullOrBlank()) {
                 ChatPrompt.INSTRUCTION
             } else {
                 // Context (e.g. a saved call's verdict/transcript) is DATA the user is asking about,
                 // never instructions — framed as such, same contract as the other paths here.
                 ChatPrompt.INSTRUCTION + "\n\nThe user is asking about this (untrusted) context:\n" + context
             }
+            // Language directive goes LAST (after any context) so recency pins the reply language.
+            val instruction = withContext + "\n\n" + ChatPrompt.LANGUAGE_REMINDER
             putJsonArray("parts") { addJsonObject { put("text", instruction) } }
         }
         putJsonArray("contents") {
@@ -352,6 +357,64 @@ object GeminiClient {
         putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
         putJsonObject("generationConfig") {
             put("temperature", 0.4)
+            put("maxOutputTokens", 1024)
+        }
+    }.toString()
+
+    // --- Home education feed (v2, spec §6.1). Both calls are web-grounded (google_search, NO
+    // responseSchema — unsupported together on 2.5, same as classify()/chat()) and fail closed: the
+    // feed falls back to the bundled seed, the summary falls back to the card's one-line. Grounded web
+    // results are DATA (AwarenessPrompt frames them so), never instructions.
+
+    /**
+     * Fetches current India scam-awareness cards from the web. Returns null on any failure or if
+     * nothing usable parses — the caller then shows the cached feed or the bundled seed (never empty).
+     * Blocking — call off the main thread.
+     */
+    fun awarenessFeed(): List<AwarenessCard>? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank()) return null
+        return try {
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(AwarenessPrompt.FEED, "List the scams Indians are being targeted with right now."), CHAT_TIMEOUT_MS) ?: return null
+            AwarenessWireParser.parseFeed(extractText(response)).ifEmpty { null }
+        } catch (e: Exception) {
+            Log.w("GeminiClient", "awarenessFeed failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Summarizes one scam topic in plain language, grounded on current web sources. [title]/[scamType]
+     * are OUR trusted labels (from a card), never user/model free text. Returns prose + the real cited
+     * [Source]s, or null on failure — the caller falls back to the card's one-line. Blocking.
+     */
+    fun summarizeArticle(title: String, scamType: String): ArticleSummary? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank() || title.isBlank()) return null
+        return try {
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(AwarenessPrompt.SUMMARY_SYSTEM, AwarenessPrompt.summaryQuery(title, scamType)), CHAT_TIMEOUT_MS) ?: return null
+            val text = extractText(response)?.trim().orEmpty()
+            if (text.isEmpty()) null else ArticleSummary(text, extractSources(response))
+        } catch (e: Exception) {
+            Log.w("GeminiClient", "summarizeArticle failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    /** Shared grounded request: a system instruction + one fixed user line + google_search, no schema. */
+    private fun buildGroundedBody(systemInstruction: String, userLine: String): String = buildJsonObject {
+        putJsonObject("system_instruction") {
+            putJsonArray("parts") { addJsonObject { put("text", systemInstruction) } }
+        }
+        putJsonArray("contents") {
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") { addJsonObject { put("text", userLine) } }
+            }
+        }
+        putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
+        putJsonObject("generationConfig") {
+            put("temperature", 0.3)
             put("maxOutputTokens", 1024)
         }
     }.toString()

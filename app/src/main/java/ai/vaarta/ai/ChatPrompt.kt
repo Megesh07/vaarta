@@ -36,4 +36,15 @@ object ChatPrompt {
         - If a question is unrelated to scams or personal safety, gently steer back — you are a
           scam-safety helper, not a general chatbot.
         """.trimIndent()
+
+    /**
+     * A final, unmissable language directive appended AFTER any context so it is the last thing the
+     * model reads (recency). Grounding on India-centric topics pulls Hindi sources and was biasing
+     * replies into Hindi even for English questions (regression found 2026-07-15) — this pins the
+     * reply to the user's own language regardless of the context or source language.
+     */
+    val LANGUAGE_REMINDER =
+        "MOST IMPORTANT: Write your ENTIRE reply in the SAME language and script as the user's LATEST " +
+            "message — even if the context, the article, or your web search results are in a different " +
+            "language. If the user's latest message is in English, you MUST reply in English."
 }

@@ -49,10 +49,15 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
     private var conversationId: Long? = null
     private var contextText: String? = null
 
-    /** Begin a fresh blank chat. The DB row is created on the first [send]. */
-    fun newChat() {
+    /**
+     * Begin a fresh blank chat. The DB row is created on the first [send]. [seedContext] optionally
+     * grounds the chat in a topic the user tapped "Ask about this" on (e.g. an awareness article) —
+     * it's fed to the model as untrusted context, exactly like a saved call's transcript, but shows
+     * no verdict header.
+     */
+    fun newChat(seedContext: String? = null) {
         conversationId = null
-        contextText = null
+        contextText = seedContext?.takeIf { it.isNotBlank() }
         _turns.value = emptyList()
         _header.value = null
     }

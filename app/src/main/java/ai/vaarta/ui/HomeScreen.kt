@@ -1,5 +1,6 @@
 package ai.vaarta.ui
 
+import ai.vaarta.core.reasoning.AwarenessCard
 import ai.vaarta.ui.theme.VaartaTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -52,6 +54,9 @@ fun HomeScreen(
     onAnalyzeRecording: () -> Unit,
     onAskVaarta: () -> Unit,
     onOpenUrl: (String) -> Unit,
+    feedCards: List<AwarenessCard>,
+    feedRefreshing: Boolean,
+    onOpenArticle: (AwarenessCard) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = VaartaTheme.colors
@@ -127,21 +132,38 @@ fun HomeScreen(
                 )
             }
 
-            // Trending scams — real AI-generated feed lands in Phase 4.
+            // Trending scams — AI-generated, web-grounded feed (spec §6.1); tap a card for a plain
+            // summary. Sits below the actions and never competes with them.
             Spacer(Modifier.height(4.dp))
-            Text("Trending scams in India", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.ink)
-            Card(
-                colors = CardDefaults.cardColors(containerColor = c.panel),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    "Live scam-awareness stories will appear here soon — tap any story and VAARTA " +
-                        "explains it in plain language, with trusted sources.",
-                    Modifier.padding(16.dp),
-                    fontSize = 14.sp,
-                    color = c.muted,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Trending scams in India", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.ink)
+                if (feedRefreshing) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+            Text(
+                "Tap a card — VAARTA explains it in plain language, with sources.",
+                fontSize = 13.sp,
+                color = c.muted,
+            )
+            if (feedCards.isEmpty()) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = c.panel),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        "Scam-awareness stories will appear here once you're online.",
+                        Modifier.padding(16.dp),
+                        fontSize = 14.sp,
+                        color = c.muted,
+                    )
+                }
+            } else {
+                feedCards.forEach { card -> AwarenessCardRow(card, onClick = { onOpenArticle(card) }) }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -205,6 +227,36 @@ private fun ActionCard(emoji: String, title: String, subtitle: String, onClick: 
                 Text(subtitle, fontSize = 13.sp, color = c.muted)
             }
             Text("›", fontSize = 24.sp, color = c.indigo)
+        }
+    }
+}
+
+@Composable
+private fun AwarenessCardRow(card: AwarenessCard, onClick: () -> Unit) {
+    val c = VaartaTheme.colors
+    Card(
+        colors = CardDefaults.cardColors(containerColor = c.panel),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "${card.title}. ${card.oneLine}" },
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                if (card.scamType.isNotBlank()) {
+                    Text(card.scamType.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = c.indigo)
+                    Spacer(Modifier.height(2.dp))
+                }
+                Text(card.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = c.ink)
+                Spacer(Modifier.height(2.dp))
+                Text(card.oneLine, fontSize = 13.sp, color = c.muted, maxLines = 2)
+            }
+            Text("›", fontSize = 22.sp, color = c.indigo)
         }
     }
 }
