@@ -231,6 +231,19 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-16 — Both AI-verification wiring gaps FIXED + emulator-verified (`c21ebd9`).**
+  (1) **Demo now shows the AI:** `VaartaScreen` renders the fetched single-shot Gemini suggestion
+  as a trailing coach bubble after the deterministic thread (plus an "AI coach is thinking…"
+  loading line) — gated on `liveStatus == null` so live calls (whose coaching already streams into
+  the chat) can't double-render, and still behind the `SuggestionSafetyFilter` rail. Verified live:
+  demo with AI on ends with a Gemini reply ("I will confirm this with the 1930 cyber helpline
+  first."), distinct from the deterministic replies. (2) **Analyze dead-end gone:** `AnalyzeScreen`
+  now owns its own `GetContent("audio/*")` picker with an Idle-state "Pick a recording" button, so
+  Home's "Check a recording" card works standalone. Verified end-to-end from the Home card: picker
+  → scam_call.wav → SCAM_PATTERN verdict — this run also surfaced the web-grounded scam-ID card
+  ("Digital Arrest / Parcel Seized Scam", sources incl. thehindu.com) inside the analyzer.
+  Remaining known chip: `%3F` percent-encoding in one saved conversation title.
+
 - **2026-07-16 — AI intelligence verification (owner ask: "is the AI ready to lock and ship?").**
   Drove every AI surface end-to-end on the `vaarta_test` emulator with the real Gemini key
   (screenshots captured for each). **Verdict: the AI layer itself is genuinely intelligent and
