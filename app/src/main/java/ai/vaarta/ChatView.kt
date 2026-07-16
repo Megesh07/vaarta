@@ -4,10 +4,14 @@ import ai.vaarta.core.reasoning.Reply
 import ai.vaarta.core.reasoning.ReplyKind
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.Source
+import ai.vaarta.ui.MarkdownText
+import ai.vaarta.ui.VaartaIcon
+import ai.vaarta.ui.components.Eyebrow
+import ai.vaarta.ui.components.SourceLink
+import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import ai.vaarta.ui.theme.riskColor
 import ai.vaarta.ui.theme.stateLabel
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,14 +22,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 // --- The shared WhatsApp-style chat view (design system §6). Every surface — the in-app live screen,
 // the read-only history detail, and the floating overlay panel — renders the exact same thread through
@@ -57,16 +61,29 @@ internal fun StatusBanner(level: RiskLevel, score: Int, reassure: Boolean, aiRai
     val color = if (reassure) c.safe else c.riskColor(level)
     val headline = if (reassure) "This looks like a genuine call" else stateLabel(level)
     Card(colors = CardDefaults.cardColors(containerColor = color)) {
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Text(headline, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Column(Modifier.fillMaxWidth().padding(VSpace.xl)) {
+            Text(headline, color = Color.White, style = MaterialTheme.typography.headlineSmall)
             if (!reassure) {
-                Text("Risk $score / 100", color = Color.White, fontSize = 15.sp)
+                Text("Risk $score / 100", color = Color.White, style = MaterialTheme.typography.bodyMedium)
                 if (aiRaised) {
-                    Spacer(Modifier.height(4.dp))
-                    Text("⚠  Flagged from live web intelligence", color = Color.White, fontSize = 13.sp)
+                    Spacer(Modifier.height(VSpace.xs))
+                    IconLabel(R.drawable.ic_alert_triangle, "Flagged from live web intelligence", Color.White)
                 }
             }
         }
+    }
+}
+
+/** A small leading-icon + label row, used for inline markers inside bubbles/banners. */
+@Composable
+private fun IconLabel(icon: Int, text: String, tint: Color, bold: Boolean = false) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+        VaartaIcon(icon, contentDescription = null, tint = tint, size = 16.dp)
+        Text(
+            text,
+            style = if (bold) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodySmall,
+            color = tint,
+        )
     }
 }
 
@@ -75,21 +92,17 @@ internal fun StatusBanner(level: RiskLevel, score: Int, reassure: Boolean, aiRai
 internal fun ScamIdCard(scamType: String, sources: List<Source>, onOpenUrl: (String) -> Unit) {
     val c = VaartaTheme.colors
     Card(colors = CardDefaults.cardColors(containerColor = c.indigoTint)) {
-        Column(Modifier.fillMaxWidth().padding(14.dp)) {
-            Text("IDENTIFIED FROM THE LIVE WEB", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigoInk)
-            Spacer(Modifier.height(3.dp))
-            Text(scamType, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = c.indigoInk)
+        Column(Modifier.fillMaxWidth().padding(VSpace.md)) {
+            Eyebrow("Identified from the live web", color = c.indigoInk)
+            Spacer(Modifier.height(VSpace.xs))
+            Text(scamType, style = MaterialTheme.typography.titleMedium, color = c.indigoInk)
             if (sources.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                Text("Matches ${sources.size} recent report${if (sources.size == 1) "" else "s"}:", fontSize = 12.sp, color = c.indigoInk)
-                for (s in sources.take(3)) {
-                    Text(
-                        "🔗 ${s.title}",
-                        fontSize = 12.sp,
-                        color = c.verify,
-                        modifier = Modifier.padding(top = 3.dp).clickable { onOpenUrl(s.uri) },
-                    )
-                }
+                Spacer(Modifier.height(VSpace.xs))
+                Text(
+                    "Matches ${sources.size} recent report${if (sources.size == 1) "" else "s"}:",
+                    style = MaterialTheme.typography.bodySmall, color = c.indigoInk,
+                )
+                for (s in sources.take(3)) SourceLink(title = s.title, onClick = { onOpenUrl(s.uri) })
             }
         }
     }
@@ -102,7 +115,7 @@ internal fun ScamIdCard(scamType: String, sources: List<Source>, onOpenUrl: (Str
  */
 @Composable
 internal fun ChatThread(items: List<ChatItem>, onOpenUrl: (String) -> Unit = {}) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VSpace.sm)) {
         for (item in items) {
             when (item) {
                 is ChatItem.Caller -> CallerBubble(item.text)
@@ -125,8 +138,8 @@ private fun CallerBubble(text: String) {
             modifier = Modifier.fillMaxWidth(0.85f),
         ) {
             Column(Modifier.padding(11.dp)) {
-                Text("Caller", fontSize = 11.sp, color = c.muted)
-                Text(text, fontSize = 15.sp, color = c.ink)
+                Text("Caller", style = MaterialTheme.typography.labelMedium, color = c.muted)
+                Text(text, style = MaterialTheme.typography.bodyMedium, color = c.ink)
             }
         }
     }
@@ -143,8 +156,8 @@ private fun YouBubble(text: String) {
             modifier = Modifier.fillMaxWidth(0.85f),
         ) {
             Column(Modifier.padding(11.dp)) {
-                Text("You said", fontSize = 11.sp, color = c.indigoInk)
-                Text(text, fontSize = 15.sp, color = c.ink)
+                Text("You said", style = MaterialTheme.typography.labelMedium, color = c.indigoInk)
+                Text(text, style = MaterialTheme.typography.bodyMedium, color = c.ink)
             }
         }
     }
@@ -164,24 +177,20 @@ internal fun CoachBubble(item: ChatItem.Coach, onOpenUrl: (String) -> Unit) {
             shape = RoundedCornerShape(12.dp, 12.dp, 3.dp, 12.dp),
             modifier = Modifier.fillMaxWidth(0.9f),
         ) {
-            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(VSpace.sm)) {
                 if (item.scamType != null) {
-                    Text("🌐  ${item.scamType}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = c.indigoInk)
-                    for (s in item.sources.take(3)) {
-                        Text(
-                            "🔗 ${s.title}",
-                            fontSize = 11.sp,
-                            color = c.verify,
-                            modifier = Modifier.clickable { onOpenUrl(s.uri) },
-                        )
-                    }
+                    IconLabel(R.drawable.ic_globe, item.scamType, c.indigoInk, bold = true)
+                    for (s in item.sources.take(3)) SourceLink(title = s.title, onClick = { onOpenUrl(s.uri) })
                 }
                 if (item.warning.isNotBlank()) {
-                    Text("⚠️  ${item.warning}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = c.indigoInk)
+                    Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                        VaartaIcon(R.drawable.ic_alert_triangle, contentDescription = null, tint = c.indigoInk, size = 16.dp)
+                        MarkdownText(item.warning, color = c.indigoInk)
+                    }
                 }
                 // A recorded-call verdict (Phase 4D) has no live replies — show the header + chips only when present.
                 if (item.replies.isNotEmpty()) {
-                    Text("SAY THIS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigo)
+                    Eyebrow("Say this", color = c.indigo)
                     item.replies.forEachIndexed { i, reply -> ReplyLine(reply, primary = i == 0) }
                 }
             }
@@ -189,7 +198,7 @@ internal fun CoachBubble(item: ChatItem.Coach, onOpenUrl: (String) -> Unit) {
     }
 }
 
-/** A free-form VAARTA chat answer — left bubble, "VAARTA" label, plain prose + tappable sources. */
+/** A free-form VAARTA chat answer — left bubble, "VAARTA" label, markdown prose + tappable sources. */
 @Composable
 internal fun AssistantBubble(item: ChatItem.Assistant, onOpenUrl: (String) -> Unit) {
     val c = VaartaTheme.colors
@@ -199,19 +208,12 @@ internal fun AssistantBubble(item: ChatItem.Assistant, onOpenUrl: (String) -> Un
             shape = RoundedCornerShape(12.dp, 12.dp, 12.dp, 3.dp),
             modifier = Modifier.fillMaxWidth(0.92f),
         ) {
-            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("🛡️  VAARTA", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigoInk)
-                Text(item.text, fontSize = 15.sp, color = c.ink)
+            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(VSpace.xs)) {
+                IconLabel(R.drawable.ic_sparkle, "VAARTA", c.indigoInk, bold = true)
+                MarkdownText(item.text, color = c.ink)
                 if (item.sources.isNotEmpty()) {
-                    Text("Sources:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = c.muted)
-                    for (s in item.sources.take(3)) {
-                        Text(
-                            "🔗 ${s.title}",
-                            fontSize = 12.sp,
-                            color = c.verify,
-                            modifier = Modifier.clickable { onOpenUrl(s.uri) },
-                        )
-                    }
+                    Eyebrow("Sources")
+                    for (s in item.sources.take(3)) SourceLink(title = s.title, onClick = { onOpenUrl(s.uri) })
                 }
             }
         }
@@ -224,12 +226,11 @@ private fun ReplyLine(reply: Reply, primary: Boolean) {
     val style = replyStyle(reply.kind)
     Surface(color = style.tint, shape = RoundedCornerShape(9.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(if (primary) 11.dp else 9.dp)) {
-            Text(style.label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = style.accent)
+            Eyebrow(style.label, color = style.accent)
             Spacer(Modifier.height(2.dp))
             Text(
                 "❝ ${reply.text} ❞",
-                fontSize = if (primary) 16.sp else 13.sp,
-                fontWeight = if (primary) FontWeight.Medium else FontWeight.Normal,
+                style = if (primary) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
                 color = style.ink,
             )
         }

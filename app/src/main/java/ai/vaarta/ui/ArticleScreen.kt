@@ -1,10 +1,16 @@
 package ai.vaarta.ui
 
+import ai.vaarta.R
 import ai.vaarta.ai.GeminiClient
 import ai.vaarta.core.reasoning.ArticleSummary
 import ai.vaarta.core.reasoning.AwarenessCard
+import ai.vaarta.ui.components.Eyebrow
+import ai.vaarta.ui.components.SourceLink
+import ai.vaarta.ui.components.VaartaButton
+import ai.vaarta.ui.components.VaartaBackBar
+import ai.vaarta.ui.components.VaartaSecondaryButton
+import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,13 +24,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,19 +38,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
  * Article summary screen (v2, spec §6.1). Opened from a home feed card: a clean banner (title +
  * scam-type + source label), then a plain-language AI summary of the *real* topic grounded on current
- * web sources — with the cited sources shown and tappable (the honest attribution: we show what
- * grounding actually cited, we don't fabricate a link). Fails closed to the card's one-line if
- * summarization errors. "Ask about this" seeds a NEW conversation; the summary itself is ephemeral
- * (regenerated cheaply on reopen) — only a chat the user engages in is saved.
+ * web sources — rendered through [MarkdownText] so no raw markup ever shows — with the cited sources
+ * shown and tappable. Fails closed to the card's one-line if summarization errors.
  */
 @Composable
 fun ArticleScreen(
@@ -66,12 +65,10 @@ fun ArticleScreen(
     LaunchedEffect(card.title) {
         loading = true
         val result = withContext(Dispatchers.IO) { GeminiClient.summarizeArticle(card.title, card.scamType) }
-        // Fail closed: if the grounded summary errors, fall back to the card's own one-line.
         summary = result ?: ArticleSummary(card.oneLine)
         loading = false
     }
 
-    // Context handed to "Ask about this" — VAARTA answers the follow-up chat grounded in this topic.
     val seedContext = buildString {
         append("The user is reading a scam-awareness article titled \"${card.title}\"")
         if (card.scamType.isNotBlank()) append(" (category: ${card.scamType})")
@@ -82,13 +79,10 @@ fun ArticleScreen(
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
             Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = VSpace.xl),
+                verticalArrangement = Arrangement.spacedBy(VSpace.md),
             ) {
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("‹ Back", fontSize = 15.sp, color = c.indigo, modifier = Modifier.clickable(onClick = onBack))
-                }
+                VaartaBackBar(title = null, onBack = onBack)
 
                 // Clean banner — title + scam-type + source label.
                 Card(
@@ -96,56 +90,52 @@ fun ArticleScreen(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (card.scamType.isNotBlank()) {
-                            Text(card.scamType.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = c.indigo)
-                        }
-                        Text(card.title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.ink)
+                    Column(Modifier.padding(VSpace.xl), verticalArrangement = Arrangement.spacedBy(VSpace.xs)) {
+                        if (card.scamType.isNotBlank()) Eyebrow(card.scamType, color = c.indigo)
+                        Text(card.title, style = MaterialTheme.typography.headlineSmall, color = c.ink)
                         if (card.sourceName.isNotBlank()) {
-                            Text("Seen in ${card.sourceName}", fontSize = 12.sp, color = c.muted)
+                            Text("Seen in ${card.sourceName}", style = MaterialTheme.typography.bodySmall, color = c.muted)
                         }
                     }
                 }
 
                 if (loading) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
                         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
-                        Text("VAARTA is reading the latest on this…", fontSize = 13.sp, color = c.muted)
+                        Text("VAARTA is reading the latest on this…", style = MaterialTheme.typography.bodySmall, color = c.muted)
                     }
                 } else {
-                    Text(summary?.text.orEmpty(), fontSize = 16.sp, color = c.ink)
+                    MarkdownText(summary?.text.orEmpty(), color = c.ink)
                     summary?.sources?.takeIf { it.isNotEmpty() }?.let { sources ->
-                        Spacer(Modifier.height(2.dp))
-                        Text("Sources", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = c.muted)
+                        Spacer(Modifier.height(VSpace.xs))
+                        Eyebrow("Sources")
                         for (s in sources.take(4)) {
-                            Text(
-                                "🔗 ${s.title}",
-                                fontSize = 13.sp,
-                                color = c.verify,
-                                modifier = Modifier.clickable { onOpenUrl(s.uri) }.padding(vertical = 2.dp),
-                            )
+                            SourceLink(title = s.title, onClick = { onOpenUrl(s.uri) })
                         }
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(VSpace.sm))
             }
 
             // Actions — social-good weave: keep learning, warn family, report.
             Column(
-                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = VSpace.xl, vertical = VSpace.md),
+                verticalArrangement = Arrangement.spacedBy(VSpace.sm),
             ) {
-                Button(
+                VaartaButton(
+                    text = "Ask VAARTA about this",
                     onClick = { onAskAbout(seedContext) },
-                    enabled = !loading,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = c.indigo),
-                ) { Text("💬  Ask VAARTA about this", fontSize = 16.sp) }
-                OutlinedButton(
-                    onClick = { onShare(warnFamilyText(card, summary)) },
+                    leadingIcon = R.drawable.ic_sparkle,
                     enabled = !loading,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("📤  Warn my family") }
+                )
+                VaartaSecondaryButton(
+                    text = "Warn my family",
+                    onClick = { onShare(warnFamilyText(card, summary)) },
+                    leadingIcon = R.drawable.ic_bell,
+                    enabled = !loading,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

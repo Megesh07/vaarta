@@ -1,8 +1,13 @@
 package ai.vaarta.ui
 
+import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.ui.components.VaartaButton
+import ai.vaarta.ui.components.VaartaSecondaryButton
+import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +22,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,9 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 private const val WARN_FAMILY_MESSAGE =
     "VAARTA: please be careful — scammers posing as police/CBI/courier are calling people, " +
@@ -75,75 +75,81 @@ fun HelpScreen(
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = VSpace.xl),
+            verticalArrangement = Arrangement.spacedBy(VSpace.lg),
         ) {
-            Spacer(Modifier.height(8.dp))
-            Text("Get help & report", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.ink)
+            Spacer(Modifier.height(VSpace.sm))
+            Text("Get help & report", style = MaterialTheme.typography.headlineMedium, color = c.ink)
 
             HelpSection(title = "If this is happening now") {
                 Text(
                     "Call the government cyber-crime helpline. It's free and open 24×7.",
-                    fontSize = 14.sp, color = c.muted,
+                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
                 )
-                Spacer(Modifier.height(10.dp))
-                Button(
+                Spacer(Modifier.height(VSpace.md))
+                VaartaButton(
+                    text = "Call 1930",
                     onClick = { onOpenUrl("tel:1930") },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = c.scam),
-                ) { Text("📞  Call 1930", fontSize = 16.sp) }
+                    leadingIcon = R.drawable.ic_phone,
+                    destructive = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             HelpSection(title = "If you've already lost money") {
                 Text(
                     "Stay calm — acting fast can still get your money back. Do these in order:",
-                    fontSize = 14.sp, color = c.muted,
+                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(VSpace.md))
                 SCAMMED_STEPS.forEachIndexed { i, step ->
-                    if (i > 0) Spacer(Modifier.height(12.dp))
+                    if (i > 0) Spacer(Modifier.height(VSpace.md))
                     StepRow(number = i + 1, text = step)
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(VSpace.md))
                 Text(
                     "Reporting within the first few hours gives the best chance of freezing the " +
                         "money before it moves.",
-                    fontSize = 13.sp, color = c.muted,
+                    style = MaterialTheme.typography.bodySmall, color = c.muted,
                 )
             }
 
             HelpSection(title = "Report online") {
                 Text(
                     "File a complaint on the National Cyber Crime Reporting Portal.",
-                    fontSize = 14.sp, color = c.muted,
+                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
                 )
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(
+                Spacer(Modifier.height(VSpace.md))
+                VaartaSecondaryButton(
+                    text = "Open cybercrime.gov.in",
                     onClick = { onOpenUrl("https://cybercrime.gov.in") },
+                    leadingIcon = R.drawable.ic_globe,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("🌐  Open cybercrime.gov.in") }
+                )
             }
 
             HelpSection(title = "Prepare a complaint") {
                 Text(
                     "Turn what VAARTA detected into a ready-to-file complaint draft.",
-                    fontSize = 14.sp, color = c.muted,
+                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
                 )
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(
+                Spacer(Modifier.height(VSpace.md))
+                VaartaSecondaryButton(
+                    text = "Generate complaint draft",
                     onClick = { vm.session.generateComplaint() },
+                    leadingIcon = R.drawable.ic_file_text,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("📝  Generate complaint draft") }
+                )
                 complaint?.let { text ->
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(VSpace.md))
                     Card(colors = CardDefaults.cardColors(containerColor = c.panel)) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text(text, fontSize = 12.sp, color = c.ink)
-                            Spacer(Modifier.height(10.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { onShare(text) }) { Text("Share as text") }
+                        Column(Modifier.padding(VSpace.md)) {
+                            Text(text, style = MaterialTheme.typography.bodySmall, color = c.ink)
+                            Spacer(Modifier.height(VSpace.md))
+                            Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                                VaartaButton(text = "Share as text", onClick = { onShare(text) })
                                 complaintDraft?.let { draft ->
-                                    OutlinedButton(onClick = { onExportPdf(draft) }) { Text("Export PDF") }
+                                    VaartaSecondaryButton(text = "Export PDF", onClick = { onExportPdf(draft) })
                                 }
                             }
                         }
@@ -154,15 +160,17 @@ fun HelpScreen(
             HelpSection(title = "Warn your family") {
                 Text(
                     "Send a short warning to the people most at risk — one message can stop a scam.",
-                    fontSize = 14.sp, color = c.muted,
+                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
                 )
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(
+                Spacer(Modifier.height(VSpace.md))
+                VaartaSecondaryButton(
+                    text = "Share a warning",
                     onClick = { onShare(WARN_FAMILY_MESSAGE) },
+                    leadingIcon = R.drawable.ic_bell,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("🔔  Share a warning") }
+                )
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(VSpace.xxl))
         }
     }
 }
@@ -171,22 +179,17 @@ fun HelpScreen(
 @Composable
 private fun StepRow(number: Int, text: String) {
     val c = VaartaTheme.colors
-    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(28.dp),
-        ) {
+    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(VSpace.md)) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp)) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     "$number",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         }
-        Text(text, fontSize = 14.sp, color = c.ink, modifier = Modifier.padding(top = 3.dp))
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = VSpace.xs))
     }
 }
 
@@ -195,12 +198,14 @@ private fun HelpSection(title: String, content: @Composable () -> Unit) {
     val c = VaartaTheme.colors
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (c.isDark) 0.dp else 1.dp),
+        border = if (c.isDark) BorderStroke(1.dp, c.line) else null,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.ink)
-            Spacer(Modifier.height(6.dp))
+        Column(Modifier.padding(VSpace.lg)) {
+            Text(title, style = MaterialTheme.typography.titleLarge, color = c.ink)
+            Spacer(Modifier.height(VSpace.sm))
             content()
         }
     }
