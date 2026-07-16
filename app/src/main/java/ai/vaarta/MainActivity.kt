@@ -13,7 +13,13 @@ import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.recording.AudioAnalyzerViewModel
 import ai.vaarta.ui.RiskHero
+import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.VaartaNav
+import ai.vaarta.ui.components.Eyebrow
+import ai.vaarta.ui.components.VaartaBackBar
+import ai.vaarta.ui.components.VaartaButton
+import ai.vaarta.ui.components.VaartaSecondaryButton
+import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import android.Manifest
 import android.app.Activity
@@ -42,7 +48,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -215,17 +223,18 @@ fun VaartaScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "‹ Back",
-                    fontSize = 15.sp,
-                    color = VaartaTheme.colors.indigo,
-                    modifier = Modifier.clickable(onClick = onBack),
+                VaartaIcon(
+                    R.drawable.ic_arrow_left, contentDescription = "Back", tint = VaartaTheme.colors.ink, size = 24.dp,
+                    modifier = Modifier.clickable(onClick = onBack).padding(end = VSpace.md),
                 )
-                Spacer(Modifier.width(12.dp))
-                Text("Live protection", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("Live protection", style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink)
                 Spacer(Modifier.weight(1f))
                 if (liveStatus != null) {
-                    Text("● Live: $liveStatus", color = VaartaTheme.colors.indigo, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(
+                        "● Live: $liveStatus",
+                        color = VaartaTheme.colors.indigo,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
                 }
             }
 
@@ -255,50 +264,65 @@ fun VaartaScreen(
 
             // Live controls.
             if (liveStatus == null) {
-                Button(
+                VaartaButton(
+                    text = "Start live protection",
                     onClick = {
                         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                             PackageManager.PERMISSION_GRANTED
                         if (granted) vm.session.startLiveListening() else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.indigo),
-                ) { Text("🎙  Start live protection", fontSize = 16.sp) }
-                // The real in-call mode: float over the dialer as a bubble (Phase 4C).
-                OutlinedButton(
-                    onClick = { launchFloating() },
+                    leadingIcon = R.drawable.ic_mic,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("🪟  Use as a floating window (during a call)") }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { vm.session.runDemoCall() }) { Text("▶  Try a demo") }
-                    OutlinedButton(onClick = { vm.session.reset() }) { Text("Reset") }
+                )
+                // The real in-call mode: float over the dialer as a bubble (Phase 4C).
+                VaartaSecondaryButton(
+                    text = "Use as a floating window (during a call)",
+                    onClick = { launchFloating() },
+                    leadingIcon = R.drawable.ic_pip,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                    VaartaSecondaryButton(text = "Try a demo", onClick = { vm.session.runDemoCall() })
+                    VaartaSecondaryButton(text = "Reset", onClick = { vm.session.reset() })
                 }
                 // Analyze a recorded call after the fact (Phase 4D) — only when the AI layer is present.
                 if (vm.session.aiConfigured) {
-                    OutlinedButton(
+                    VaartaSecondaryButton(
+                        text = "Analyze a recorded call",
                         onClick = { recordingPicker.launch("audio/*") },
+                        leadingIcon = R.drawable.ic_headphones,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("🎧  Analyze a recorded call") }
+                    )
                 }
                 if (vm.session.aiConfigured) {
                     AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
                 }
             } else {
-                Text("🔊  Put the call on speaker so VAARTA can hear the caller.", fontSize = 13.sp, color = VaartaTheme.colors.muted)
-                OutlinedButton(onClick = { vm.session.stopLiveListening() }, modifier = Modifier.fillMaxWidth()) {
-                    Text("■  Stop protection")
-                }
+                Text(
+                    "Put the call on speaker so VAARTA can hear the caller.",
+                    style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
+                )
+                VaartaSecondaryButton(
+                    text = "Stop protection",
+                    onClick = { vm.session.stopLiveListening() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             if (displayedLevel.ordinal >= RiskLevel.HIGH_RISK.ordinal && !reassure) {
-                Button(
+                VaartaButton(
+                    text = "Alert my family",
                     onClick = {
                         onShare("VAARTA alert: I may be on a scam call right now. Please call me back. (${levelText(displayedLevel)})")
                     },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.scam),
-                ) { Text("🔔  Alert my family", fontSize = 16.sp) }
-                Text("No agency arrests anyone over a phone or video call.", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    leadingIcon = R.drawable.ic_bell,
+                    destructive = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "No agency arrests anyone over a phone or video call.",
+                    style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink,
+                )
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -312,12 +336,12 @@ private fun QuestionCard(text: String, onCycle: () -> Unit) {
         modifier = Modifier.fillMaxWidth().clickable(onClick = onCycle),
         colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint),
     ) {
-        Column(Modifier.padding(14.dp)) {
-            Text("ASK THEM", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VaartaTheme.colors.muted)
-            Spacer(Modifier.height(4.dp))
-            Text("❝ $text ❞", fontSize = 16.sp, color = VaartaTheme.colors.ink)
-            Spacer(Modifier.height(4.dp))
-            Text("⟳ tap for another question", fontSize = 11.sp, color = VaartaTheme.colors.muted)
+        Column(Modifier.padding(VSpace.md)) {
+            Eyebrow("Ask them")
+            Spacer(Modifier.height(VSpace.xs))
+            Text("❝ $text ❞", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+            Spacer(Modifier.height(VSpace.xs))
+            Text("Tap for another question", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
         }
     }
 }
@@ -326,13 +350,16 @@ private fun QuestionCard(text: String, onCycle: () -> Unit) {
 @Composable
 private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth().padding(VSpace.md), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("🤖  AI live coach", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                    VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
+                    Text("AI live coach", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+                }
                 Text(
                     "Opt-in. Sends the caller's words to Google (and searches the web for current scams) " +
                         "to coach your reply. Off = fully on-device. Never replaces the safe question.",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = VaartaTheme.colors.muted,
                 )
             }
@@ -367,23 +394,23 @@ internal fun HistoryScreen(
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("Conversations", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("Conversations", style = MaterialTheme.typography.headlineMedium, color = VaartaTheme.colors.ink)
                 Spacer(Modifier.weight(1f))
-                Button(
-                    onClick = onNewChat,
-                    colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.indigo),
-                ) { Text("＋ New chat") }
+                VaartaButton(text = "New chat", onClick = onNewChat, leadingIcon = R.drawable.ic_plus)
             }
-            Text("Chats, live calls and recordings — stored only on this phone, encrypted.", fontSize = 12.sp, color = VaartaTheme.colors.muted)
+            Text(
+                "Chats, live calls and recordings — stored only on this phone, encrypted.",
+                style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
+            )
 
             RetentionRow(retentionDays = retentionDays, onSet = { historyVm.setRetentionDays(it) })
 
             if (sessions.isEmpty()) {
-                Spacer(Modifier.height(32.dp))
-                Text("No conversations yet.", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = VaartaTheme.colors.ink, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(VSpace.xxxl))
+                Text("No conversations yet.", style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink, modifier = Modifier.fillMaxWidth())
                 Text(
-                    "Tap ＋ New chat to ask VAARTA about a suspicious call or message — or protect a live call from Home.",
-                    fontSize = 13.sp, color = VaartaTheme.colors.muted, modifier = Modifier.fillMaxWidth(),
+                    "Tap New chat to ask VAARTA about a suspicious call or message — or protect a live call from Home.",
+                    style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted, modifier = Modifier.fillMaxWidth(),
                 )
             } else {
                 if (sessions.size > 1) {
@@ -413,23 +440,18 @@ internal fun HistoryScreen(
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(
-        text,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
-        color = VaartaTheme.colors.muted,
-        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-    )
+    Eyebrow(text)
 }
 
-/** One conversation row: type glyph + title + (risk + when). */
+/** One conversation row: type glyph chip + title + (risk + when). */
 @Composable
 private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
+    val c = VaartaTheme.colors
     val level = levelFromName(session.finalLevel)
     val glyph = when (session.source) {
-        SessionSource.CHAT -> "💬"
-        SessionSource.RECORDING -> "🎧"
-        else -> "📞"
+        SessionSource.CHAT -> R.drawable.ic_nav_chat
+        SessionSource.RECORDING -> R.drawable.ic_headphones
+        else -> R.drawable.ic_phone
     }
     val title = session.title
         ?: session.scamType
@@ -438,22 +460,33 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete:
             SessionSource.RECORDING -> "Recording"
             else -> "Live call"
         }
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(glyph, fontSize = 20.sp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = VaartaTheme.colors.ink, maxLines = 2)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (session.source != SessionSource.CHAT && session.finalScore > 0) {
-                        Surface(color = levelColor(level), shape = RoundedCornerShape(50), modifier = Modifier.size(9.dp)) {}
-                        Text(levelText(level), fontSize = 11.sp, color = levelColor(level), fontWeight = FontWeight.SemiBold)
-                        Text("·", fontSize = 11.sp, color = VaartaTheme.colors.muted)
-                    }
-                    Text(historyDateFmt.format(Date(session.startedAtMs)), fontSize = 11.sp, color = VaartaTheme.colors.muted)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = c.panel),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (c.isDark) 0.dp else 1.dp),
+        border = if (c.isDark) androidx.compose.foundation.BorderStroke(1.dp, c.line) else null,
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
+    ) {
+        Row(Modifier.padding(VSpace.md), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.md)) {
+            Surface(color = c.track, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(40.dp)) {
+                Box(contentAlignment = Alignment.Center) {
+                    VaartaIcon(glyph, contentDescription = null, tint = c.muted, size = 20.dp)
                 }
             }
-            Text("✕", fontSize = 16.sp, color = VaartaTheme.colors.muted, modifier = Modifier.clickable(onClick = onDelete).padding(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 2)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
+                    if (session.source != SessionSource.CHAT && session.finalScore > 0) {
+                        Surface(color = levelColor(level), shape = CircleShape, modifier = Modifier.size(9.dp)) {}
+                        Text(levelText(level), style = MaterialTheme.typography.labelMedium, color = levelColor(level))
+                        Text("·", style = MaterialTheme.typography.labelMedium, color = c.muted)
+                    }
+                    Text(historyDateFmt.format(Date(session.startedAtMs)), style = MaterialTheme.typography.labelMedium, color = c.muted)
+                }
+            }
+            VaartaIcon(
+                R.drawable.ic_close, contentDescription = "Delete", tint = c.faint, size = 18.dp,
+                modifier = Modifier.clickable(onClick = onDelete).padding(8.dp),
+            )
         }
     }
 }
@@ -463,7 +496,7 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete:
 private fun RetentionRow(retentionDays: Int, onSet: (Int) -> Unit) {
     val options = listOf(0 to "Keep", 7 to "7 days", 30 to "30 days")
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Auto-delete:", fontSize = 13.sp, color = VaartaTheme.colors.muted)
+        Text("Auto-delete:", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
         for ((days, label) in options) {
             FilterChip(selected = retentionDays == days, onClick = { onSet(days) }, label = { Text(label) })
         }
@@ -495,30 +528,26 @@ internal fun AnalyzeScreen(
             Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = VaartaTheme.colors.indigo, modifier = Modifier.clickable(onClick = onBack))
-                Spacer(Modifier.weight(1f))
-                Text("Analyze a recording", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
+            VaartaBackBar(title = "Analyze a recording", onBack = onBack)
 
             when (val s = state) {
                 AudioAnalyzerViewModel.UiState.Idle ->
-                    Text("Pick a recording from the home screen to analyze.", fontSize = 14.sp, color = VaartaTheme.colors.muted)
+                    Text("Pick a recording from the home screen to analyze.", style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted)
 
                 AudioAnalyzerViewModel.UiState.Running -> {
                     Spacer(Modifier.height(40.dp))
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
                         CircularProgressIndicator(color = VaartaTheme.colors.indigo)
-                        Text("Transcribing and checking the recording…", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text("This can take up to a minute for a longer clip.", fontSize = 12.sp, color = VaartaTheme.colors.muted)
+                        Text("Transcribing and checking the recording…", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+                        Text("This can take up to a minute for a longer clip.", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
                     }
                 }
 
                 is AudioAnalyzerViewModel.UiState.Error -> {
                     Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.scamTint)) {
-                        Text(s.message, modifier = Modifier.padding(16.dp), fontSize = 14.sp, color = VaartaTheme.colors.scam)
+                        Text(s.message, modifier = Modifier.padding(VSpace.lg), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.scam)
                     }
-                    OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("‹ Back") }
+                    VaartaSecondaryButton(text = "Back", onClick = onBack, leadingIcon = R.drawable.ic_arrow_left, modifier = Modifier.fillMaxWidth())
                 }
 
                 is AudioAnalyzerViewModel.UiState.Done -> {
@@ -541,24 +570,24 @@ internal fun AnalyzeScreen(
                     Text(
                         "Analyzed from a recording. The risk score is computed on-device from the transcript; " +
                             "the AI transcribed and helped classify it.",
-                        fontSize = 11.sp, color = VaartaTheme.colors.muted,
+                        style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
                     )
                     if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
 
                     if (r.level.ordinal >= RiskLevel.HIGH_RISK.ordinal && !r.reassure) {
-                        Button(
+                        VaartaButton(
+                            text = "Share this warning",
                             onClick = { onShare("VAARTA: I analyzed a call recording and it looks like a scam (${levelText(r.level)}).") },
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = VaartaTheme.colors.scam),
-                        ) { Text("🔔  Share this warning", fontSize = 16.sp) }
+                            leadingIcon = R.drawable.ic_bell,
+                            destructive = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
 
-                    Text(
-                        "✓  Saved to your conversations",
-                        fontSize = 13.sp,
-                        color = VaartaTheme.colors.muted,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
+                        VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.muted, size = 16.dp)
+                        Text("Saved to your conversations", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))

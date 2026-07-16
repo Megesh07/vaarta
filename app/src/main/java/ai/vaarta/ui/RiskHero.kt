@@ -62,7 +62,10 @@ fun RiskHero(
         )
         if (aiRaised && !reassure) {
             Spacer(Modifier.height(4.dp))
-            Text("⚠  Flagged from live web intelligence", style = MaterialTheme.typography.bodySmall, color = colors.muted)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                VaartaIcon(ai.vaarta.R.drawable.ic_alert_triangle, contentDescription = null, tint = colors.muted, size = 15.dp)
+                Text("Flagged from live web intelligence", style = MaterialTheme.typography.bodySmall, color = colors.muted)
+            }
         }
 
         // Detected-signal tokens: one per distinct stage in play (excluding NONE), newest scam-script
@@ -87,7 +90,7 @@ private fun SignalToken(stage: Stage, content: androidx.compose.ui.graphics.Colo
         ) {
             Icon(painterResource(v.icon), contentDescription = null, tint = content, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
-            Text(v.label, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = content)
+            Text(v.label, style = MaterialTheme.typography.labelLarge, color = content)
         }
     }
 }

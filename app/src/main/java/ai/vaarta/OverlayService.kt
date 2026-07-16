@@ -55,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -464,13 +465,15 @@ private fun PanelContent(
                 ) {
                     Text("⠿", fontSize = 16.sp, color = c.muted)
                     Spacer(Modifier.width(6.dp))
-                    Text("VAARTA", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = c.ink)
+                    ai.vaarta.ui.VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = c.indigo, size = 18.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text("VAARTA", style = MaterialTheme.typography.titleMedium, color = c.ink)
                     if (liveStatus != null) {
                         Spacer(Modifier.width(8.dp))
-                        Text("● $liveStatus", color = c.indigo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("● $liveStatus", color = c.indigo, style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.weight(1f))
-                    TextButton(onClick = onCollapse) { Text("▾ Hide") }
+                    TextButton(onClick = onCollapse) { Text("Hide", style = MaterialTheme.typography.labelLarge, color = c.muted) }
                 }
 
                 StatusBanner(level = displayedLevel, score = state.score, reassure = reassure, aiRaised = aiRaised)
@@ -483,7 +486,7 @@ private fun PanelContent(
                     if (chat.isEmpty()) {
                         Text(
                             "Listening — I'll show what to say.",
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = c.muted,
                             modifier = Modifier.padding(vertical = 12.dp),
                         )
@@ -496,7 +499,7 @@ private fun PanelContent(
                     onClick = onStop,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = c.scam),
-                ) { Text("■  Stop protection") }
+                ) { Text("Stop protection", style = MaterialTheme.typography.titleMedium, color = Color.White) }
             }
 
             // Corner resize handle (bottom-end). Drag to grow/shrink within min/max bounds.
