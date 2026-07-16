@@ -1,6 +1,7 @@
 package ai.vaarta.ui
 
 import ai.vaarta.AnalyzeScreen
+import ai.vaarta.R
 import ai.vaarta.HistoryScreen
 import ai.vaarta.SessionViewModel
 import ai.vaarta.VaartaScreen
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 enum class VaartaTab { HOME, HISTORY, HELP }
 
@@ -93,19 +95,19 @@ fun VaartaNav(
                 NavigationBarItem(
                     selected = tab == VaartaTab.HOME,
                     onClick = { tab = VaartaTab.HOME },
-                    icon = { Text("🛡️") },
+                    icon = { VaartaIcon(R.drawable.ic_nav_shield, contentDescription = null, size = 24.dp) },
                     label = { Text("Home") },
                 )
                 NavigationBarItem(
                     selected = tab == VaartaTab.HISTORY,
                     onClick = { tab = VaartaTab.HISTORY },
-                    icon = { Text("💬") },
+                    icon = { VaartaIcon(R.drawable.ic_nav_chat, contentDescription = null, size = 24.dp) },
                     label = { Text("Conversations") },
                 )
                 NavigationBarItem(
                     selected = tab == VaartaTab.HELP,
                     onClick = { tab = VaartaTab.HELP },
-                    icon = { Text("🆘") },
+                    icon = { VaartaIcon(R.drawable.ic_nav_help, contentDescription = null, size = 24.dp) },
                     label = { Text("Help") },
                 )
             }
