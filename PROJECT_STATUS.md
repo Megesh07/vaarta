@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-15 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-16 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -230,6 +230,19 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   other way around.
 
 ## 8. Change log
+
+- **2026-07-16 — v2 Help deepening (part of spec §10 Phase 7): "If you've already lost money" steps
+  (spec §4.3).** Closes the one remaining emulator-buildable gap in the Help tab — the rest of §4.3/§6.6
+  (1930 one-tap dial, cybercrime.gov.in, complaint draft + share + PDF export, "Warn your family"
+  share) was already built. Added a calm, elder-friendly **7-step "what to do if you were scammed"**
+  section to `HelpScreen.kt` (ordered by urgency: stop paying → call 1930 → tell bank → file on
+  cybercrime.gov.in → rotate OTP/PIN → keep evidence → tell family), with a new `StepRow` composable
+  (primary-tonal circular number badge + instruction), plus a closing "report within the first few
+  hours" note. Procedural safety guidance only — deliberately no financial advice. **Verified on the
+  `vaarta_test` emulator** (screenshots): all 7 numbered badges render, the section sits between "If
+  this is happening now" and "Report online", and flows into the existing complaint/warn cards.
+  `assembleDebug` green. **Only remaining spec work: §10 Phase 7 live-call hardening on hardware +
+  best-effort auto-show — needs the owner's physical phone (real call audio, OEM overlay/FGS variance).**
 
 - **2026-07-15 — v2 Phase 5 (complete): overlay rebuild — corner icon, expand-from-icon, drag/resize
   (spec §6.2).** Built + **verified end-to-end on the `vaarta_test` emulator** (screenshots + window

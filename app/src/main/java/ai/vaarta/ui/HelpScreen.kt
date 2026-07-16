@@ -4,6 +4,7 @@ import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.ui.theme.VaartaTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -25,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +38,23 @@ private const val WARN_FAMILY_MESSAGE =
     "VAARTA: please be careful — scammers posing as police/CBI/courier are calling people, " +
         "threatening arrest, and demanding money or OTPs. No real officer arrests anyone over a " +
         "phone or video call. Never pay or share an OTP. If pressured, hang up and call 1930."
+
+/**
+ * Plain, calm steps for someone who has already been defrauded (spec §4.3). Ordered by urgency —
+ * stop the bleeding, then report fast (1930's money-freeze window), then bank + evidence. Procedural
+ * safety guidance only; deliberately no financial advice.
+ */
+private val SCAMMED_STEPS = listOf(
+    "Stop now — don't send any more money. Scammers often demand \"one last payment\" to reverse " +
+        "it. That is part of the scam.",
+    "Call 1930 right away and report it. The sooner you call, the better the chance of stopping " +
+        "the money.",
+    "Tell your bank immediately. Ask them to freeze the transaction and block any further debits.",
+    "File a complaint on cybercrime.gov.in with the numbers, transaction IDs, and any screenshots.",
+    "If you shared an OTP, PIN, or password, change it and turn on any extra security your bank offers.",
+    "Keep everything — call logs, messages, and payment receipts — as evidence.",
+    "Tell your family so they can help and stay alert too.",
+)
 
 /**
  * The social-good pillar (spec §4.3): how and where to get help and report a scam, always reachable.
@@ -71,6 +92,24 @@ fun HelpScreen(
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = c.scam),
                 ) { Text("📞  Call 1930", fontSize = 16.sp) }
+            }
+
+            HelpSection(title = "If you've already lost money") {
+                Text(
+                    "Stay calm — acting fast can still get your money back. Do these in order:",
+                    fontSize = 14.sp, color = c.muted,
+                )
+                Spacer(Modifier.height(12.dp))
+                SCAMMED_STEPS.forEachIndexed { i, step ->
+                    if (i > 0) Spacer(Modifier.height(12.dp))
+                    StepRow(number = i + 1, text = step)
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Reporting within the first few hours gives the best chance of freezing the " +
+                        "money before it moves.",
+                    fontSize = 13.sp, color = c.muted,
+                )
             }
 
             HelpSection(title = "Report online") {
@@ -125,6 +164,29 @@ fun HelpScreen(
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+/** A single numbered step: a calm circular badge + the instruction, aligned as a row. */
+@Composable
+private fun StepRow(number: Int, text: String) {
+    val c = VaartaTheme.colors
+    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(28.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    "$number",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+        Text(text, fontSize = 14.sp, color = c.ink, modifier = Modifier.padding(top = 3.dp))
     }
 }
 
