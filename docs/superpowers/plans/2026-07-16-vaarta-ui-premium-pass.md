@@ -48,7 +48,7 @@
   ```
 - Consumes: nothing.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```kotlin
 package ai.vaarta.core.reasoning
@@ -120,12 +120,12 @@ class MarkdownTest {
 }
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `./gradlew :core:reasoning:test --tests "ai.vaarta.core.reasoning.MarkdownTest"`
 Expected: FAIL (unresolved reference `parseMarkdown` / `MdBlock`).
 
-- [ ] **Step 3: Implement the parser**
+- [x] **Step 3: Implement the parser**
 
 ```kotlin
 package ai.vaarta.core.reasoning
@@ -220,12 +220,12 @@ private fun parseInline(textIn: String): List<MdSpan> {
 }
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `./gradlew :core:reasoning:test --tests "ai.vaarta.core.reasoning.MarkdownTest"`
 Expected: PASS (8 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add core/reasoning/src/main/kotlin/ai/vaarta/core/reasoning/Markdown.kt core/reasoning/src/test/kotlin/ai/vaarta/core/reasoning/MarkdownTest.kt
@@ -243,7 +243,7 @@ git commit -m "core:reasoning — add dependency-free markdown parser for AI pro
 - Consumes: `parseMarkdown`, `MdBlock`, `MdSpan` (Task 1); `VaartaTheme`, `MaterialTheme.typography`.
 - Produces: `@Composable fun MarkdownText(text: String, modifier: Modifier = Modifier, color: Color = VaartaTheme.colors.ink)`.
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 ```kotlin
 package ai.vaarta.ui
@@ -305,8 +305,8 @@ fun MarkdownText(text: String, modifier: Modifier = Modifier, color: Color = Vaa
 }
 ```
 
-- [ ] **Step 2: Build** — `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL.
-- [ ] **Step 3: Commit** — `git add app/src/main/java/ai/vaarta/ui/MarkdownText.kt && git commit -m "app — MarkdownText composable renders AI prose via the type scale"`
+- [x] **Step 2: Build** — `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL.
+- [x] **Step 3: Commit** — `git add app/src/main/java/ai/vaarta/ui/MarkdownText.kt && git commit -m "app — MarkdownText composable renders AI prose via the type scale"`
 
 ---
 
@@ -320,7 +320,7 @@ fun MarkdownText(text: String, modifier: Modifier = Modifier, color: Color = Vaa
 - Produces: `object VSpace { val xs=4.dp; val sm=8.dp; val md=12.dp; val lg=16.dp; val xl=20.dp; val xxl=24.dp; val xxxl=32.dp }`
 - Produces: `@Composable fun VaartaIcon(@DrawableRes res: Int, contentDescription: String?, modifier: Modifier = Modifier, tint: Color = VaartaTheme.colors.ink, size: Dp = 24.dp)`
 
-- [ ] **Step 1: Write `Spacing.kt`**
+- [x] **Step 1: Write `Spacing.kt`**
 
 ```kotlin
 package ai.vaarta.ui.theme
@@ -339,7 +339,7 @@ object VSpace {
 }
 ```
 
-- [ ] **Step 2: Write `VaartaIcon.kt`**
+- [x] **Step 2: Write `VaartaIcon.kt`**
 
 ```kotlin
 package ai.vaarta.ui
@@ -368,8 +368,8 @@ fun VaartaIcon(
 ```
 (Add `import androidx.compose.foundation.layout.size`.)
 
-- [ ] **Step 3: Build** — `./gradlew :app:assembleDebug` → SUCCESS.
-- [ ] **Step 4: Commit** — `git commit -am "app — spacing scale + VaartaIcon token-tinted icon helper"`
+- [x] **Step 3: Build** — `./gradlew :app:assembleDebug` → SUCCESS.
+- [x] **Step 4: Commit** — `git commit -am "app — spacing scale + VaartaIcon token-tinted icon helper"`
 
 ---
 
@@ -377,7 +377,7 @@ fun VaartaIcon(
 
 **Files (Create, all in `app/src/main/res/drawable/`):** `ic_nav_shield.xml`, `ic_nav_chat.xml`, `ic_nav_help.xml`, `ic_phone.xml`, `ic_globe.xml`, `ic_file_text.xml`, `ic_bell.xml`, `ic_headphones.xml`, `ic_image.xml`, `ic_download.xml`, `ic_alert_triangle.xml`, `ic_sparkle.xml`, `ic_check.xml`, `ic_chevron_right.xml`, `ic_arrow_left.xml`, `ic_close.xml`, `ic_link_external.xml`, `ic_siren.xml`.
 
-- [ ] **Step 1:** Author each in the house style (Global Constraints). Template (this is `ic_arrow_left.xml`):
+- [x] **Step 1:** Author each in the house style (Global Constraints). Template (this is `ic_arrow_left.xml`):
 
 ```xml
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
@@ -386,9 +386,9 @@ fun VaartaIcon(
 ```
 Draw the remaining glyphs as clean Lucide-equivalents on the 24-grid (chevron-right = `M9,5 L16,12 L9,19`; check = `M5,13 l4,4 l10,-11`; close = `M6,6 L18,18 M18,6 L6,18`; phone/globe/etc. modeled on Lucide paths). Keep each to 1–3 paths. `strokeColor` value is irrelevant (overridden by tint) but keep `#1B1826` for editor legibility.
 
-- [ ] **Step 2: Verify they render** — build, then in a scratch preview or the running app confirm each glyph is centered and legible at 24dp. (During screen tasks each is seen in context.)
-- [ ] **Step 3: Build** — `./gradlew :app:assembleDebug` → SUCCESS (vector XML compiles).
-- [ ] **Step 4: Commit** — `git add app/src/main/res/drawable/ic_*.xml && git commit -m "app — author line-icon glyphs (nav/actions) in the house style"`
+- [x] **Step 2: Verify they render** — build, then in a scratch preview or the running app confirm each glyph is centered and legible at 24dp. (During screen tasks each is seen in context.)
+- [x] **Step 3: Build** — `./gradlew :app:assembleDebug` → SUCCESS (vector XML compiles).
+- [x] **Step 4: Commit** — `git add app/src/main/res/drawable/ic_*.xml && git commit -m "app — author line-icon glyphs (nav/actions) in the house style"`
 
 ---
 
@@ -409,9 +409,9 @@ enum class ChipTone { BRAND, NEUTRAL }
 @Composable fun EmptyState(@DrawableRes icon: Int, text: String)
 ```
 
-- [ ] **Step 1: Implement** all of the above. Key rules: buttons `heightIn(min = 52.dp)`, filled uses `c.indigo` (or `c.scam` when `destructive`), leading icon via `VaartaIcon(tint = onColor)`; `IconChipCard` chip is a 40dp `Surface(shape = RoundedCornerShape(12.dp))` with bg `c.indigoTint` (BRAND) or `c.line`/neutral (NEUTRAL) holding `VaartaIcon(tint = indigo/muted)`, trailing `ic_chevron_right` tinted `muted`; `SourceLink` = Row(`ic_link_external` 16dp tint `verify` + Text title `bodySmall` color `verify`) clickable; `VaartaBackBar` = Row(`ic_arrow_left` + optional title `titleLarge`) height 56dp; `Eyebrow` = Text `labelSmall` uppercase; `EmptyState` = centered Column(icon 32dp tint `faint` + Text `bodyMedium` `muted`). All text uses `MaterialTheme.typography.*`.
-- [ ] **Step 2: Build** — `./gradlew :app:assembleDebug` → SUCCESS.
-- [ ] **Step 3: Commit** — `git add app/src/main/java/ai/vaarta/ui/components/VaartaComponents.kt && git commit -m "app — shared Calm Guardian components (button, icon-chip card, source link, back bar, eyebrow, empty state)"`
+- [x] **Step 1: Implement** all of the above. Key rules: buttons `heightIn(min = 52.dp)`, filled uses `c.indigo` (or `c.scam` when `destructive`), leading icon via `VaartaIcon(tint = onColor)`; `IconChipCard` chip is a 40dp `Surface(shape = RoundedCornerShape(12.dp))` with bg `c.indigoTint` (BRAND) or `c.line`/neutral (NEUTRAL) holding `VaartaIcon(tint = indigo/muted)`, trailing `ic_chevron_right` tinted `muted`; `SourceLink` = Row(`ic_link_external` 16dp tint `verify` + Text title `bodySmall` color `verify`) clickable; `VaartaBackBar` = Row(`ic_arrow_left` + optional title `titleLarge`) height 56dp; `Eyebrow` = Text `labelSmall` uppercase; `EmptyState` = centered Column(icon 32dp tint `faint` + Text `bodyMedium` `muted`). All text uses `MaterialTheme.typography.*`.
+- [x] **Step 2: Build** — `./gradlew :app:assembleDebug` → SUCCESS.
+- [x] **Step 3: Commit** — `git add app/src/main/java/ai/vaarta/ui/components/VaartaComponents.kt && git commit -m "app — shared Calm Guardian components (button, icon-chip card, source link, back bar, eyebrow, empty state)"`
 
 ---
 
@@ -420,63 +420,63 @@ enum class ChipTone { BRAND, NEUTRAL }
 > For every screen task: swap emoji → `VaartaIcon`/component; replace inline `fontSize`/`fontWeight` with `MaterialTheme.typography.*`; replace ad-hoc `Spacer(n.dp)` with `VSpace.*`; use shared components. Each task ends with: build green, then install + screenshot the screen in **light and dark** on the `vaarta_test` emulator, then commit.
 
 ### Task 6: Bottom nav (`VaartaNav.kt`)
-- [ ] Replace the three `icon = { Text("🛡️") }` etc. with `VaartaIcon(R.drawable.ic_nav_shield, "Home", size = 24.dp)` (and `ic_nav_chat`, `ic_nav_help`). Let Material3 handle the selected pill/tint. Build → screenshot (light+dark) → commit.
+- [x] Replace the three `icon = { Text("🛡️") }` etc. with `VaartaIcon(R.drawable.ic_nav_shield, "Home", size = 24.dp)` (and `ic_nav_chat`, `ic_nav_help`). Let Material3 handle the selected pill/tint. Build → screenshot (light+dark) → commit.
 
 ### Task 7: Home (`HomeScreen.kt`)
-- [ ] Header title → `headlineMedium`, subtitle → `bodyMedium`.
-- [ ] Panic card: `🚨` → `VaartaIcon(R.drawable.ic_siren, tint = Color.White, size = 34.dp)`; titles → typography; keep `c.scam`.
-- [ ] `ActionCard(emoji=…)` → `IconChipCard(icon = R.drawable.ic_mic/ic_nav_chat/ic_headphones, tone = BRAND)`; drop the `›` Text (chip card provides chevron).
-- [ ] `AwarenessCardRow` → neutral-tone card row: eyebrow via `Eyebrow`, chevron icon; scam-type uses `Eyebrow`.
-- [ ] Feed section title → `titleLarge`; helper → `bodySmall`; empty card → `EmptyState(R.drawable.ic_globe, …)`.
-- [ ] Panic sheet buttons → `VaartaButton`/`VaartaSecondaryButton` with icons; step badges kept.
-- [ ] Spacing → `VSpace`. Build → screenshot (light+dark) → commit.
+- [x] Header title → `headlineMedium`, subtitle → `bodyMedium`.
+- [x] Panic card: `🚨` → `VaartaIcon(R.drawable.ic_siren, tint = Color.White, size = 34.dp)`; titles → typography; keep `c.scam`.
+- [x] `ActionCard(emoji=…)` → `IconChipCard(icon = R.drawable.ic_mic/ic_nav_chat/ic_headphones, tone = BRAND)`; drop the `›` Text (chip card provides chevron).
+- [x] `AwarenessCardRow` → neutral-tone card row: eyebrow via `Eyebrow`, chevron icon; scam-type uses `Eyebrow`.
+- [x] Feed section title → `titleLarge`; helper → `bodySmall`; empty card → `EmptyState(R.drawable.ic_globe, …)`.
+- [x] Panic sheet buttons → `VaartaButton`/`VaartaSecondaryButton` with icons; step badges kept.
+- [x] Spacing → `VSpace`. Build → screenshot (light+dark) → commit.
 
 ### Task 8: Help (`HelpScreen.kt`)
-- [ ] All four buttons → `VaartaButton`(Call 1930 `destructive=true`, icon `ic_phone`) / `VaartaSecondaryButton`(`ic_globe`, `ic_file_text`, `ic_bell`).
-- [ ] `HelpSection` title → `titleLarge`; body copy → `bodyMedium`; `StepRow` keeps badge but text → `bodyLarge`.
-- [ ] Complaint card share/export → `VaartaButton`/secondary. Spacing → `VSpace`. Build → screenshot (light+dark) → commit.
+- [x] All four buttons → `VaartaButton`(Call 1930 `destructive=true`, icon `ic_phone`) / `VaartaSecondaryButton`(`ic_globe`, `ic_file_text`, `ic_bell`).
+- [x] `HelpSection` title → `titleLarge`; body copy → `bodyMedium`; `StepRow` keeps badge but text → `bodyLarge`.
+- [x] Complaint card share/export → `VaartaButton`/secondary. Spacing → `VSpace`. Build → screenshot (light+dark) → commit.
 
 ### Task 9: Article (`ArticleScreen.kt`) + markdown
-- [ ] `"‹ Back"` → `VaartaBackBar(title = null, onBack)`.
-- [ ] Summary body `Text(summary?.text…)` → `MarkdownText(summary?.text.orEmpty())` (fixes markdown bug on this screen).
-- [ ] Source rows → `SourceLink`; "Sources" label → `Eyebrow`.
-- [ ] Buttons → `VaartaButton`("Ask VAARTA about this", `ic_sparkle`) / `VaartaSecondaryButton`("Warn my family", `ic_bell`). Emoji stays only inside `warnFamilyText()`.
-- [ ] Titles/eyebrows → typography; spacing → `VSpace`. Build → screenshot (light+dark) → commit.
+- [x] `"‹ Back"` → `VaartaBackBar(title = null, onBack)`.
+- [x] Summary body `Text(summary?.text…)` → `MarkdownText(summary?.text.orEmpty())` (fixes markdown bug on this screen).
+- [x] Source rows → `SourceLink`; "Sources" label → `Eyebrow`.
+- [x] Buttons → `VaartaButton`("Ask VAARTA about this", `ic_sparkle`) / `VaartaSecondaryButton`("Warn my family", `ic_bell`). Emoji stays only inside `warnFamilyText()`.
+- [x] Titles/eyebrows → typography; spacing → `VSpace`. Build → screenshot (light+dark) → commit.
 
 ### Task 10: Chat (`ConversationScreen.kt` + `ChatView.kt`) + markdown
-- [ ] `ChatView.AssistantBubble`: `Text(item.text…)` → `MarkdownText(item.text)` (fixes markdown bug in chat). Label `🛡️ VAARTA` → `VaartaIcon(ic_sparkle,16dp,indigo)` + Text.
-- [ ] `CoachBubble`: `🌐`/`⚠️` markers → `VaartaIcon(ic_globe/ic_alert_triangle)`; warning text via `MarkdownText`; source rows → `SourceLink`; "SAY THIS" → `Eyebrow`.
-- [ ] `ScamIdCard` + `AssistantBubble`/`CoachBubble` source rows all use `SourceLink` (removes the 4× duplication). `ReplyLine` `❝ ❞` kept (typographic, not emoji).
-- [ ] `ConversationScreen` composer: `🎤 🖼️ 🎧` → `VaartaIcon(ic_mic/ic_image/ic_headphones, tint=muted, 22dp)`; context header `🌐`/`⬇` → `VaartaIcon(ic_globe/ic_download)`; empty-state `🛡️` → `EmptyState(ic_nav_shield, …)`. Attachment chip `✕` → `ic_close`. Attachment *content* labels ("📷 Photo") stay (shared text).
-- [ ] All text → typography; spacing → `VSpace`. Build → screenshot (light+dark) → commit.
+- [x] `ChatView.AssistantBubble`: `Text(item.text…)` → `MarkdownText(item.text)` (fixes markdown bug in chat). Label `🛡️ VAARTA` → `VaartaIcon(ic_sparkle,16dp,indigo)` + Text.
+- [x] `CoachBubble`: `🌐`/`⚠️` markers → `VaartaIcon(ic_globe/ic_alert_triangle)`; warning text via `MarkdownText`; source rows → `SourceLink`; "SAY THIS" → `Eyebrow`.
+- [x] `ScamIdCard` + `AssistantBubble`/`CoachBubble` source rows all use `SourceLink` (removes the 4× duplication). `ReplyLine` `❝ ❞` kept (typographic, not emoji).
+- [x] `ConversationScreen` composer: `🎤 🖼️ 🎧` → `VaartaIcon(ic_mic/ic_image/ic_headphones, tint=muted, 22dp)`; context header `🌐`/`⬇` → `VaartaIcon(ic_globe/ic_download)`; empty-state `🛡️` → `EmptyState(ic_nav_shield, …)`. Attachment chip `✕` → `ic_close`. Attachment *content* labels ("📷 Photo") stay (shared text).
+- [x] All text → typography; spacing → `VSpace`. Build → screenshot (light+dark) → commit.
 
 ### Task 11: Live + Analyze + Panic + permission screen + ChatView banner
-- [ ] `RiskHero.kt`: `⚠ Flagged…` → `VaartaIcon(ic_alert_triangle,16dp,muted)` + Text `bodySmall`.
-- [ ] `ChatView.StatusBanner`: `⚠` → `ic_alert_triangle` (white tint).
-- [ ] `MainActivity.kt` live controls + permission screen: `🎙 🪟 🎧 🔊 🔔 🤖 ✕ ❝❞ ✓` → icons (`ic_mic`, `ic_history`/window, `ic_headphones`, speaker→`ic_alert_triangle` or drop, `ic_bell`, `ic_sparkle`, `ic_close`, `ic_check`); source-type glyphs (`💬 🎧 📞`) → `ic_nav_chat`/`ic_headphones`/`ic_phone`. Buttons → `VaartaButton`. Text → typography.
-- [ ] `AnalyzeScreen`: icon/button/spacing pass.
-- [ ] **§9 consolidation:** extract the "right-now emergency steps" used by Home's panic sheet and Help's "If this is happening now" into ONE composable in `components/` and call it from both. Extract the web-grounded scam-ID into ONE presentation (prefer `ScamIdCard`; `CoachBubble` reuses it). Build → screenshot (light+dark) → commit.
+- [x] `RiskHero.kt`: `⚠ Flagged…` → `VaartaIcon(ic_alert_triangle,16dp,muted)` + Text `bodySmall`.
+- [x] `ChatView.StatusBanner`: `⚠` → `ic_alert_triangle` (white tint).
+- [x] `MainActivity.kt` live controls + permission screen: `🎙 🪟 🎧 🔊 🔔 🤖 ✕ ❝❞ ✓` → icons (`ic_mic`, `ic_history`/window, `ic_headphones`, speaker→`ic_alert_triangle` or drop, `ic_bell`, `ic_sparkle`, `ic_close`, `ic_check`); source-type glyphs (`💬 🎧 📞`) → `ic_nav_chat`/`ic_headphones`/`ic_phone`. Buttons → `VaartaButton`. Text → typography.
+- [x] `AnalyzeScreen`: icon/button/spacing pass.
+- [x] **§9 consolidation:** extract the "right-now emergency steps" used by Home's panic sheet and Help's "If this is happening now" into ONE composable in `components/` and call it from both. Extract the web-grounded scam-ID into ONE presentation (prefer `ScamIdCard`; `CoachBubble` reuses it). Build → screenshot (light+dark) → commit.
 
 ### Task 12: Overlay (`OverlayService.kt`)
-- [ ] Any emoji in the floating panel → icons; buttons → `VaartaButton`; text → typography; spacing → `VSpace`. Keep the Phase-5 drag/resize/edge-snap behavior untouched. Build → install → screenshot the expanded overlay (light+dark) → commit.
+- [x] Any emoji in the floating panel → icons; buttons → `VaartaButton`; text → typography; spacing → `VSpace`. Keep the Phase-5 drag/resize/edge-snap behavior untouched. Build → install → screenshot the expanded overlay (light+dark) → commit.
 
 ---
 
 ## Phase 3 — Sweep & verify
 
 ### Task 13: Type-scale + emoji + markdown sweep
-- [ ] **Emoji grep:** `grep -rEn "[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}]" app/src/main/java` → only the §4.3 whitelist (`ChatAttachment`, `ArticleScreen.warnFamilyText`, `HelpScreen.WARN_FAMILY_MESSAGE`, `ConversationScreen` attach labels) remains.
-- [ ] **Hardcoded-size grep:** `grep -rn "fontSize =" app/src/main/java/ai/vaarta/ui app/src/main/java/ai/vaarta/*.kt` → none outside `theme/`. Fix stragglers.
-- [ ] **Markdown on device:** open a chat, ask a question that yields a bold/bulleted answer; confirm no `**`/`#`/`-` characters appear. Screenshot.
-- [ ] Fix anything found; commit.
+- [x] **Emoji grep:** `grep -rEn "[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}]" app/src/main/java` → only the §4.3 whitelist (`ChatAttachment`, `ArticleScreen.warnFamilyText`, `HelpScreen.WARN_FAMILY_MESSAGE`, `ConversationScreen` attach labels) remains.
+- [x] **Hardcoded-size grep:** `grep -rn "fontSize =" app/src/main/java/ai/vaarta/ui app/src/main/java/ai/vaarta/*.kt` → none outside `theme/`. Fix stragglers.
+- [x] **Markdown on device:** open a chat, ask a question that yields a bold/bulleted answer; confirm no `**`/`#`/`-` characters appear. Screenshot.
+- [x] Fix anything found; commit.
 
 ### Task 14: Full verification + status + commit
-- [ ] `./gradlew :core:reasoning:test` → all green (incl. `MarkdownTest`).
-- [ ] `./gradlew :app:assembleDebug` → SUCCESS.
-- [ ] Install; walk every screen in light AND dark; capture the before/after screenshot set as evidence.
-- [ ] TalkBack spot-check: icon-only controls announce; decorative icons are `contentDescription = null`.
-- [ ] Update `PROJECT_STATUS.md` (status matrix + change log, dated 2026-07-16) and `docs/superpowers/plans/2026-07-16-vaarta-ui-premium-pass.md` checkboxes.
-- [ ] Commit (no Claude co-author).
+- [x] `./gradlew :core:reasoning:test` → all green (incl. `MarkdownTest`).
+- [x] `./gradlew :app:assembleDebug` → SUCCESS.
+- [x] Install; walk every screen in light AND dark; capture the before/after screenshot set as evidence.
+- [x] TalkBack spot-check: icon-only controls announce; decorative icons are `contentDescription = null`.
+- [x] Update `PROJECT_STATUS.md` (status matrix + change log, dated 2026-07-16) and `docs/superpowers/plans/2026-07-16-vaarta-ui-premium-pass.md` checkboxes.
+- [x] Commit (no Claude co-author).
 
 ---
 

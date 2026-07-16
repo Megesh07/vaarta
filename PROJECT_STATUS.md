@@ -51,8 +51,8 @@ and verified working as of this writing — don't rediscover them:
 
 | Tool | Path |
 |---|---|
-| JDK 17 | `C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot` (set as `JAVA_HOME`) |
-| Gradle 8.11.1 | `C:\Users\Meges\tools\gradle-8.11.1\bin\gradle.bat` (standalone, not on PATH) |
+| JDK 17 | `C:\Users\Meges\AppData\Local\Programs\jdk17\jdk-17.0.19+10` (portable Temurin; set as `JAVA_HOME` — the older `C:\Program Files\Microsoft\...` path from earlier sessions is gone, see the 2026-07-15 environment incident) |
+| Gradle | Use the project wrapper: `./gradlew :app:assembleDebug` / `./gradlew :core:reasoning:test` (Git Bash, with `JAVA_HOME` exported to the JDK 17 above) |
 | Android SDK | `C:\Users\Meges\AppData\Local\Android\Sdk` |
 | SDK packages installed | `platform-tools`, `platforms;android-35`, `build-tools;35.0.0`/`34.0.0`, `emulator`, `system-images;android-35;google_apis;x86_64` |
 | Emulator AVD | `vaarta_test` (Pixel 6 profile, x86_64, google_apis, API 35) |
@@ -230,6 +230,41 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   other way around.
 
 ## 8. Change log
+
+- **2026-07-16 — "Calm Guardian" premium UI + consistency pass (spec
+  `docs/superpowers/specs/2026-07-16-vaarta-ui-premium-pass-design.md`, plan
+  `docs/superpowers/plans/2026-07-16-vaarta-ui-premium-pass.md`).** A presentation-layer refit — no IA,
+  feature, engine, or copy changes. Owner feedback: the UI felt un-premium (emoji used as icons) and
+  AI answers showed raw markdown. Delivered:
+  - **Icons:** hand-authored **20 line-icon vector glyphs** in the existing house style
+    (24dp, stroke 1.75, round, fill-none, tinted at call site) — no dependency, $0, offline. **Zero
+    emoji remain in the interface** (verified by grep); emoji kept only in user-authored *shared*
+    strings (`WARN_FAMILY_MESSAGE`, `warnFamilyText`, attachment content labels) and typographic
+    quote marks (`❝ ❞`).
+  - **Markdown bug fixed:** new dependency-free `parseMarkdown` in `core:reasoning` (**8 TDD tests**,
+    all green) + `MarkdownText` composable; wired into every AI free-text surface (`AssistantBubble`,
+    coach warning, `ArticleScreen` summary) so no raw `**`/`#`/`- ` ever shows.
+  - **Consistency backbone:** all screens now route text through the `Type.kt` scale (no hardcoded
+    `fontSize`/`fontWeight` left outside `theme/` except two intentional exceptions — the ring's
+    size-proportional score, and the overlay drag/resize affordance glyphs); new `VSpace` spacing
+    scale replaces ad-hoc `Spacer`s; new shared components (`VaartaButton`/`VaartaSecondaryButton`,
+    `IconChipCard`, `SourceLink`, `VaartaBackBar`, `Eyebrow`, `EmptyState`, `VaartaIcon`) build the
+    look once so it can't drift. Cards gained a soft elevation (light) / hairline border (dark) and a
+    leading tinted icon chip (indigo for brand/action, neutral for content rows — risk-red never used
+    as decoration).
+  - **Applied across:** bottom nav, Home, Help, Article, Chat (`ConversationScreen`+`ChatView`), Live
+    (`RiskHero`+`MainActivity`), Conversations list, Analyze, Overlay panel.
+  - **Verified on the `vaarta_test` emulator** (screenshots): Home, bottom nav, Help, Chat empty
+    state + composer, Live, Conversations list — all in **light**, plus Home + Help + Conversations
+    view in **dark**. `:app:assembleDebug` green; `:core:reasoning:test` green (incl. `MarkdownTest`).
+  - **Not fully exercised on device:** the markdown render on a *live* AI answer (Article summary /
+    chat reply) needs a configured Gemini key + network; the parser is unit-tested and the render path
+    is trivial, so this is low-risk. **§9 simplification candidates:** unified back-bar done; the
+    "duplicate scam-ID" and "shared emergency-steps" consolidations were deferred to an owner-driven
+    polish pass (they read better judged on a live screen; doing them blind risked removing context
+    from the overlay/recording surfaces). Emoji-as-icon references remain in a few code *comments*
+    only. Separately flagged (out of scope): a saved-conversation title showed `%3F` instead of `?`
+    (percent-encoding leak in title generation).
 
 - **2026-07-16 — v2 Help deepening (part of spec §10 Phase 7): "If you've already lost money" steps
   (spec §4.3).** Closes the one remaining emulator-buildable gap in the Help tab — the rest of §4.3/§6.6
