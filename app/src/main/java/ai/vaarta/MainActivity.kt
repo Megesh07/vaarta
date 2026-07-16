@@ -149,6 +149,7 @@ fun VaartaScreen(
     val question by vm.session.currentQuestion.collectAsState()
     val aiEnabled by vm.session.aiEnabled.collectAsState()
     val aiSuggestion by vm.session.aiSuggestion.collectAsState()
+    val aiLoading by vm.session.aiLoading.collectAsState()
     val liveStatus by vm.session.liveStatus.collectAsState()
     val chat by vm.session.chat.collectAsState()
     val scroll = rememberScrollState()
@@ -256,6 +257,21 @@ fun VaartaScreen(
             // been coached yet, fall back to the single deterministic verification question.
             if (chat.isNotEmpty()) {
                 ChatThread(chat)
+                // Demo/text-mode only: the single-shot AI suggestion arrives after the deterministic
+                // thread is built, so it renders as a trailing coach bubble. Never during a live call —
+                // there the copilot streams its coaching into [chat] itself and this would duplicate.
+                if (liveStatus == null && aiEnabled) {
+                    if (aiLoading) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+                            Text("AI coach is thinking…", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                        }
+                    } else {
+                        aiSuggestion?.let { s ->
+                            CoachBubble(ChatItem.Coach(warning = "", replies = listOf(Reply(s, ReplyKind.VERIFY))), onOpenUrl)
+                        }
+                    }
+                }
             } else if (question != null) {
                 QuestionCard(text = question!!, onCycle = { vm.session.cycleQuestion() })
             } else if (aiEnabled && aiSuggestion != null) {
@@ -522,6 +538,11 @@ internal fun AnalyzeScreen(
     val state by analyzerVm.state.collectAsState()
     val scroll = rememberScrollState()
     val context = LocalContext.current
+    // The screen owns its own picker, so every entry point (Home card, Live button, reopening after
+    // an analysis) can start a new analysis right here — no dead-end Idle state.
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) analyzerVm.analyze(uri)
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -531,8 +552,19 @@ internal fun AnalyzeScreen(
             VaartaBackBar(title = "Analyze a recording", onBack = onBack)
 
             when (val s = state) {
-                AudioAnalyzerViewModel.UiState.Idle ->
-                    Text("Pick a recording from the home screen to analyze.", style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted)
+                AudioAnalyzerViewModel.UiState.Idle -> {
+                    Text(
+                        "Pick a recorded call — VAARTA will transcribe it, check it against known scam " +
+                            "patterns, and give you a verdict.",
+                        style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
+                    )
+                    VaartaSecondaryButton(
+                        text = "Pick a recording",
+                        onClick = { picker.launch("audio/*") },
+                        leadingIcon = R.drawable.ic_headphones,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 AudioAnalyzerViewModel.UiState.Running -> {
                     Spacer(Modifier.height(40.dp))
