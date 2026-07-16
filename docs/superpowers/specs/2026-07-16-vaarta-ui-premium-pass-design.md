@@ -1,10 +1,11 @@
-# VAARTA — "Calm Guardian" Premium UI Pass
+# VAARTA — "Calm Guardian" Premium UI + Consistency Pass
 
 **Date:** 2026-07-16
 **Status:** Design — awaiting owner review before planning
 **Relationship to prior specs:** refines the *presentation layer* of the v2 shell
-(`2026-07-14-vaarta-v2-intelligence-ux-design.md`). It does **not** change information
-architecture, navigation, copy, or any logic — purely visual/UX polish.
+(`2026-07-14-vaarta-v2-intelligence-ux-design.md`). It does **not** change the product's
+information architecture, features, or engine — it makes the existing surface clean, consistent,
+sleek, and genuinely premium, and fixes presentation bugs.
 **Scope-lock (ADR-0001):** unchanged — strict $0, no new paid deps, offline, sideload,
 hackathon/portfolio MVP.
 
@@ -12,143 +13,159 @@ hackathon/portfolio MVP.
 
 ## 1. Why this exists (the problem)
 
-The design *foundation* is strong — the semantic color tokens (`Color.kt`), the WCAG-AA risk
-ramp, the restrained Apple-style type scale (`Type.kt`), and the "color is reserved for risk"
-rule are all done right. But a thin, pervasive layer on top reads as unpolished / "hackathon":
+The design *foundation* is strong — semantic color tokens (`Color.kt`), a WCAG-AA risk ramp, a
+restrained Apple-style type scale (`Type.kt`), and the "color is reserved for risk" rule. But the
+layer on top drifted, and it reads as unpolished / "hackathon". Five concrete defects:
 
-1. **Emojis are used as UI icons throughout** — bottom nav (🛡️ 💬 🆘), every primary button
-   (📞 🌐 📝 🔔 🎙️ 🎧), the chat composer (🎤 🖼️ 🎧), Home cards, source links (🔗). Emojis
-   render differently per OEM, sit at inconsistent baselines, and carry cartoonish color that
-   fights the "color = risk only" discipline. This is ~80% of the cheap feeling.
-2. **No finished icon system** — the project already ships 17 hand-drawn line glyphs
-   (`res/drawable/ic_*`), but the emoji spots never got real glyphs, so the system is half-built.
-3. **Ad-hoc spacing** — arbitrary `Spacer(8/10/12.dp)` instead of a scale; buttons and cards lean
-   on stock Material with no press feedback or depth story.
+1. **Emojis used as UI icons** — bottom nav (🛡️ 💬 🆘), every primary button (📞 🌐 📝 🔔 🎙️ 🎧),
+   the chat composer (🎤 🖼️ 🎧), Home cards, source links (🔗). They render differently per OEM,
+   sit at inconsistent baselines, and carry cartoonish color that fights the "color = risk only"
+   rule. ~80% of the cheap feeling.
+2. **The type scale is defined but ignored.** `Type.kt` ships a full scale
+   (`displayLarge`…`labelSmall`), yet nearly every screen hardcodes `fontSize = 15.sp` /
+   `fontWeight = …` inline. Sizes, weights, and line-heights are re-invented per screen — the root
+   cause of the inconsistent, un-sleek feel.
+3. **Raw markdown leaks into the UI (bug).** AI free-text (`AssistantBubble` `ChatView.kt`, the
+   article summary `ArticleScreen.kt`, coach warnings) is rendered in a plain `Text()`. Gemini
+   emits markdown, so users see literal `**bold**`, `#`, `- `, `1.` characters.
+4. **Duplicated, inconsistent micro-components.** The source-link row is copy-pasted 4× (three in
+   `ChatView`, one in `ArticleScreen`) at different sizes with different emoji; back affordances
+   differ per screen ("‹ Back" text vs others); section eyebrows vary (10 vs 11sp, uppercase or
+   not).
+5. **Ad-hoc spacing & flat components** — arbitrary `Spacer(8/10/12.dp)`, no press feedback, no
+   depth story, empty states rendered as "text in a box".
 
 ## 2. Goals / Non-goals
 
 **Goals**
-- Zero emoji in the *interface*. Every UI glyph is a real vector icon in one coherent style.
-- One named aesthetic — **Calm Guardian** — executed on every screen.
-- A premium, trustworthy, elder-legible feel: quiet monochrome chrome, color only for risk,
-  generous space, soft depth, gentle motion.
-- No regressions: build + existing 70 unit tests stay green; both light and dark verified.
+- Zero emoji in the *interface*; one coherent vector icon system.
+- Every piece of text flows through the `Type.kt` scale — no hardcoded `fontSize`/`fontWeight` in
+  screens.
+- AI output renders cleanly (formatted, no stray markdown characters) — bug fixed at the render
+  layer, not just prompted away.
+- One set of shared micro-components (source link, back bar, eyebrow, icon-chip card, buttons) so
+  the look cannot drift.
+- One named aesthetic — **Calm Guardian** — executed on every screen: quiet monochrome chrome,
+  color only for risk, generous space, soft depth, gentle motion, elder-legible.
+- Keep **only what the user actually needs** — simplify/consolidate overlapping surfaces (§9).
+- No regressions: build + existing ~70 unit tests green; both light and dark verified on device.
 
 **Non-goals**
-- No change to information architecture (3 tabs: Home / Conversations / Help), navigation flow,
-  or sub-screen structure.
-- No copy rewrites, no behavior/logic changes.
-- No new color *ramp* (tokens are good; may add 1–2 neutral elevation/shadow tokens only).
-- Not touching the deterministic engine, AI, or data layers.
+- No change to information architecture (3 tabs), navigation, or which features exist (subject to
+  the small, owner-confirmed consolidations in §9).
+- No copy rewrites (beyond removing markdown), no engine/AI/data-layer changes.
+- No new color *ramp* (may add 1–2 neutral elevation/shadow tokens only).
 
 ## 3. The aesthetic — "Calm Guardian"
 
-Chrome is near-monochrome and quiet; **color appears only for risk**; content outranks chrome
-(deference). Apple-style restraint, but with elder-first overrides layered on top: ≥48dp tap
-targets, ≥15–17sp body text, contrast above iOS defaults, no thin low-contrast text. Motion is
-subtle and never flashes (respects the existing safety rule).
+Chrome is near-monochrome and quiet; **color appears only for risk**; content outranks chrome.
+Apple-style restraint with elder-first overrides: ≥48dp tap targets, ≥15–17sp body, contrast above
+iOS defaults, no thin low-contrast text. Motion is subtle and never flashes (existing safety rule).
 
-## 4. Iconography (the core change)
+## 4. Iconography
 
 ### 4.1 Decision: hand-author in the existing house style
-Standardize on the **existing Lucide-style house system** already in `res/drawable`:
-`android:width/height="24dp"`, `viewportWidth/Height="24"`, `strokeWidth="1.75"`,
-`strokeLineCap/Join="round"`, `fillColor="#00000000"`, and the stroke color overridden at the
-call site by `Icon(painter, tint = …)`. New glyphs are authored as vector XML in this exact
-convention.
+Standardize on the **existing Lucide-style house system** already in `res/drawable`: 24dp
+viewport, `strokeWidth ≈ 1.75`, round caps/joins, `fillColor="#00000000"`, stroke color overridden
+by `Icon(painter, tint = …)`. Author the missing glyphs as vector XML in this exact convention.
+**Rejected:** `material-icons-extended` — adds a dependency and its heavier/filled style clashes
+with the shipped thin-line signal glyphs; a mixed set reads worse than the emoji.
 
-**Rejected:** `androidx.compose.material:material-icons-extended`. It adds a dependency and its
-filled/heavier optical style clashes with the shipped thin-line signal icons — a mixed set reads
-worse than the emoji. Hand-authoring keeps $0/offline, gives full control of weight/optical size,
-and guarantees the nav/button glyphs look like the same hand that drew the risk-signal glyphs.
+### 4.2 New glyphs (~20)
+Nav: `ic_nav_shield`, `ic_nav_chat`, `ic_nav_help` (life-buoy). Actions: `ic_phone`, `ic_globe`,
+`ic_file_text`, `ic_bell`, `ic_headphones`, `ic_image`, `ic_download`, `ic_alert_triangle`,
+`ic_sparkle` (AI/VAARTA mark), `ic_check`, `ic_chevron_right`, `ic_arrow_left` (back), `ic_close`,
+`ic_link_external`, `ic_siren` (panic). Reuse `ic_mic`, `ic_history`, `ic_shield_x`, `ic_act_*`,
+`ic_sig_*`. Each verified legible at 20/24/28dp.
 
-### 4.2 New glyphs to author (~20)
-Chrome/nav: `ic_nav_shield` (Home), `ic_nav_chat` (Conversations), `ic_nav_help` (life-buoy).
-Actions: `ic_phone`, `ic_globe`, `ic_file_text`, `ic_bell` (or megaphone), `ic_headphones`,
-`ic_image`, `ic_download`, `ic_alert_triangle`, `ic_sparkle` (AI), `ic_check`, `ic_chevron_right`,
-`ic_close`, `ic_link_external`, `ic_siren` (panic). Reuse existing `ic_mic`, `ic_history`,
-`ic_shield_x`, `ic_act_*`, `ic_sig_*` where they already fit.
-Every glyph verified for legibility at 20/24/28dp.
+### 4.3 Emoji that stays (content, not chrome)
+Only in **user-authored strings shared out of the app** — the "⚠️ Scam alert from VAARTA…"
+WhatsApp warning and the "📷 Photo" / "🎧 Audio clip" attachment content markers. Those are message
+copy, idiomatic in WhatsApp, not interface.
 
-### 4.3 Tinting helper
-A small `VaartaIcon(res, tint, size)` wrapper (or a shared convention) so no icon is ever drawn
-with a raw color — tint always comes from tokens (`ink` / `muted` / an intent color), keeping
-theming and dark mode correct.
+## 5. Text rendering & AI output (bug fix + polish)
 
-### 4.4 Emoji that stays (content, not chrome)
-Emoji remains **only in user-authored content strings that get shared out** of the app — the
-"⚠️ Scam alert from VAARTA…" WhatsApp warning (`ArticleScreen`, `WARN_FAMILY_MESSAGE`) and the
-attachment content markers ("📷 Photo" / "🎧 Audio clip" saved into a sent bubble). Those are
-message copy, idiomatic in WhatsApp, not interface elements.
+- **Lightweight markdown renderer, no dependency.** A pure parser in `core` (unit-tested, TDD)
+  that converts common markdown to a clean `AnnotatedString` + block list: inline `**bold**` /
+  `*italic*`, bullet lists (`- ` / `* `), numbered lists (`1.`), and links; headings (`#`) become
+  a bold line; stray markers (`>`, backticks, residual `*`/`#`) are dropped. A `MarkdownText`
+  composable renders it with the type scale.
+- Applied to every AI free-text surface: `AssistantBubble`, coach warning, `ArticleScreen`
+  summary. Deterministic/engine text (replies, verdicts) is already clean and left as plain text.
+- **Defense-in-depth:** also nudge the Gemini prompts to answer in plain text without markdown, so
+  the renderer is a guaranteed floor, not the only line of defense.
 
-## 5. Spacing & rhythm
+## 6. Type & spacing system (consistency backbone)
 
-Introduce a spacing scale (`4 / 8 / 12 / 16 / 20 / 24 / 32`, e.g. `VSpace.xs…xxl`) and replace
-ad-hoc `Spacer` values with it. Screen horizontal padding 16→20dp; card inner padding 20dp;
-section gaps 24dp. Radii already exist in `Shapes` — apply consistently: cards 20, chips full,
-buttons 14.
+- **Route all text through `MaterialTheme.typography.*`.** Remove inline `fontSize`/`fontWeight`
+  from screens; map each usage to a scale role (screen title → `headlineMedium`, section title →
+  `titleLarge`, body → `bodyLarge`/`bodyMedium`, eyebrow → `labelSmall`, caption → `bodySmall`).
+  Extend the scale only if a genuine role is missing.
+- **Spacing scale** (`4/8/12/16/20/24/32`, e.g. `VSpace`) replacing ad-hoc `Spacer`s. Screen
+  padding 16→20dp; card inner padding 20dp; section gaps 24dp. Radii already in `Shapes` — applied
+  consistently (cards 20, chips full, buttons 14).
 
-## 6. Components (refine, do not rebuild)
+## 7. Shared components (build once, reuse)
 
-- **Buttons** — `VaartaButton` (filled) + `VaartaSecondaryButton` (tonal/outlined): 52–56dp tall,
-  leading tinted icon + centered label, real pressed state, no emoji. Filled = indigo (brand);
-  destructive/panic = `scam` red.
-- **Cards + icon chip** — the biggest visual lever. Replace bare 28sp emoji with a leading
-  **icon chip**: a rounded tinted square holding the line icon. Guardrail so it never breaks
-  "color = risk only":
-  - Action/brand cards (Help me on a call, Ask VAARTA, Check a recording) → chip = **indigo tint
-    bg + indigo icon** (indigo is chrome, on-system).
-  - Content rows (trending-scam feed, conversation list) → chip = **neutral tint** (faint), so the
-    feed stays quiet.
-  - `scam` red is never used as a chip decoration — reserved for the panic/scam context only.
-  Cards get a soft 1–2dp shadow on light / hairline border on dark; trailing `›` becomes
-  `ic_chevron_right`.
-- **Bottom nav** — real line icons; Material3's selected pill + indigo tint for the active tab,
-  `muted` for the rest.
-- **Empty states** — centered icon + one muted line, replacing the current "text in a box".
+- **`VaartaButton` / `VaartaSecondaryButton`** — 52–56dp, leading tinted icon + label, real
+  pressed state, no emoji. Filled = indigo (brand); destructive/panic = `scam` red.
+- **Icon-chip card** — replace bare emoji with a leading rounded tinted square holding the line
+  icon. Guardrail so it never breaks "color = risk only":
+  - Action/brand cards → chip = **indigo tint bg + indigo icon** (indigo is chrome, on-system).
+  - Content rows (feed, conversation list) → chip = **neutral tint**, keeping the feed quiet.
+  - `scam` red never used as chip decoration — reserved for the panic/scam context only.
+  Soft 1–2dp shadow on light / hairline border on dark; trailing chevron via `ic_chevron_right`.
+- **`SourceLink`** — one component (link icon + title, tappable) replacing the 4 duplicated rows.
+- **`VaartaBackBar`** — one back affordance (`ic_arrow_left` + optional title) for all sub-screens.
+- **`Eyebrow`** — one small label-caps component for section/category labels.
+- **Empty state** — centered icon + one muted line, replacing "text in a box".
 
-## 7. Motion
+## 8. Motion
 
 Subtle press-scale (~0.97) + tonal shift on tappable cards/buttons; fade + slight slide on
-sub-screen enter/exit. The risk-ring sweep/breathe animation and the "no flashing" rule are
-untouched.
+sub-screen enter/exit. The risk-ring sweep/breathe animation and the "no flashing" rule untouched.
 
-## 8. Where it lands (screen inventory)
+## 9. Simplification — "only what the user needs" (confirm before cutting)
 
-Each screen gets: emoji→icon, icon-chip cards where cards exist, refined buttons, spacing scale.
-- **Home** (`HomeScreen.kt`) — header, panic card (siren icon, red kept), 3 action cards (icon
-  chips), trending feed rows (neutral chips + external-link), panic bottom sheet.
-- **Conversations** (`HistoryScreen` in `MainActivity.kt`) — list rows with source icon chips
-  (chat/recording/call), new-chat button, empty state.
-- **Help** (`HelpScreen.kt`) — section cards, all four buttons, numbered step badges (keep), the
-  "call 1930" red button.
-- **Article** (`ArticleScreen.kt`) — source links, "Ask VAARTA" / "Warn my family" buttons.
-- **Chat** (`ConversationScreen.kt`) — composer icons (mic/image/audio), context header
-  (globe/download), empty-state shield.
-- **Live** (`RiskHero.kt`, `MainActivity` live controls) — "flagged from web" alert-triangle,
-  start/family/analyze buttons.
-- **Analyze** (`AnalyzeScreen`), **Panic sheet**, **permission screen** (`MainActivity`),
-  **overlay** (`OverlayService.kt`) — icon + button/spacing pass.
-- **ChatView.kt** — inline source/flag/verdict markers (🔗 ⚠ 🌐 🛡️ ❝❞) → icons / typographic
-  quotes.
+Candidates I want the owner to confirm before removing/merging anything (I will not silently delete
+features):
+1. **Overlapping emergency guidance in 3 places** — Home's PANIC card, its panic bottom sheet, and
+   Help's "If this is happening now". Proposal: the panic sheet and Help share one canonical
+   "right-now steps" component; Home's card opens it. Removes duplicated, slightly-divergent copy.
+2. **Duplicate web-grounded scam-ID** — `ScamIdCard` and `CoachBubble`'s `scamType` header both
+   present the same web-grounded identification. Proposal: keep one presentation.
+3. **Article back vs global back** — fold into the shared `VaartaBackBar`.
+Anything the owner wants kept stays; this section is a proposal, not a mandate.
 
-## 9. Verification
+## 10. Where it lands (screen inventory)
 
-- `gradlew :app:assembleDebug` succeeds; existing unit tests (~70) stay green.
-- Install on the `vaarta_test` emulator; capture screenshots of **every screen in both light and
-  dark**, before/after, as the completion evidence.
-- Confirm **zero emoji remain in interface strings** (grep the emoji ranges over `*.kt`, allowing
-  only the whitelisted content strings in §4.4).
-- Spot-check TalkBack content descriptions still read (icons are decorative where a text label is
-  adjacent; `contentDescription` preserved on icon-only controls).
+Home (`HomeScreen.kt`), Conversations (`HistoryScreen` in `MainActivity.kt`), Help
+(`HelpScreen.kt`), Article (`ArticleScreen.kt`), Chat (`ConversationScreen.kt` + `ChatView.kt`),
+Live hero (`RiskHero.kt` + `MainActivity` live controls), Analyze (`AnalyzeScreen`), Panic sheet,
+permission screen (`MainActivity`), bottom nav (`VaartaNav.kt`), overlay (`OverlayService.kt`).
+Each: emoji→icon, text→type scale, icon-chip cards, shared components, spacing scale, markdown
+render where AI text appears.
 
-## 10. Rollout order (feeds the implementation plan)
+## 11. Verification (evidence before "done")
 
-1. Foundation: author the ~20 glyphs; add spacing tokens + `VaartaIcon`; build `VaartaButton` /
-   `VaartaSecondaryButton` / icon-chip card primitives.
-2. Home + bottom nav (highest-visibility surface).
-3. Help + Article.
-4. Conversations list + Chat composer.
-5. Live hero + Analyze + Panic sheet + permission screen + ChatView inline markers.
-6. Overlay.
-7. Full emulator verification (light + dark) + emoji-free grep + status/commit.
+- `gradlew :app:assembleDebug` succeeds; unit tests (~70 + new markdown-parser tests) green.
+- Install on the `vaarta_test` emulator; screenshots of **every screen in both light and dark**,
+  before/after, as completion evidence.
+- **Emoji-free grep** over `*.kt` interface strings (only §4.3 whitelist allowed).
+- **No-hardcoded-size check** — spot-grep for `fontSize =` in screen files (should be gone except
+  inside the type/theme definitions).
+- Markdown: verify a known markdown-heavy AI answer renders clean (no `**`/`#`) on device.
+- TalkBack: icon-only controls keep `contentDescription`; decorative icons are null.
+
+## 12. Rollout order (feeds the implementation plan)
+
+1. **Foundation** — author glyphs; add spacing tokens, `VaartaIcon`, `MarkdownText` + parser
+   (TDD), `VaartaButton`/`VaartaSecondaryButton`, `SourceLink`, `VaartaBackBar`, `Eyebrow`,
+   icon-chip card.
+2. **Home + bottom nav** (highest-visibility surface).
+3. **Help + Article** (+ markdown in Article summary).
+4. **Conversations list + Chat** (+ markdown in AssistantBubble, source links).
+5. **Live hero + Analyze + Panic sheet + permission screen + ChatView markers.**
+6. **Overlay.**
+7. **Type-scale sweep** — ensure no screen still hardcodes sizes.
+8. **Full emulator verification** (light + dark), emoji/size/markdown checks, status + commit.
