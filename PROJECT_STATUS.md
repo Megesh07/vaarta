@@ -231,6 +231,20 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-17 — Premium-redesign spec written (design only, no code) — AWAITING OWNER REVIEW.**
+  Owner verdict after the 07-16 "Calm Guardian" pass: UI still overloaded, repetitive, text-heavy,
+  misaligned, not premium — asked for a redesign "to the core". Diagnosed against **live emulator
+  screenshots** (not vibes): every major action duplicated in 3–4 places (dedup table in the spec),
+  text-only feed/article with zero imagery, and 7 concrete structural defects (Article draws under
+  the status bar; status-bar icons white-on-light; system back exits the app from sub-screens;
+  Conversations date wraps to 3 lines; Delete-all/retention above content; Live idle shows
+  "Listening & checking 0"; Article pins 2 stacked buttons over content). Spec:
+  `docs/superpowers/specs/2026-07-17-vaarta-premium-redesign-design.md` (committed `3ebbbc1`) —
+  one-action-one-home IA, bundled $0 vector cover-illustration system for feed/article imagery,
+  structured (JSON) article summary with a fail-closed ladder, a shared screen-scaffold/row grammar
+  that makes the alignment bugs impossible by construction, and an 8-phase build order. **Next
+  step: owner reviews the spec, then writing-plans → implementation.** No code changed this session.
+
 - **2026-07-17 — `%3F` title bug FIXED (root cause, not a patch).** Traced the "known chip" from
   the last two entries: `conversationTitleFrom` (core:reasoning, `ChatModels.kt`) is the single seam
   every chat-derived Conversations-list title passes through, and it trusted the typed message
