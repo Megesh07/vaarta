@@ -38,6 +38,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,36 +58,48 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val vm: SessionViewModel by viewModels()
@@ -392,8 +405,15 @@ private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
 private fun levelFromName(name: String): RiskLevel =
     runCatching { RiskLevel.valueOf(name) }.getOrDefault(RiskLevel.OBSERVING)
 
-/** The saved-history list — newest first. Tap a row to open the read-only thread; retention + a
- *  delete-all control sit at the top so the user stays in charge of what's stored (ADR-0004). */
+/**
+ * Conversations v2 (redesign spec §6.6). A clean header (title + count + kebab), an extended
+ * "New chat" FAB in the thumb zone, the shared row grammar (single-line title + verdict pill +
+ * relative time, chevron only), swipe-to-delete with an Undo snackbar (the actual DB delete is
+ * deferred behind a pending set so Undo needs no re-insert), and the retention/Delete-all controls
+ * moved into a kebab bottom-sheet so they no longer occupy the prime scroll space. Encryption note
+ * shrinks to a lock caption at the list foot.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun HistoryScreen(
     historyVm: HistoryViewModel,
@@ -401,74 +421,180 @@ internal fun HistoryScreen(
     onOpen: (CallSessionEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val c = VaartaTheme.colors
     val sessions by historyVm.sessions.collectAsState()
     val retentionDays by historyVm.retentionDays.collectAsState()
+    val pending = remember { mutableStateListOf<Long>() }
+    val visible = sessions.filter { it.id !in pending }
     val now = System.currentTimeMillis()
     val weekAgo = now - 7L * 24 * 60 * 60 * 1000
-    val thisWeek = sessions.filter { it.startedAtMs >= weekAgo }
-    val earlier = sessions.filter { it.startedAtMs < weekAgo }
+    val thisWeek = visible.filter { it.startedAtMs >= weekAgo }
+    val earlier = visible.filter { it.startedAtMs < weekAgo }
+
+    val snackbarHost = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var showMenu by remember { mutableStateOf(false) }
+    val deletedMsg = stringResource(R.string.conv_deleted)
+    val undoLabel = stringResource(R.string.conv_undo)
+
+    fun requestDelete(id: Long) {
+        pending.add(id)
+        scope.launch {
+            val result = snackbarHost.showSnackbar(deletedMsg, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) {
+                pending.remove(id) // undo: the row is still in the DB, just un-hide it
+            } else {
+                pending.remove(id)
+                historyVm.delete(id) // commit the delete only once the window closed without undo
+            }
+        }
+    }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("Conversations", style = MaterialTheme.typography.headlineMedium, color = VaartaTheme.colors.ink)
-                Spacer(Modifier.weight(1f))
-                VaartaButton(text = "New chat", onClick = onNewChat, leadingIcon = R.drawable.ic_plus)
+        Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            Column(Modifier.fillMaxSize().padding(horizontal = VSpace.xl)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = VSpace.sm)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.conv_title), style = MaterialTheme.typography.headlineMedium, color = c.ink)
+                        if (sessions.isNotEmpty()) {
+                            Eyebrow(stringResource(R.string.conv_count, sessions.size))
+                        }
+                    }
+                    Surface(
+                        color = Color.Transparent, shape = CircleShape,
+                        modifier = Modifier.size(44.dp).clickable { showMenu = true },
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            VaartaIcon(R.drawable.ic_more_vert, contentDescription = stringResource(R.string.conv_menu_a11y), tint = c.ink, size = 22.dp)
+                        }
+                    }
+                }
+
+                if (sessions.isEmpty()) {
+                    Column(
+                        Modifier.fillMaxSize().padding(bottom = VSpace.xxxl),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        VaartaIcon(R.drawable.ic_nav_chat, contentDescription = null, tint = c.faint, size = 40.dp)
+                        Spacer(Modifier.height(VSpace.md))
+                        Text(stringResource(R.string.conv_empty_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
+                        Spacer(Modifier.height(VSpace.xs))
+                        Text(
+                            stringResource(R.string.conv_empty_body),
+                            style = MaterialTheme.typography.bodyMedium, color = c.muted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
+                    }
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
+                        if (thisWeek.isNotEmpty()) {
+                            item(key = "h_week") { Eyebrow(stringResource(R.string.conv_section_week)) }
+                            items(thisWeek, key = { it.id }) { s -> SwipeableRow(s, onOpen = { onOpen(s) }, onDelete = { requestDelete(s.id) }) }
+                        }
+                        if (earlier.isNotEmpty()) {
+                            item(key = "h_earlier") { Eyebrow(stringResource(R.string.conv_section_earlier)) }
+                            items(earlier, key = { it.id }) { s -> SwipeableRow(s, onOpen = { onOpen(s) }, onDelete = { requestDelete(s.id) }) }
+                        }
+                        item(key = "foot") {
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = VSpace.lg),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                VaartaIcon(R.drawable.ic_lock, contentDescription = null, tint = c.faint, size = 14.dp)
+                                Spacer(Modifier.width(VSpace.xs))
+                                Text(stringResource(R.string.conv_encrypted), style = MaterialTheme.typography.bodySmall, color = c.faint)
+                            }
+                            Spacer(Modifier.height(72.dp)) // clear the FAB
+                        }
+                    }
+                }
             }
-            Text(
-                "Chats, live calls and recordings — stored only on this phone, encrypted.",
-                style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
+
+            ExtendedFloatingActionButton(
+                onClick = onNewChat,
+                containerColor = c.indigo,
+                contentColor = Color.White,
+                icon = { VaartaIcon(R.drawable.ic_plus, contentDescription = null, tint = Color.White, size = 20.dp) },
+                text = { Text(stringResource(R.string.conv_new_chat), style = MaterialTheme.typography.titleMedium, color = Color.White) },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(VSpace.xl),
             )
 
-            RetentionRow(retentionDays = retentionDays, onSet = { historyVm.setRetentionDays(it) })
+            SnackbarHost(snackbarHost, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 88.dp))
+        }
+    }
 
-            if (sessions.isEmpty()) {
-                Spacer(Modifier.height(VSpace.xxxl))
-                Text("No conversations yet.", style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink, modifier = Modifier.fillMaxWidth())
-                Text(
-                    "Tap New chat to ask VAARTA about a suspicious call or message — or protect a live call from Home.",
-                    style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted, modifier = Modifier.fillMaxWidth(),
-                )
-            } else {
-                if (sessions.size > 1) {
-                    OutlinedButton(
-                        onClick = { historyVm.deleteAll() },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = VaartaTheme.colors.scam),
-                    ) { Text("Delete all") }
+    if (showMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showMenu = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = VSpace.xxl).padding(bottom = VSpace.xxxl),
+                verticalArrangement = Arrangement.spacedBy(VSpace.md),
+            ) {
+                Text(stringResource(R.string.conv_menu_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
+                Text(stringResource(R.string.conv_autodelete), style = MaterialTheme.typography.bodyMedium, color = c.muted)
+                Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                    val options = listOf(0 to stringResource(R.string.conv_keep), 7 to stringResource(R.string.conv_7d), 30 to stringResource(R.string.conv_30d))
+                    for ((days, label) in options) {
+                        FilterChip(selected = retentionDays == days, onClick = { historyVm.setRetentionDays(days) }, label = { Text(label) })
+                    }
                 }
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    if (thisWeek.isNotEmpty()) {
-                        item { SectionLabel("This week") }
-                        items(thisWeek, key = { it.id }) { s ->
-                            HistoryRow(session = s, onOpen = { onOpen(s) }, onDelete = { historyVm.delete(s.id) })
-                        }
-                    }
-                    if (earlier.isNotEmpty()) {
-                        item { SectionLabel("Earlier") }
-                        items(earlier, key = { it.id }) { s ->
-                            HistoryRow(session = s, onOpen = { onOpen(s) }, onDelete = { historyVm.delete(s.id) })
-                        }
-                    }
+                if (sessions.isNotEmpty()) {
+                    Spacer(Modifier.height(VSpace.xs))
+                    VaartaSecondaryButton(
+                        text = stringResource(R.string.conv_delete_all),
+                        onClick = { historyVm.deleteAll(); showMenu = false },
+                        leadingIcon = R.drawable.ic_close,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
     }
 }
 
+/** A conversation row wrapped in swipe-to-delete; swiping either way triggers [onDelete]. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SectionLabel(text: String) {
-    Eyebrow(text)
+private fun SwipeableRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
+    val c = VaartaTheme.colors
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { target ->
+            if (target != SwipeToDismissBoxValue.Settled) { onDelete(); true } else false
+        },
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(c.scamTint).padding(horizontal = VSpace.xl),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                VaartaIcon(R.drawable.ic_close, contentDescription = null, tint = c.scam, size = 22.dp)
+            }
+        },
+    ) {
+        HistoryRow(session = session, onOpen = onOpen)
+    }
 }
 
-/** One conversation row: type glyph chip + title + (risk + when). */
+/** One conversation row: source circle + single-line title + (verdict pill + relative time) + chevron. */
 @Composable
-private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
+private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit) {
     val c = VaartaTheme.colors
     val level = levelFromName(session.finalLevel)
-    val glyph = when (session.source) {
-        SessionSource.CHAT -> R.drawable.ic_nav_chat
-        SessionSource.RECORDING -> R.drawable.ic_headphones
-        else -> R.drawable.ic_phone
+    val (glyph, chipTint) = when (session.source) {
+        SessionSource.CHAT -> R.drawable.ic_nav_chat to c.indigo
+        SessionSource.RECORDING -> R.drawable.ic_headphones to c.muted
+        else -> R.drawable.ic_phone to c.verify
+    }
+    val chipBg = when (session.source) {
+        SessionSource.CHAT -> c.indigoTint
+        SessionSource.RECORDING -> c.track
+        else -> c.verifyTint
     }
     val title = session.title
         ?: session.scamType
@@ -477,50 +603,36 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete:
             SessionSource.RECORDING -> "Recording"
             else -> "Live call"
         }
+    val scored = session.source != SessionSource.CHAT && session.finalScore > 0
     Card(
         colors = CardDefaults.cardColors(containerColor = c.panel),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = if (c.isDark) 0.dp else 1.dp),
         border = if (c.isDark) androidx.compose.foundation.BorderStroke(1.dp, c.line) else null,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
     ) {
-        Row(Modifier.padding(VSpace.md), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.md)) {
-            Surface(color = c.track, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(40.dp)) {
+        Row(Modifier.padding(VSpace.lg), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.md)) {
+            Surface(color = chipBg, shape = CircleShape, modifier = Modifier.size(44.dp)) {
                 Box(contentAlignment = Alignment.Center) {
-                    VaartaIcon(glyph, contentDescription = null, tint = c.muted, size = 20.dp)
+                    VaartaIcon(glyph, contentDescription = null, tint = chipTint, size = 20.dp)
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 2)
+                Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
-                    if (session.source != SessionSource.CHAT && session.finalScore > 0) {
-                        Surface(color = levelColor(level), shape = CircleShape, modifier = Modifier.size(9.dp)) {}
-                        Text(levelText(level), style = MaterialTheme.typography.labelMedium, color = levelColor(level))
-                        Text("·", style = MaterialTheme.typography.labelMedium, color = c.muted)
+                    if (scored) {
+                        Surface(color = levelColor(level), shape = CircleShape, modifier = Modifier.size(8.dp)) {}
+                        Text(levelText(level), style = MaterialTheme.typography.labelMedium, color = levelColor(level), maxLines = 1)
+                        Text("·", style = MaterialTheme.typography.labelMedium, color = c.faint)
                     }
                     Text(
                         relativeTimeLabel(session.startedAtMs, System.currentTimeMillis()),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = c.muted,
-                        maxLines = 1,
+                        style = MaterialTheme.typography.labelMedium, color = c.muted, maxLines = 1,
                     )
                 }
             }
-            VaartaIcon(
-                R.drawable.ic_close, contentDescription = "Delete", tint = c.faint, size = 18.dp,
-                modifier = Modifier.clickable(onClick = onDelete).padding(8.dp),
-            )
-        }
-    }
-}
-
-/** Retention control — keep forever (default) or auto-delete after N days (user-controlled, ADR-0004). */
-@Composable
-private fun RetentionRow(retentionDays: Int, onSet: (Int) -> Unit) {
-    val options = listOf(0 to "Keep", 7 to "7 days", 30 to "30 days")
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Auto-delete:", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
-        for ((days, label) in options) {
-            FilterChip(selected = retentionDays == days, onClick = { onSet(days) }, label = { Text(label) })
+            VaartaIcon(R.drawable.ic_chevron_right, contentDescription = null, tint = c.faint, size = 20.dp)
         }
     }
 }

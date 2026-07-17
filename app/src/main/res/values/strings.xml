@@ -25,4 +25,23 @@
     <string name="article_sources">Sources</string>
     <string name="article_ask">Ask VAARTA about this</string>
     <string name="article_share_a11y">Warn my family about this scam</string>
+
+    <!-- Conversations (redesign spec §6.6). -->
+    <string name="conv_title">Conversations</string>
+    <string name="conv_count">%1$d saved</string>
+    <string name="conv_new_chat">New chat</string>
+    <string name="conv_menu_a11y">List options</string>
+    <string name="conv_empty_title">No conversations yet</string>
+    <string name="conv_empty_body">Tap New chat to ask VAARTA about a suspicious call or message — or protect a live call from Home.</string>
+    <string name="conv_encrypted">Stored only on this phone, encrypted.</string>
+    <string name="conv_menu_title">Manage conversations</string>
+    <string name="conv_autodelete">Auto-delete after</string>
+    <string name="conv_keep">Keep</string>
+    <string name="conv_7d">7 days</string>
+    <string name="conv_30d">30 days</string>
+    <string name="conv_delete_all">Delete all conversations</string>
+    <string name="conv_deleted">Conversation deleted</string>
+    <string name="conv_undo">Undo</string>
+    <string name="conv_section_week">This week</string>
+    <string name="conv_section_earlier">Earlier</string>
 </resources>
