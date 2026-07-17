@@ -231,6 +231,22 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-17 (night) — Premium redesign Phase 5 (Conversations v2) DONE + emulator-verified
+  (`ed691dd`).** Spec §6.6, all behaviors driven live on the emulator:
+  - **Kebab bottom-sheet** ("Manage conversations": retention chips + Delete all) moves the
+    settings/destructive chrome off the prime scroll space.
+  - **Extended "New chat" FAB** (indigo, bottom-end, thumb zone) replaces the header button.
+  - **Swipe-to-delete with an Undo snackbar** — the DB delete is deferred behind a pending-id set,
+    so Undo restores with no re-insert. Verified live: swipe → "Conversation deleted · Undo";
+    letting it time out committed (count 9→8); a quick Undo tap kept it at 8 with the row restored.
+  - **Single-line row grammar:** source-tinted circle (chat=indigo, recording=neutral,
+    live=verify-blue; risk red never used as decoration), title `maxLines=1` ellipsis, verdict
+    pill + relative time on one line, chevron only — the old 3-line date wrap and per-row X are gone.
+  - Count eyebrow ("8 SAVED"); encryption note shrunk to a lock caption at the list foot;
+    `ic_more_vert` + `ic_lock` glyphs added; copy in `strings.xml`.
+  - `assembleDebug` green. Dark-mode render deferred to the Phase 9 sweep (all tokens flow through
+    `VaartaTheme`, so it's low-risk). **Next: Phase 6 — Live v2 + panic sheet.**
+
 - **2026-07-17 (evening, cont.) — Premium redesign Phase 4 (Article v2) DONE (`dd93b1c`); one
   live check pending free-tier quota reset.** Spec §6.4 + §7:
   - **Structured summary pipeline:** `AwarenessPrompt.SUMMARY_SYSTEM` now demands a JSON object
