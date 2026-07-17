@@ -231,6 +231,23 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-17 (evening) — Premium redesign Phase 3 (Home v2) DONE + emulator-verified
+  (`75aae02`).** Home restructured per spec §6.1/§5.2, screenshot-verified top + feed:
+  - Brand header ("VAARTA" + honest **AI ready / On-device** status chip); tagline deleted.
+  - **Slim panic banner** (72dp, single line + chevron, full instruction kept for TalkBack) —
+    still the only red on screen.
+  - **Tile grammar:** wide "Help me on a call" primary + two compact `ActionTile`s (Ask VAARTA /
+    Check a recording) — Home's action text cut from 6 blocks to 4 short lines.
+  - **Magazine feed:** featured story = full-width 16:7 cover banner + overlaid category pill +
+    title + source; compact rows = 56dp cover thumb + eyebrow + title (body-preview line
+    deleted). "Tap a card…" caption replaced by an honest origin line (Live from the web / From
+    your last refresh / Built-in guide) driven by the existing `Origin` enum.
+  - **Dedup step:** panic sheet no longer clones "Analyze a recording" (spec §4.1).
+  - Home copy extracted to `strings.xml` (`home_*`) per the §3B convention.
+  - `assembleDebug` green; screenshots: header/panic/tiles + featured card + compact rows all
+    correct. **Next: Phase 4 — Article v2** (cover banner header, structured JSON summary with
+    fail-closed ladder, skeleton loading, single-action footer).
+
 - **2026-07-17 (later still) — Premium redesign Phase 2 (cover imagery) DONE + emulator-verified
   (`96fd66a`, `c03b4e6`).** The app's first real imagery, $0/offline (spec §5.1–5.2):
   - **11 hand-authored duotone vector covers** (`cover_*.xml`) — digital-arrest (police cap),
