@@ -231,7 +231,31 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
-- **2026-07-17 — Premium-redesign spec written (design only, no code) — AWAITING OWNER REVIEW.**
+- **2026-07-17 (later) — Premium redesign Phase 1 (Foundation) DONE + emulator-verified.** Owner
+  approved the spec (now including §3A India-first and §3B language architecture — India anchor
+  prompts, in-app language picker design with Hinglish/Tanglish as first-class `-Latn` locales,
+  LLM mirror-vs-follow language contract). Plan:
+  `docs/superpowers/plans/2026-07-17-vaarta-premium-redesign-phase1-foundation.md`. Delivered:
+  - **India anchor block (`IndiaContext.BLOCK`) appended to all 6 user-facing prompts** (Chat,
+    Awareness FEED+SUMMARY, Coach, AudioAnalyze, SharedScam) — 1930/cybercrime.gov.in/Sanchar
+    Saathi/₹/UPI pinned, foreign resources (911/FTC/IC3) forbidden. **App module gained JVM unit
+    tests (JUnit5)**; `IndiaContextTest` (2 tests) asserts every prompt contains the block, so
+    India-first can't silently drift.
+  - **`enableEdgeToEdge`** — status-bar icons now dark-on-light/light-on-dark (were invisible
+    white-on-light; screenshot-verified).
+  - **`VaartaSubScreen` scaffold** (BackHandler + statusBarsPadding + back bar + scroll frame by
+    construction) adopted by Article + Analyze; BackHandler added to Live + Chat. **Verified on
+    emulator:** Article's back arrow no longer overlaps the clock, and system back from
+    Article/Live/Chat keeps the app foreground (`mCurrentFocus` stayed on MainActivity) — it
+    previously exited the app.
+  - **`relativeTimeLabel` (core:reasoning, TDD, 5 tests)** — en-IN one-line relative dates wired
+    into Conversations rows (`maxLines=1`); the 3-line date wrap is gone (screenshot-verified).
+  - **Tests: 115 total, 0 failures** (fresh JUnit XML across all modules; core:reasoning now 107).
+    `assembleDebug` green. Commits `093b038`, `6dbe22d`, `7d9ba7b`.
+  - **Next: Phase 2 — the 11 India-scam cover illustrations + `coverKeyForScamType` (TDD)**, then
+    Home v2 (spec §12).
+
+- **2026-07-17 — Premium-redesign spec written (design only, no code) — owner approved same day.**
   Owner verdict after the 07-16 "Calm Guardian" pass: UI still overloaded, repetitive, text-heavy,
   misaligned, not premium — asked for a redesign "to the core". Diagnosed against **live emulator
   screenshots** (not vibes): every major action duplicated in 3–4 places (dedup table in the spec),
