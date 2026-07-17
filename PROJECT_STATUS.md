@@ -231,6 +231,26 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-17 (evening, cont.) — Premium redesign Phase 4 (Article v2) DONE (`dd93b1c`); one
+  live check pending free-tier quota reset.** Spec §6.4 + §7:
+  - **Structured summary pipeline:** `AwarenessPrompt.SUMMARY_SYSTEM` now demands a JSON object
+    (whatItIs / howToSpot[] / whatToDo[]); new `parseStructuredSummary` in core:reasoning
+    (lenient — trailing commas, fences, preamble — but fail-closed; **12 TDD tests**); client
+    ladder structured → prose → null (screen then shows the card's one-liner; a JSON-ish reply
+    that failed to parse is treated as failure so raw braces can never render).
+  - **Article screen v2:** cover banner + category pill + title + source render **instantly**
+    from the card; `ShimmerLines` skeleton while the AI reads (no more blank void); structured
+    sections (prose / warning-sign rows / numbered steps); single primary "Ask VAARTA" action;
+    "Warn my family" moved to a top-bar share icon.
+  - **Two live findings while verifying:** (1) the model's fenced JSON failed to parse at
+    `maxOutputTokens=1024` — a truncated object can never parse; raised to 2048 for the summary
+    call + parser made lenient (regression tests added). (2) Free-tier **HTTP 429 daily quota
+    exhausted** by today's heavy verification — fallback behavior confirmed live (clean one-liner,
+    never garbage), but the **structured-section live render is still unverified**; re-run one
+    article open after quota resets (next day) before calling §7 fully closed.
+  - Tests: core+app **127 green**; `assembleDebug` green. Skeleton + fallback + share icon
+    screenshot-verified live.
+
 - **2026-07-17 (evening) — Premium redesign Phase 3 (Home v2) DONE + emulator-verified
   (`75aae02`).** Home restructured per spec §6.1/§5.2, screenshot-verified top + feed:
   - Brand header ("VAARTA" + honest **AI ready / On-device** status chip); tagline deleted.
