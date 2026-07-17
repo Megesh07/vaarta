@@ -101,6 +101,40 @@ Same named aesthetic, executed to the core instead of veneered:
   single soft elevation on light. Gradients allowed **only** inside illustration covers and the
   brand header (indigo family, never risk colors).
 
+## 3A. India-first ground rules (owner directive, 2026-07-17)
+
+VAARTA is **entirely for India**. That is not a localization detail — it is the product's ground
+truth, and every surface must enforce it, not merely lean toward it:
+
+1. **AI answers are India-anchored by contract, not by luck.** Every prompt that produces
+   user-visible text (`ChatPrompt`, `AwarenessPrompt` FEED + SUMMARY, `CoachPrompt`,
+   `AudioAnalyzePrompt`) carries one shared **India context block** (a single constant, defined
+   once): the user is in India; the helplines are **1930** and **cybercrime.gov.in**; the
+   institutions are Indian (police, CBI, ED, RBI, TRAI, I4C, SEBI, banks); the payment rails are
+   **UPI/IMPS/NEFT, OTPs, net-banking**; amounts are in **₹** (lakh/crore phrasing welcome);
+   examples and advice reference Indian reality (Aadhaar, PAN, KYC, SIM cards, courier customs).
+   **Never** suggest non-Indian resources (911, FTC, Action Fraud, etc.). Being one constant
+   makes it unit-testable: a test asserts every user-facing prompt contains the anchor block.
+2. **Language follows the user.** Chat/coaching already mirror the user's language
+   (EN/HI/Hinglish, enforced re-verification 2026-07-15); this stays binding. Voice input offers
+   Indian locales (`en-IN`, `hi-IN`) via `RecognizerIntent.EXTRA_LANGUAGE`. UI copy is simple,
+   idiom-free Indian English readable by elders; a full Hindi UI translation remains post-MVP
+   (scope lock) but no new copy may block it (no text baked into images, all strings in one place).
+3. **The scam taxonomy is India's actual fraud landscape** (aligned to what I4C/1930 reporting
+   sees), and the cover-illustration set in §5.1 is built from it — digital arrest, UPI/QR fraud,
+   KYC/bank/SIM, courier/customs parcel, investment/trading, job/task, loan-app harassment,
+   lottery/festival prize, electricity/utility disconnection.
+4. **The help rail is the real Indian one** (§6.5): call **1930**, file on **cybercrime.gov.in**,
+   report the fraud number/SMS on **Sanchar Saathi (Chakshu)**, and tell the bank immediately
+   (RBI's unauthorized-transaction guidance: reporting fast limits liability). All free links —
+   $0 intact.
+5. **Formats are Indian**: `en-IN` locale for dates/times ("17 Jul 2026, 10:07 am"), ₹ symbol
+   for any amount, +91 phrasing for numbers in examples.
+6. **Visual identity carries Indian cues without costume**: covers use recognizably Indian
+   motifs (₹ glyph, UPI-style QR tile, Indian police peaked-cap silhouette, LPG/electricity-meter
+   shapes, courier boxes with customs tags) in the same restrained duotone style — India-specific,
+   never kitsch. Feed header stays "Trending scams in India".
+
 ## 4. Information architecture — the "one home" rule
 
 Every row below is a *move or delete of an entry point*, not a feature change.
@@ -135,19 +169,22 @@ Every row below is a *move or delete of an entry point*, not a feature change.
 ## 5. The imagery system (the "images in news and retrieval" ask, at $0)
 
 ### 5.1 Category covers (bundled, offline, deterministic)
-Hand-author **9 vector cover illustrations** — flat duotone scenes in the indigo/neutral family
-(consistent style: 2–3 shapes, one accent, no faces, no text) — one per scam family:
+Hand-author **11 vector cover illustrations** — flat duotone scenes in the indigo/neutral family
+(consistent style: 2–3 shapes, one accent, no faces, no text) — one per **Indian** scam family
+(§3A.3, aligned to the I4C/1930 fraud landscape):
 
-| Key | Motif | Matches (case-insensitive, in `coverForScamType()`) |
+| Key | Motif (Indian cues, §3A.6) | Matches (case-insensitive, in `coverForScamType()`) |
 |---|---|---|
-| `cover_digital_arrest` | police cap + phone silhouette | digital arrest, police, CBI, ED, impersonation, courier+police |
-| `cover_parcel` | parcel box + warning tag | parcel, courier, FedEx, customs |
-| `cover_kyc_bank` | bank card + shield | KYC, bank, account, SIM, Aadhaar, PAN |
-| `cover_investment` | rising chart that snaps | investment, trading, stock, crypto, Ponzi |
-| `cover_job` | briefcase + hook | job, task, work-from-home, recruitment |
-| `cover_lottery` | gift box + coins | lottery, prize, lucky draw, cashback |
-| `cover_romance` | heart + mask | romance, matrimonial, dating |
-| `cover_utility` | bolt/meter | electricity, utility, bill, disconnection |
+| `cover_digital_arrest` | Indian police peaked cap + phone silhouette | digital arrest, police, CBI, ED, court, impersonation |
+| `cover_upi` | UPI-style QR tile + ₹ | UPI, QR, payment request, PhonePe/GPay/Paytm, cashback-reverse |
+| `cover_parcel` | courier box + customs tag | parcel, courier, FedEx, customs, drugs-in-parcel |
+| `cover_kyc_bank` | bank card + shield + ₹ | KYC, bank, account, SIM, Aadhaar, PAN, net-banking |
+| `cover_investment` | rising chart that snaps | investment, trading, stock, crypto, IPO, Ponzi, SEBI |
+| `cover_job` | briefcase + hook | job, task, work-from-home, recruitment, part-time |
+| `cover_loan_app` | phone + chain/₹ | loan app, instant loan, recovery, harassment |
+| `cover_lottery` | gift box + coins | lottery, prize, lucky draw, festival offer, KBC |
+| `cover_romance` | heart + mask | romance, matrimonial, dating, sextortion→generic if explicit |
+| `cover_utility` | electricity meter + bolt | electricity, utility, bill, disconnection, gas |
 | `cover_generic` | shield + waves | anything else (safe default) |
 
 Each cover ships in a **wide banner crop** (article header, featured feed card) and reads
@@ -218,8 +255,9 @@ before the AI answers.
 ### 6.5 Help
 - **Emergency:** one red-tinted card — "Scam happening now?" + **Call 1930** + a link that opens
   the same panic sheet (shared steps, zero copy drift).
-- **Report online:** compact link-row (globe icon + "cybercrime.gov.in" + chevron) — a
-  full-width outlined button is more chrome than this needs.
+- **Report online — the real Indian rail (§3A.4):** compact link-rows, not full-width buttons:
+  "cybercrime.gov.in — file a complaint", "Sanchar Saathi (Chakshu) — report the fraud
+  number/SMS", each globe icon + chevron. One quiet caption explains when to use which.
 - **"Lost money?" steps:** collapsed to the first 3 steps + "Show all 7 steps" expander; steps
   keep the numbered `StepRow` look.
 - **Complaint + Warn family:** two compact rows in one "Tools" section card.
@@ -242,8 +280,9 @@ Help drops from ~5 screens of scroll to ~2.
   field + a circular indigo **send FAB-let**; attachment pickers collapse behind one "+"
   (paperclip) that opens a small sheet (photo / audio) — 3 always-visible gray icons become 1.
 - Empty state: shield + "Ask me anything about a suspicious call or message" + **3 tappable
-  starter chips** ("Is this message a scam?", "They're asking for an OTP", "Check a number for
-  me") — replaces the two-sentence paragraph and gives instant, judge-friendly value.
+  starter chips**, India-specific (§3A): "A caller says my parcel has drugs in it",
+  "They're threatening digital arrest", "Is this UPI payment request safe?" — replaces the
+  two-sentence paragraph and gives instant, judge-friendly value.
 - Bubbles: quote glyphs `❝ ❞` dropped; coach replies restyled as clean "SAY THIS" chips
   (existing tint system, straight quotes).
 
@@ -278,6 +317,10 @@ prompt to request strict JSON:
   "Here is…" preamble is structurally ignored — the bug in `06b-article-loaded.png` cannot
   recur.
 - Chat answers (`ChatPrompt`) stay free-form prose — conversation should read like conversation.
+- **India anchor (§3A.1):** as part of this change, the shared India context block constant is
+  introduced and appended to `ChatPrompt`, both `AwarenessPrompt` variants, `CoachPrompt`, and
+  `AudioAnalyzePrompt` (placed before the existing `LANGUAGE_REMINDER`, which must stay last —
+  the 2026-07-15 recency lesson). A unit test asserts every user-facing prompt contains it.
 
 ## 8. Structural correctness (the "everything aligned" contract)
 
@@ -335,12 +378,18 @@ prompt to request strict JSON:
   sequence, app never exits except from a root).
 - TalkBack pass on Home + Article (cover images `contentDescription = null` as decorative;
   featured card reads title + category once).
+- **India-first checks (§3A):** unit test — every user-facing prompt constant contains the India
+  anchor block; live check — a chat question ("I lost money to a scam, what do I do?") answers
+  with 1930/cybercrime.gov.in/bank-freeze and **never** a non-Indian resource; grep — no "911",
+  "FTC", "$" amounts in UI strings; dates render via `en-IN`; Help's Chakshu link opens.
 - Same-day owner walkthrough — this redesign's bar is the owner's eye, not just the checklist.
 
 ## 12. Build order (feeds the implementation plan)
 
 1. **Foundation:** `VaartaScreenScaffold` (insets/back/scroll) + edge-to-edge/system-bar fix +
-   BackHandlers; shared row/tile components v2; shimmer primitive. *(unblocks every screen)*
+   BackHandlers; shared row/tile components v2; shimmer primitive; **the India anchor block into
+   every prompt + its unit test (§3A.1 — independent, high-value, lands first)**; `en-IN`
+   date/₹ formatting rule. *(unblocks every screen)*
 2. **Covers:** author 9 vectors + `coverKeyForScamType` (TDD) + wide/thumb rendering.
 3. **Home v2:** header, slim panic, tile grammar, magazine feed (featured + compact).
 4. **Article v2:** cover header + structured summary (prompt + parser TDD + fail-closed ladder)
