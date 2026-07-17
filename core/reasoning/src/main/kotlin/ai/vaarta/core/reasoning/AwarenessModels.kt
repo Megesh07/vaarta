@@ -19,7 +19,27 @@ data class AwarenessCard(
 )
 
 /** A plain-language AI summary of a scam topic + the real web sources it was grounded on (§6.1). */
-data class ArticleSummary(val text: String, val sources: List<Source> = emptyList())
+data class ArticleSummary(
+    val text: String,
+    val sources: List<Source> = emptyList(),
+    /** Present when the model's reply parsed into designed sections (redesign spec §7); null = prose fallback. */
+    val structured: StructuredSummary? = null,
+)
+
+/** The designed three-part article shape (redesign spec §7): prose + checklist + numbered steps. */
+data class StructuredSummary(
+    val whatItIs: String,
+    val howToSpot: List<String>,
+    val whatToDo: List<String>,
+)
+
+/** Raw wire shape of the structured summary from the grounded model's JSON-in-text. */
+@Serializable
+private data class StructuredSummaryWire(
+    val whatItIs: String = "",
+    val howToSpot: List<String> = emptyList(),
+    val whatToDo: List<String> = emptyList(),
+)
 
 /** Raw wire shape of one feed card from the grounded model's JSON-in-text (no strict schema on 2.5). */
 @Serializable
@@ -39,7 +59,14 @@ private data class AwarenessCardWire(
  * is never empty and never shows garbage.
  */
 object AwarenessWireParser {
-    private val json = Json { ignoreUnknownKeys = true }
+    // Lenient on purpose: grounded model JSON drifts (trailing commas, relaxed quoting). Every
+    // decode is still fail-closed — leniency widens what parses, never what gets shown.
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        allowTrailingComma = true
+    }
 
     /** Max cards surfaced on the home feed — keeps it scannable and caps a runaway model response. */
     const val MAX_CARDS = 8
@@ -64,6 +91,48 @@ object AwarenessWireParser {
             }
             .distinctBy { it.title.lowercase() }
             .take(MAX_CARDS)
+    }
+
+    /**
+     * Parses the structured article summary (redesign spec §7) from JSON-in-text. Tolerates
+     * preamble prose, markdown fences, and citation markers exactly like [parseFeed]; fails
+     * closed to null (caller falls back to prose, then the card's one-liner). Requires a
+     * non-blank whatItIs and at least one spot sign and one step — a partial object is worse
+     * than the prose fallback.
+     */
+    fun parseStructuredSummary(modelText: String?): StructuredSummary? {
+        val objectText = extractJsonObject(modelText) ?: return null
+        val wire = runCatching {
+            json.decodeFromString(StructuredSummaryWire.serializer(), objectText)
+        }.getOrNull() ?: return null
+        val whatItIs = wire.whatItIs.trim()
+        val spot = wire.howToSpot.map { it.trim() }.filter { it.isNotEmpty() }
+        val steps = wire.whatToDo.map { it.trim() }.filter { it.isNotEmpty() }
+        if (whatItIs.isEmpty() || spot.isEmpty() || steps.isEmpty()) return null
+        return StructuredSummary(whatItIs, spot, steps)
+    }
+
+    /** Leniently pulls the first JSON object out of a text blob (brace-depth scan, string-aware). */
+    private fun extractJsonObject(text: String?): String? {
+        if (text.isNullOrBlank()) return null
+        val open = text.indexOf('{')
+        if (open == -1) return null
+        var depth = 0
+        var inString = false
+        var escaped = false
+        var i = open
+        while (i < text.length) {
+            val ch = text[i]
+            when {
+                escaped -> escaped = false
+                ch == '\\' && inString -> escaped = true
+                ch == '"' -> inString = !inString
+                !inString && ch == '{' -> depth++
+                !inString && ch == '}' -> { depth--; if (depth == 0) return text.substring(open, i + 1) }
+            }
+            i++
+        }
+        return null
     }
 
     /**

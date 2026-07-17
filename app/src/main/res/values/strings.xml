@@ -16,4 +16,13 @@
     <string name="home_feed_origin_seed">Built-in guide — updates when you\'re online</string>
     <string name="home_feed_empty">Scam-awareness stories will appear here once you\'re online.</string>
     <string name="home_feed_seen_in">Seen in %1$s</string>
+
+    <!-- Article (redesign spec §6.4). -->
+    <string name="article_reading">VAARTA is reading the latest on this…</string>
+    <string name="article_what_it_is">What it is</string>
+    <string name="article_how_to_spot">How to spot it</string>
+    <string name="article_what_to_do">What to do</string>
+    <string name="article_sources">Sources</string>
+    <string name="article_ask">Ask VAARTA about this</string>
+    <string name="article_share_a11y">Warn my family about this scam</string>
 </resources>

@@ -392,9 +392,26 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || title.isBlank()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildGroundedBody(AwarenessPrompt.SUMMARY_SYSTEM, AwarenessPrompt.summaryQuery(title, scamType)), CHAT_TIMEOUT_MS) ?: return null
+            // 2048: a grounded three-list JSON with thinking overhead truncates at 1024, and a
+            // truncated object can never parse (observed live 2026-07-17).
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(AwarenessPrompt.SUMMARY_SYSTEM, AwarenessPrompt.summaryQuery(title, scamType), maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
             val text = extractText(response)?.trim().orEmpty()
-            if (text.isEmpty()) null else ArticleSummary(text, extractSources(response))
+            if (text.isEmpty()) {
+                Log.w("GeminiClient", "summarizeArticle: empty text in 200 response")
+                return null
+            }
+            // Fail-closed ladder (redesign spec §7): structured sections -> prose -> null (the
+            // screen then shows the card's one-liner). If the reply *tried* to be JSON but didn't
+            // parse, prose would show raw braces — treat that as a failure, not a fallback.
+            val structured = ai.vaarta.core.reasoning.AwarenessWireParser.parseStructuredSummary(text)
+            when {
+                structured != null -> ArticleSummary(structured.whatItIs, extractSources(response), structured)
+                "whatItIs" in text || text.startsWith("{") -> {
+                    Log.w("GeminiClient", "summarizeArticle: JSON-ish reply didn't parse (len=${text.length}, tail=...${text.takeLast(160)})")
+                    null
+                }
+                else -> ArticleSummary(text, extractSources(response))
+            }
         } catch (e: Exception) {
             Log.w("GeminiClient", "summarizeArticle failed: ${e.javaClass.simpleName}: ${e.message}")
             null
@@ -402,7 +419,7 @@ object GeminiClient {
     }
 
     /** Shared grounded request: a system instruction + one fixed user line + google_search, no schema. */
-    private fun buildGroundedBody(systemInstruction: String, userLine: String): String = buildJsonObject {
+    private fun buildGroundedBody(systemInstruction: String, userLine: String, maxTokens: Int = 1024): String = buildJsonObject {
         putJsonObject("system_instruction") {
             putJsonArray("parts") { addJsonObject { put("text", systemInstruction) } }
         }
@@ -415,7 +432,7 @@ object GeminiClient {
         putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
         putJsonObject("generationConfig") {
             put("temperature", 0.3)
-            put("maxOutputTokens", 1024)
+            put("maxOutputTokens", maxTokens)
         }
     }.toString()
 

@@ -30,13 +30,14 @@ fun VaartaSubScreen(
     modifier: Modifier = Modifier,
     scrollable: Boolean = true,
     spacing: Dp = VSpace.md,
+    trailing: (@Composable () -> Unit)? = null,
     bottomContent: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack) // system back == the back arrow, never app exit (spec §8.2)
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            VaartaBackBar(title = title, onBack = onBack)
+            VaartaBackBar(title = title, onBack = onBack, trailing = trailing)
             if (scrollable) {
                 Column(
                     Modifier

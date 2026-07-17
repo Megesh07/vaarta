@@ -204,9 +204,9 @@ fun SourceLink(title: String, onClick: () -> Unit, modifier: Modifier = Modifier
     }
 }
 
-/** One back affordance for every sub-screen. */
+/** One back affordance for every sub-screen; [trailing] hosts an optional end action (e.g. share). */
 @Composable
-fun VaartaBackBar(title: String?, onBack: () -> Unit) {
+fun VaartaBackBar(title: String?, onBack: () -> Unit, trailing: (@Composable () -> Unit)? = null) {
     val c = VaartaTheme.colors
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = VSpace.xs),
@@ -223,6 +223,10 @@ fun VaartaBackBar(title: String?, onBack: () -> Unit) {
             }
         }
         if (title != null) Text(title, style = MaterialTheme.typography.titleLarge, color = c.ink)
+        if (trailing != null) {
+            Spacer(Modifier.weight(1f))
+            trailing()
+        }
     }
 }
 
