@@ -231,6 +231,24 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-17 (later still) — Premium redesign Phase 2 (cover imagery) DONE + emulator-verified
+  (`96fd66a`, `c03b4e6`).** The app's first real imagery, $0/offline (spec §5.1–5.2):
+  - **11 hand-authored duotone vector covers** (`cover_*.xml`) — digital-arrest (police cap),
+    UPI/QR, parcel, KYC/bank, investment, job, loan-app, lottery, romance, utility, generic —
+    one visual contract (120×120, indigo gradient + white-alpha motifs, text-free, centered for
+    thumb/banner crops).
+  - **`coverKeyForScamType` (core:reasoning, TDD, 10 tests)** — ordered, word-boundary keyword
+    taxonomy; fail-safe to generic. Two real bugs found by emulator verification and fixed with
+    pinned regressions: (1) vague category tags ("Financial Fraud") missed — callers now match on
+    category+title combined; (2) substring "ed " (Enforcement Directorate) fired inside
+    "Task-Based" — switched to `\b` word-boundary regexes.
+  - **`ScamCover` composable** wired into Home's feed rows (56dp thumbnails replace the identical
+    gray alert-triangle chips). **Screenshot-verified:** every seed-feed category shows distinct,
+    correct art.
+  - Tests: core:reasoning **117 green** (fresh XML); `assembleDebug` green.
+  - **Next: Phase 3 — Home v2** (brand header + status chip, slim panic banner, tile grammar,
+    featured magazine card, subtitle cuts), then Article v2 (cover banner + structured summary).
+
 - **2026-07-17 (later) — Premium redesign Phase 1 (Foundation) DONE + emulator-verified.** Owner
   approved the spec (now including §3A India-first and §3B language architecture — India anchor
   prompts, in-app language picker design with Hinglish/Tanglish as first-class `-Latn` locales,
