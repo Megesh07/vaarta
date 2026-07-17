@@ -121,6 +121,7 @@ fun VaartaNav(
                 onAskVaarta = { conversationVm.newChat(); sub = SubScreen.Chat },
                 onOpenUrl = onOpenUrl,
                 feedCards = feed.cards,
+                feedOrigin = feed.origin,
                 feedRefreshing = feed.refreshing,
                 onOpenArticle = { card -> sub = SubScreen.Article(card) },
                 modifier = Modifier.padding(pad),

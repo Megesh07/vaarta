@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">VAARTA</string>
+
+    <!-- Home (redesign spec §6.1). Every future language adds a values-xx/ copy of these. -->
+    <string name="home_status_ai_ready">AI ready</string>
+    <string name="home_status_on_device">On-device</string>
+    <string name="home_panic_title">I\'m on a scam call right now</string>
+    <string name="home_panic_a11y">I am on a scam call right now. Open emergency steps.</string>
+    <string name="home_action_live_title">Help me on a call</string>
+    <string name="home_action_live_subtitle">VAARTA listens on speaker and coaches you live</string>
+    <string name="home_action_ask">Ask VAARTA</string>
+    <string name="home_action_recording">Check a recording</string>
+    <string name="home_feed_title">Trending scams in India</string>
+    <string name="home_feed_origin_live">Live from the web</string>
+    <string name="home_feed_origin_cached">From your last refresh</string>
+    <string name="home_feed_origin_seed">Built-in guide — updates when you\'re online</string>
+    <string name="home_feed_empty">Scam-awareness stories will appear here once you\'re online.</string>
+    <string name="home_feed_seen_in">Seen in %1$s</string>
 </resources>

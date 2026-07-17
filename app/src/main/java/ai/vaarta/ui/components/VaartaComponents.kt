@@ -153,6 +153,43 @@ fun IconChipCard(
     }
 }
 
+/**
+ * A half-width action tile (redesign spec §6.1): icon chip over a short title, no subtitle.
+ * Two of these share a row under the wide primary card — the compact end of the tile grammar.
+ */
+@Composable
+fun ActionTile(
+    @DrawableRes icon: Int,
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = VaartaTheme.colors
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, label = "tilePress")
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = c.panel),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (c.isDark) 0.dp else 1.dp),
+        border = if (c.isDark) BorderStroke(1.dp, c.line) else null,
+        modifier = modifier
+            .heightIn(min = 104.dp)
+            .scale(scale)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+    ) {
+        Column(Modifier.padding(VSpace.lg), verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
+            Surface(color = c.indigoTint, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(40.dp)) {
+                Box(contentAlignment = Alignment.Center) {
+                    VaartaIcon(icon, contentDescription = null, tint = c.indigo, size = 20.dp)
+                }
+            }
+            Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 2)
+        }
+    }
+}
+
 /** One cited web source: link glyph + title, tappable. Replaces the old copy-pasted "🔗 title" rows. */
 @Composable
 fun SourceLink(title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
