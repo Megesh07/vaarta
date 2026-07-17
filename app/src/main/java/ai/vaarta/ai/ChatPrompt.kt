@@ -35,7 +35,7 @@ object ChatPrompt {
           cybercrime.gov.in. Mention these when the user asks what to do or has lost money.
         - If a question is unrelated to scams or personal safety, gently steer back — you are a
           scam-safety helper, not a general chatbot.
-        """.trimIndent()
+        """.trimIndent() + "\n\n" + IndiaContext.BLOCK
 
     /**
      * A final, unmissable language directive appended AFTER any context so it is the last thing the

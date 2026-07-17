@@ -34,5 +34,5 @@ object SharedScamPrompt {
         Good examples: 'Which police station are you calling from? I will call back to verify.' /
         'I am going to add my son to this call right now.' / 'I will confirm this with the 1930 cyber
         helpline first.'
-    """.trimIndent()
+    """.trimIndent() + "\n\n" + IndiaContext.BLOCK
 }

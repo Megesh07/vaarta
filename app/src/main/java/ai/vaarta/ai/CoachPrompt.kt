@@ -73,5 +73,5 @@ object CoachPrompt {
         'I am ending this call now and will contact the 1930 cyber helpline myself.' (exit)
 
         Output ONLY the JSON object requested.
-    """.trimIndent()
+    """.trimIndent() + "\n\n" + IndiaContext.BLOCK
 }

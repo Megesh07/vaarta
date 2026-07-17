@@ -37,5 +37,5 @@ object AudioAnalyzePrompt {
         - "benign": true ONLY if this is clearly a normal, legitimate call with no scam signs; else false.
           NEVER mark a call benign just to reassure — a wrong "safe" verdict is the most dangerous output.
         - "language": the main language spoken (e.g. "en", "hi", "hinglish").
-    """.trimIndent()
+    """.trimIndent() + "\n\n" + IndiaContext.BLOCK
 }

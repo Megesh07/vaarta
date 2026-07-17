@@ -32,7 +32,7 @@ object AwarenessPrompt {
         - Keep every line simple, calm, and factual. No fear-mongering, no instructions to the reader.
         - Prefer scams reported recently in Indian news or by official sources.
         - Output the JSON array and nothing else.
-        """.trimIndent()
+        """.trimIndent() + "\n\n" + IndiaContext.BLOCK
 
     /**
      * System instruction for the per-topic summary — format + safety only. The actual topic lives in
@@ -55,7 +55,7 @@ object AwarenessPrompt {
         - Never tell the reader to pay money, share an OTP/PIN/password, or comply with the scammer.
         - Reply in simple English. Keep it under ~150 words. Plain text, no markdown headings.
         - Answer directly; never ask the user which scam they mean — it is named below.
-        """.trimIndent()
+        """.trimIndent() + "\n\n" + IndiaContext.BLOCK
 
     /** The explicit user turn naming the topic. [title]/[scamType] are OUR trusted labels (not model text). */
     fun summaryQuery(title: String, scamType: String): String =

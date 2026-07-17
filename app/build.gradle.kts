@@ -42,6 +42,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.all { it.useJUnitPlatform() }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -75,4 +79,7 @@ dependencies {
     // for the text-mode call; OkHttp provides the WebSocket for the Gemini Live streaming path.
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
