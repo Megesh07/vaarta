@@ -243,8 +243,8 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   of a valid escape (e.g. "50% off") untouched. TDD: added two failing tests first
   (`percent-encoded punctuation is decoded`, `a stray percent sign with no valid escape is left
   untouched`) in `ChatModelsTest.kt`, watched them fail against the old implementation, then made
-  them pass. **Verified:** `:core:reasoning:test` green (7/7, incl. the 2 new cases + the pre-existing
-  4); `:app:assembleDebug` green.
+  them pass. **Verified:** `:core:reasoning:test` green — `ChatModelsTest` 6/6 per fresh JUnit XML
+  (the 2 new cases + the pre-existing 4); `:app:assembleDebug` green. Committed `ee696a1`.
 
 - **2026-07-16 — Both AI-verification wiring gaps FIXED + emulator-verified (`c21ebd9`).**
   (1) **Demo now shows the AI:** `VaartaScreen` renders the fetched single-shot Gemini suggestion
