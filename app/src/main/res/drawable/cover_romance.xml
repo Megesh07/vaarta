@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: romance / matrimonial fraud — a heart behind a mask band (spec §5.1). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="120" android:startY="120" android:endX="0" android:endY="0" android:type="linear">
+                <item android:offset="0" android:color="#FF4B45C6"/>
+                <item android:offset="1" android:color="#FF352FA0"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- heart -->
+    <path android:fillColor="#E6FFFFFF" android:pathData="M60,88 C42,72 34,60 40,50 C46,42 58,44 60,54 C62,44 74,42 80,50 C86,60 78,72 60,88 Z"/>
+    <!-- mask band -->
+    <path android:fillColor="#FF8F8AF0" android:pathData="M34,42 L86,56 L86,66 L34,52 Z"/>
+    <!-- eye holes -->
+    <path android:fillColor="#FF352FA0" android:pathData="M48,49.5 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"/>
+    <path android:fillColor="#FF352FA0" android:pathData="M68,55 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"/>
+</vector>

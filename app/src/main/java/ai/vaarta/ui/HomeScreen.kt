@@ -223,11 +223,8 @@ private fun AwarenessCardRow(card: AwarenessCard, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(VSpace.md),
         ) {
-            Surface(color = c.track, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(44.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    VaartaIcon(R.drawable.ic_alert_triangle, contentDescription = null, tint = c.muted, size = 22.dp)
-                }
-            }
+            // Category + title: a vague tag ("Financial Fraud") still resolves via the headline.
+            ScamCover("${card.scamType} ${card.title}", modifier = Modifier.size(56.dp))
             Column(Modifier.weight(1f)) {
                 if (card.scamType.isNotBlank()) {
                     Eyebrow(card.scamType, color = c.indigo)

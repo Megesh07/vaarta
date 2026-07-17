@@ -55,6 +55,20 @@ class CoverKeyTest {
     fun `case-insensitive`() = assertEquals("upi", coverKeyForScamType("uPi FRAUD"))
 
     @Test
+    fun `short agency tokens only match whole words`() {
+        // Regression: "Task-Based" must not trigger the "ed" (Enforcement Directorate) keyword.
+        assertEquals("job", coverKeyForScamType("Job Fraud Task-Based Job Scams"))
+        assertEquals("digital_arrest", coverKeyForScamType("ED officer video call"))
+    }
+
+    @Test
+    fun `category plus title combined input maps on either part`() {
+        // Callers pass "category title" so a vague tag still resolves via the headline.
+        assertEquals("kyc_bank", coverKeyForScamType("Identity Theft KYC Update Fraud"))
+        assertEquals("investment", coverKeyForScamType("Financial Fraud Investment & Trading Scams"))
+    }
+
+    @Test
     fun `blank null unknown fall back to generic`() {
         assertEquals("generic", coverKeyForScamType(null))
         assertEquals("generic", coverKeyForScamType("  "))

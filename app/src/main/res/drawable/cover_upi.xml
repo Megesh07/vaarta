@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: UPI / QR payment fraud — QR finder-pattern tile (spec §5.1, §3A.6). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="120" android:startY="0" android:endX="0" android:endY="120" android:type="linear">
+                <item android:offset="0" android:color="#FF4B45C6"/>
+                <item android:offset="1" android:color="#FF352FA0"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- QR tile ground -->
+    <path android:fillColor="#59FFFFFF" android:pathData="M34,34 h52 v52 h-52 z"/>
+    <!-- finder squares (TL, TR, BL) -->
+    <path android:fillColor="#E6FFFFFF" android:pathData="M40,40 h13 v13 h-13 z"/>
+    <path android:fillColor="#FF4B45C6" android:pathData="M44,44 h5 v5 h-5 z"/>
+    <path android:fillColor="#E6FFFFFF" android:pathData="M67,40 h13 v13 h-13 z"/>
+    <path android:fillColor="#FF4B45C6" android:pathData="M71,44 h5 v5 h-5 z"/>
+    <path android:fillColor="#E6FFFFFF" android:pathData="M40,67 h13 v13 h-13 z"/>
+    <path android:fillColor="#FF4B45C6" android:pathData="M44,71 h5 v5 h-5 z"/>
+    <!-- data dots -->
+    <path android:fillColor="#FF8F8AF0" android:pathData="M67,67 h6 v6 h-6 z"/>
+    <path android:fillColor="#E6FFFFFF" android:pathData="M75,73 h5 v5 h-5 z"/>
+    <path android:fillColor="#E6FFFFFF" android:pathData="M60,58 h5 v5 h-5 z"/>
+</vector>
