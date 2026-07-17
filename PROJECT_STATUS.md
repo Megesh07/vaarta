@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-16 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-17 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -230,6 +230,21 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   other way around.
 
 ## 8. Change log
+
+- **2026-07-17 — `%3F` title bug FIXED (root cause, not a patch).** Traced the "known chip" from
+  the last two entries: `conversationTitleFrom` (core:reasoning, `ChatModels.kt`) is the single seam
+  every chat-derived Conversations-list title passes through, and it trusted the typed message
+  verbatim — a "?" arriving pre-escaped as `%3F` (Gboard/IME URL-autocomplete quirks and pasted-link
+  text both do this) rode straight into the saved title. No app code was ever encoding it — confirmed
+  by grepping the whole repo (app + core:*) for `Uri.encode`/`URLEncoder`/`Uri.parse` on any
+  title/scamType path and finding none, so the escape enters upstream of the app, not from a bug we
+  introduced. Fix: `conversationTitleFrom` now percent-decodes contiguous `%XX` runs as UTF-8 before
+  collapsing whitespace — decodes real escapes (`%3F` → `?`) while leaving a lone `%` that isn't part
+  of a valid escape (e.g. "50% off") untouched. TDD: added two failing tests first
+  (`percent-encoded punctuation is decoded`, `a stray percent sign with no valid escape is left
+  untouched`) in `ChatModelsTest.kt`, watched them fail against the old implementation, then made
+  them pass. **Verified:** `:core:reasoning:test` green (7/7, incl. the 2 new cases + the pre-existing
+  4); `:app:assembleDebug` green.
 
 - **2026-07-16 — Both AI-verification wiring gaps FIXED + emulator-verified (`c21ebd9`).**
   (1) **Demo now shows the AI:** `VaartaScreen` renders the fetched single-shot Gemini suggestion

@@ -24,4 +24,13 @@ class ChatModelsTest {
         assertEquals("New chat", conversationTitleFrom("   \n  "))
         assertEquals("New chat", conversationTitleFrom(""))
     }
+
+    @Test fun `percent-encoded punctuation is decoded`() {
+        assertEquals("Is this a scam?", conversationTitleFrom("Is this a scam%3F"))
+        assertEquals("50% off, is this a scam?", conversationTitleFrom("50% off, is this a scam%3F"))
+    }
+
+    @Test fun `a stray percent sign with no valid escape is left untouched`() {
+        assertEquals("50% off today", conversationTitleFrom("50% off today"))
+    }
 }
