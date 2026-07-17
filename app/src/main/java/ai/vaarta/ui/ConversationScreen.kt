@@ -68,6 +68,7 @@ fun ConversationScreen(
     onShare: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    androidx.activity.compose.BackHandler(onBack = onBack) // system back == the back bar (spec §8.2)
     val c = VaartaTheme.colors
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()

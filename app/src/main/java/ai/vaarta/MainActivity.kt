@@ -6,6 +6,7 @@ import ai.vaarta.core.data.db.SessionSource
 import ai.vaarta.core.reasoning.Reply
 import ai.vaarta.core.reasoning.ReplyKind
 import ai.vaarta.core.reasoning.RiskLevel
+import ai.vaarta.core.reasoning.relativeTimeLabel
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.reasoning.Source
 import ai.vaarta.feed.AwarenessViewModel
@@ -19,6 +20,7 @@ import ai.vaarta.ui.components.Eyebrow
 import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSecondaryButton
+import ai.vaarta.ui.components.VaartaSubScreen
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import android.Manifest
@@ -30,7 +32,9 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -83,9 +87,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private val vm: SessionViewModel by viewModels()
@@ -96,6 +97,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge() // system-bar icons follow light/dark correctly (spec §8.1)
         setContent {
             VaartaTheme {
                 VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
@@ -140,6 +142,7 @@ fun VaartaScreen(
     onOpenUrl: (String) -> Unit,
     onBack: () -> Unit,
 ) {
+    BackHandler(onBack = onBack) // system back == the header back arrow (spec §8.2)
     val state by vm.session.state.collectAsState()
     val displayedLevel by vm.session.displayedLevel.collectAsState()
     val aiRaised by vm.session.aiRaised.collectAsState()
@@ -386,8 +389,6 @@ private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
 
 // --- Phase 4B: saved history (encrypted at rest, ADR-0004) ---
 
-private val historyDateFmt = SimpleDateFormat("d MMM yyyy, h:mm a", Locale.getDefault())
-
 private fun levelFromName(name: String): RiskLevel =
     runCatching { RiskLevel.valueOf(name) }.getOrDefault(RiskLevel.OBSERVING)
 
@@ -496,7 +497,12 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete:
                         Text(levelText(level), style = MaterialTheme.typography.labelMedium, color = levelColor(level))
                         Text("·", style = MaterialTheme.typography.labelMedium, color = c.muted)
                     }
-                    Text(historyDateFmt.format(Date(session.startedAtMs)), style = MaterialTheme.typography.labelMedium, color = c.muted)
+                    Text(
+                        relativeTimeLabel(session.startedAtMs, System.currentTimeMillis()),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = c.muted,
+                        maxLines = 1,
+                    )
                 }
             }
             VaartaIcon(
@@ -536,7 +542,6 @@ internal fun AnalyzeScreen(
     onOpenUrl: (String) -> Unit,
 ) {
     val state by analyzerVm.state.collectAsState()
-    val scroll = rememberScrollState()
     val context = LocalContext.current
     // The screen owns its own picker, so every entry point (Home card, Live button, reopening after
     // an analysis) can start a new analysis right here — no dead-end Idle state.
@@ -544,86 +549,79 @@ internal fun AnalyzeScreen(
         if (uri != null) analyzerVm.analyze(uri)
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            VaartaBackBar(title = "Analyze a recording", onBack = onBack)
+    VaartaSubScreen(title = "Analyze a recording", onBack = onBack) {
+        when (val s = state) {
+            AudioAnalyzerViewModel.UiState.Idle -> {
+                Text(
+                    "Pick a recorded call — VAARTA will transcribe it, check it against known scam " +
+                        "patterns, and give you a verdict.",
+                    style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
+                )
+                VaartaSecondaryButton(
+                    text = "Pick a recording",
+                    onClick = { picker.launch("audio/*") },
+                    leadingIcon = R.drawable.ic_headphones,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
-            when (val s = state) {
-                AudioAnalyzerViewModel.UiState.Idle -> {
-                    Text(
-                        "Pick a recorded call — VAARTA will transcribe it, check it against known scam " +
-                            "patterns, and give you a verdict.",
-                        style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
-                    )
-                    VaartaSecondaryButton(
-                        text = "Pick a recording",
-                        onClick = { picker.launch("audio/*") },
-                        leadingIcon = R.drawable.ic_headphones,
+            AudioAnalyzerViewModel.UiState.Running -> {
+                Spacer(Modifier.height(40.dp))
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
+                    CircularProgressIndicator(color = VaartaTheme.colors.indigo)
+                    Text("Transcribing and checking the recording…", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+                    Text("This can take up to a minute for a longer clip.", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                }
+            }
+
+            is AudioAnalyzerViewModel.UiState.Error -> {
+                Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.scamTint)) {
+                    Text(s.message, modifier = Modifier.padding(VSpace.lg), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.scam)
+                }
+                VaartaSecondaryButton(text = "Back", onClick = onBack, leadingIcon = R.drawable.ic_arrow_left, modifier = Modifier.fillMaxWidth())
+            }
+
+            is AudioAnalyzerViewModel.UiState.Done -> {
+                val r = s.result
+                // Auto-save the analyzed recording to Conversations (v2 — keyed on the result so it
+                // saves once per analysis; the user picked the clip, which is the consent).
+                LaunchedEffect(r) {
+                    historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
+                        Toast.makeText(context, "Saved to your conversations", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                RiskHero(
+                    level = r.level,
+                    score = r.score,
+                    reassure = r.reassure,
+                    aiRaised = r.aiRaised,
+                    detectedStages = r.detectedStages,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+                Text(
+                    "Analyzed from a recording. The risk score is computed on-device from the transcript; " +
+                        "the AI transcribed and helped classify it.",
+                    style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
+                )
+                if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
+
+                if (r.level.ordinal >= RiskLevel.HIGH_RISK.ordinal && !r.reassure) {
+                    VaartaButton(
+                        text = "Share this warning",
+                        onClick = { onShare("VAARTA: I analyzed a call recording and it looks like a scam (${levelText(r.level)}).") },
+                        leadingIcon = R.drawable.ic_bell,
+                        destructive = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
 
-                AudioAnalyzerViewModel.UiState.Running -> {
-                    Spacer(Modifier.height(40.dp))
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
-                        CircularProgressIndicator(color = VaartaTheme.colors.indigo)
-                        Text("Transcribing and checking the recording…", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
-                        Text("This can take up to a minute for a longer clip.", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
-                    }
-                }
-
-                is AudioAnalyzerViewModel.UiState.Error -> {
-                    Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.scamTint)) {
-                        Text(s.message, modifier = Modifier.padding(VSpace.lg), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.scam)
-                    }
-                    VaartaSecondaryButton(text = "Back", onClick = onBack, leadingIcon = R.drawable.ic_arrow_left, modifier = Modifier.fillMaxWidth())
-                }
-
-                is AudioAnalyzerViewModel.UiState.Done -> {
-                    val r = s.result
-                    // Auto-save the analyzed recording to Conversations (v2 — keyed on the result so it
-                    // saves once per analysis; the user picked the clip, which is the consent).
-                    LaunchedEffect(r) {
-                        historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
-                            Toast.makeText(context, "Saved to your conversations", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    RiskHero(
-                        level = r.level,
-                        score = r.score,
-                        reassure = r.reassure,
-                        aiRaised = r.aiRaised,
-                        detectedStages = r.detectedStages,
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    )
-                    Text(
-                        "Analyzed from a recording. The risk score is computed on-device from the transcript; " +
-                            "the AI transcribed and helped classify it.",
-                        style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
-                    )
-                    if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
-
-                    if (r.level.ordinal >= RiskLevel.HIGH_RISK.ordinal && !r.reassure) {
-                        VaartaButton(
-                            text = "Share this warning",
-                            onClick = { onShare("VAARTA: I analyzed a call recording and it looks like a scam (${levelText(r.level)}).") },
-                            leadingIcon = R.drawable.ic_bell,
-                            destructive = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
-                        VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.muted, size = 16.dp)
-                        Text("Saved to your conversations", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
+                    VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.muted, size = 16.dp)
+                    Text("Saved to your conversations", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
                 }
             }
-            Spacer(Modifier.height(24.dp))
         }
+        Spacer(Modifier.height(24.dp))
     }
 }
 
