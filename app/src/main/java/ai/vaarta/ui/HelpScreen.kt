@@ -204,6 +204,23 @@ fun HelpScreen(
             HelpSection(title = "") {
                 HelpLanguageRow(current = currentLanguage, onClick = { showLanguagePicker = true })
             }
+
+            // Voice-attribution privacy control (Part D). Same destructive-action idiom as the
+            // Conversations screen's "Delete all" row (MainActivity.kt HistoryScreen kebab sheet):
+            // a short explanatory caption above an outlined button, no confirmation dialog.
+            HelpSection(title = "") {
+                Text(
+                    stringResource(R.string.settings_clear_voice_data_desc),
+                    style = MaterialTheme.typography.bodySmall, color = c.muted,
+                )
+                Spacer(Modifier.height(VSpace.sm))
+                VaartaSecondaryButton(
+                    text = stringResource(R.string.settings_clear_voice_data),
+                    onClick = { vm.session.clearVoiceData() },
+                    leadingIcon = R.drawable.ic_close,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Spacer(Modifier.height(VSpace.xxl))
         }
     }

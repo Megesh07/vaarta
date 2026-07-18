@@ -200,6 +200,8 @@
     <string name="language_hinglish_hint" translatable="false">Hinglish — Hindi, English letters mein</string>
     <string name="help_language_title">App language</string>
     <string name="help_language_current">Current: %1$s</string>
+    <string name="settings_clear_voice_data">Clear voice data</string>
+    <string name="settings_clear_voice_data_desc">Deletes the voice recognition VAARTA has learned from your calls</string>
 
     <!-- Floating overlay (Phase 4C) — foreground-service notification + the draggable panel. -->
     <string name="overlay_notif_channel_name">Live call protection</string>
