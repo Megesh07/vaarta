@@ -4,7 +4,7 @@ import ai.vaarta.R
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
-import androidx.compose.foundation.clickable
+import ai.vaarta.ui.theme.vaartaPressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -40,7 +40,7 @@ private fun LanguageRow(language: AppLanguage, onClick: () -> Unit) {
     val c = VaartaTheme.colors
     Surface(
         color = c.panel, shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().vaartaPressable(onClick),
     ) {
         Column(Modifier.padding(VSpace.lg)) {
             Text(language.nativeLabel, style = MaterialTheme.typography.titleMedium, color = c.ink)
@@ -86,7 +86,7 @@ fun FirstRunLanguagePicker(onChosen: () -> Unit) {
 @Composable
 fun HelpLanguageRow(current: AppLanguage, onClick: () -> Unit) {
     val c = VaartaTheme.colors
-    Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    Column(Modifier.fillMaxWidth().vaartaPressable(onClick)) {
         Text(stringResource(R.string.help_language_title), style = MaterialTheme.typography.titleMedium, color = c.ink)
         Text(
             stringResource(R.string.help_language_current, current.nativeLabel),

@@ -12,7 +12,16 @@ import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.recording.AudioAnalyzerViewModel
 import ai.vaarta.ui.theme.VaartaTheme
-import androidx.compose.foundation.clickable
+import ai.vaarta.ui.theme.isReducedMotionEnabled
+import ai.vaarta.ui.theme.motionDurationMs
+import ai.vaarta.ui.theme.vaartaPressable
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +48,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 enum class VaartaTab { HOME, HISTORY, HELP }
@@ -72,35 +84,49 @@ fun VaartaNav(
     var tab by remember { mutableStateOf(VaartaTab.HOME) }
     var sub by remember { mutableStateOf<SubScreen>(SubScreen.None) }
     val feed by awarenessVm.state.collectAsState()
+    val density = LocalDensity.current
+    val slideUpPx = with(density) { 8.dp.roundToPx() }
+    val reducedMotion = isReducedMotionEnabled(LocalContext.current)
 
     // A sub-screen takes the whole window (no bottom bar) so nothing competes with its back action.
     if (sub != SubScreen.None) {
-        when (sub) {
-            SubScreen.Live -> VaartaScreen(
-                vm = vm, historyVm = historyVm,
-                onOpenHistory = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
-                onShare = onShare, onExportPdf = onExportPdf, onOpenUrl = onOpenUrl,
-                onBack = { sub = SubScreen.None },
-            )
-            SubScreen.Analyze -> AnalyzeScreen(
-                analyzerVm = analyzerVm, historyVm = historyVm,
-                onBack = { analyzerVm.reset(); sub = SubScreen.None },
-                onShare = onShare, onOpenUrl = onOpenUrl,
-            )
-            SubScreen.Chat -> ConversationScreen(
-                vm = conversationVm,
-                onBack = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
-                onOpenUrl = onOpenUrl,
-                onShare = onShare,
-            )
-            is SubScreen.Article -> ArticleScreen(
-                card = (sub as SubScreen.Article).card,
-                onBack = { sub = SubScreen.None; tab = VaartaTab.HOME },
-                onOpenUrl = onOpenUrl,
-                onShare = onShare,
-                onAskAbout = { seed -> conversationVm.newChat(seed); sub = SubScreen.Chat },
-            )
-            SubScreen.None -> Unit
+        AnimatedContent(
+            targetState = sub,
+            transitionSpec = {
+                val enterMs = motionDurationMs(220, reducedMotion)
+                val exitMs = motionDurationMs(110, reducedMotion)
+                (fadeIn(tween(enterMs)) + slideInVertically(tween(enterMs)) { slideUpPx }) togetherWith
+                    (fadeOut(tween(exitMs)) + slideOutVertically(tween(exitMs)) { slideUpPx })
+            },
+            label = "subScreen",
+        ) { currentSub ->
+            when (currentSub) {
+                SubScreen.Live -> VaartaScreen(
+                    vm = vm, historyVm = historyVm,
+                    onOpenHistory = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
+                    onShare = onShare, onExportPdf = onExportPdf, onOpenUrl = onOpenUrl,
+                    onBack = { sub = SubScreen.None },
+                )
+                SubScreen.Analyze -> AnalyzeScreen(
+                    analyzerVm = analyzerVm, historyVm = historyVm,
+                    onBack = { analyzerVm.reset(); sub = SubScreen.None },
+                    onShare = onShare, onOpenUrl = onOpenUrl,
+                )
+                SubScreen.Chat -> ConversationScreen(
+                    vm = conversationVm,
+                    onBack = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
+                    onOpenUrl = onOpenUrl,
+                    onShare = onShare,
+                )
+                is SubScreen.Article -> ArticleScreen(
+                    card = currentSub.card,
+                    onBack = { sub = SubScreen.None; tab = VaartaTab.HOME },
+                    onOpenUrl = onOpenUrl,
+                    onShare = onShare,
+                    onAskAbout = { seed -> conversationVm.newChat(seed); sub = SubScreen.Chat },
+                )
+                SubScreen.None -> Unit
+            }
         }
         return
     }
@@ -167,13 +193,13 @@ private fun RowScope.NavItem(icon: Int, label: String, selected: Boolean, onClic
     val c = VaartaTheme.colors
     val tint = if (selected) c.indigo else c.faint
     Column(
-        Modifier.weight(1f).fillMaxHeight().clickable(onClick = onClick),
+        Modifier.weight(1f).fillMaxHeight().vaartaPressable(onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         VaartaIcon(icon, contentDescription = null, tint = tint, size = 24.dp)
         Spacer(Modifier.height(2.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = tint)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(3.dp))
         Surface(
             color = if (selected) c.indigo else Color.Transparent,

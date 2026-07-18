@@ -9,13 +9,13 @@ import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
+import ai.vaarta.ui.theme.vaartaPressable
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -154,7 +155,7 @@ fun ConversationScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
-                        modifier = Modifier.clickable { onShare(vm.transcriptText()) }.padding(vertical = VSpace.xs),
+                        modifier = Modifier.vaartaPressable({ onShare(vm.transcriptText()) }).padding(vertical = VSpace.xs),
                     ) {
                         VaartaIcon(R.drawable.ic_download, contentDescription = null, tint = c.indigo, size = 16.dp)
                         Text(stringResource(R.string.chat_download_transcript), style = MaterialTheme.typography.bodySmall, color = c.indigo)
@@ -196,10 +197,14 @@ fun ConversationScreen(
                         pending.forEach { a ->
                             Surface(color = c.indigoTint, shape = RoundedCornerShape(50)) {
                                 Row(Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
-                                    Text(a.label, style = MaterialTheme.typography.bodySmall, color = c.indigoInk)
+                                    Text(
+                                        a.label, style = MaterialTheme.typography.bodySmall, color = c.indigoInk,
+                                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        modifier = Modifier.widthIn(max = 140.dp),
+                                    )
                                     VaartaIcon(
                                         R.drawable.ic_close, contentDescription = stringResource(R.string.chat_remove_a11y), tint = c.indigoInk, size = 14.dp,
-                                        modifier = Modifier.clickable { pending = pending - a },
+                                        modifier = Modifier.vaartaPressable({ pending = pending - a }),
                                     )
                                 }
                             }
@@ -229,18 +234,21 @@ fun ConversationScreen(
                             )
                             VaartaIcon(
                                 R.drawable.ic_mic, contentDescription = stringResource(R.string.chat_mic_a11y), tint = c.muted, size = 22.dp,
-                                modifier = Modifier.clickable { startVoice() }.padding(8.dp),
+                                modifier = Modifier.vaartaPressable({ startVoice() }).padding(8.dp),
                             )
                             VaartaIcon(
                                 R.drawable.ic_plus, contentDescription = stringResource(R.string.chat_attach_a11y), tint = c.muted, size = 22.dp,
-                                modifier = Modifier.clickable { showAttachSheet = true }.padding(end = VSpace.sm).padding(8.dp),
+                                modifier = Modifier.vaartaPressable({ showAttachSheet = true }).padding(end = VSpace.sm).padding(8.dp),
                             )
                         }
                     }
                     Surface(
                         color = if ((input.isNotBlank() || pending.isNotEmpty()) && !sending) c.indigo else c.track,
                         shape = CircleShape,
-                        modifier = Modifier.size(52.dp).clickable(enabled = (input.isNotBlank() || pending.isNotEmpty()) && !sending) { submit() },
+                        modifier = Modifier.size(52.dp).vaartaPressable(
+                            onClick = { submit() },
+                            enabled = (input.isNotBlank() || pending.isNotEmpty()) && !sending,
+                        ),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             VaartaIcon(R.drawable.ic_send, contentDescription = stringResource(R.string.chat_send_a11y), tint = Color.White, size = 20.dp)
@@ -276,7 +284,7 @@ private fun StarterChip(text: String, onClick: () -> Unit) {
     val c = VaartaTheme.colors
     Surface(
         color = c.indigoTint, shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().vaartaPressable(onClick),
     ) {
         Text(
             text, style = MaterialTheme.typography.bodyMedium, color = c.indigoInk,
@@ -290,7 +298,7 @@ private fun StarterChip(text: String, onClick: () -> Unit) {
 private fun AttachRow(icon: Int, text: String, onClick: () -> Unit) {
     val c = VaartaTheme.colors
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = VSpace.md),
+        Modifier.fillMaxWidth().vaartaPressable(onClick).padding(vertical = VSpace.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(VSpace.md),
     ) {

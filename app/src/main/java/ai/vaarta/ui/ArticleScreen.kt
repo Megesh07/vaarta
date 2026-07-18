@@ -14,7 +14,7 @@ import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSubScreen
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
-import androidx.compose.foundation.clickable
+import ai.vaarta.ui.theme.vaartaPressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,9 +95,10 @@ fun ArticleScreen(
             Surface(
                 color = Color.Transparent,
                 shape = CircleShape,
-                modifier = Modifier.size(44.dp).clickable(enabled = !loading) {
-                    onShare(BilingualShare.compose(warnFamilyText(card, summaryText, warnPrefix, warnSuffix), AppLanguage.current()))
-                },
+                modifier = Modifier.size(44.dp).vaartaPressable(
+                    onClick = { onShare(BilingualShare.compose(warnFamilyText(card, summaryText, warnPrefix, warnSuffix), AppLanguage.current())) },
+                    enabled = !loading,
+                ),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     VaartaIcon(R.drawable.ic_bell, contentDescription = shareA11y, tint = c.ink, size = 22.dp)

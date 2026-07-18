@@ -27,6 +27,7 @@ import ai.vaarta.ui.components.VaartaSecondaryButton
 import ai.vaarta.ui.components.VaartaSubScreen
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
+import ai.vaarta.ui.theme.vaartaPressable
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -43,7 +44,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -256,7 +256,7 @@ fun VaartaScreen(
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 VaartaIcon(
                     R.drawable.ic_arrow_left, contentDescription = stringResource(R.string.common_back), tint = VaartaTheme.colors.ink, size = 24.dp,
-                    modifier = Modifier.clickable(onClick = onBack).padding(end = VSpace.md),
+                    modifier = Modifier.vaartaPressable(onBack).padding(end = VSpace.md),
                 )
                 Text(stringResource(R.string.live_title), style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink)
             }
@@ -390,7 +390,7 @@ fun VaartaScreen(
 @Composable
 private fun QuestionCard(text: String, onCycle: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onCycle),
+        modifier = Modifier.fillMaxWidth().vaartaPressable(onCycle),
         colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint),
     ) {
         Column(Modifier.padding(VSpace.md)) {
@@ -486,7 +486,7 @@ internal fun HistoryScreen(
                     }
                     Surface(
                         color = Color.Transparent, shape = CircleShape,
-                        modifier = Modifier.size(44.dp).clickable { showMenu = true },
+                        modifier = Modifier.size(44.dp).vaartaPressable({ showMenu = true }),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             VaartaIcon(R.drawable.ic_more_vert, contentDescription = stringResource(R.string.conv_menu_a11y), tint = c.ink, size = 22.dp)
@@ -633,7 +633,7 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit) {
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = if (c.isDark) 0.dp else 1.dp),
         border = if (c.isDark) androidx.compose.foundation.BorderStroke(1.dp, c.line) else null,
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
+        modifier = Modifier.fillMaxWidth().vaartaPressable(onOpen),
     ) {
         Row(Modifier.padding(VSpace.lg), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.md)) {
             Surface(color = chipBg, shape = CircleShape, modifier = Modifier.size(44.dp)) {
@@ -644,15 +644,20 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
                     if (scored) {
                         Surface(color = levelColor(level), shape = CircleShape, modifier = Modifier.size(8.dp)) {}
-                        Text(levelText(level), style = MaterialTheme.typography.labelMedium, color = levelColor(level), maxLines = 1)
+                        Text(
+                            levelText(level), style = MaterialTheme.typography.labelMedium, color = levelColor(level),
+                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
                         Text("·", style = MaterialTheme.typography.labelMedium, color = c.faint)
                     }
                     Text(
                         relativeTimeLabel(session.startedAtMs, System.currentTimeMillis()),
-                        style = MaterialTheme.typography.labelMedium, color = c.muted, maxLines = 1,
+                        style = MaterialTheme.typography.labelMedium, color = c.muted,
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
             }

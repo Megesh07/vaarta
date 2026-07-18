@@ -10,6 +10,10 @@ import ai.vaarta.ui.components.IconChipCard
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
+import ai.vaarta.ui.theme.isReducedMotionEnabled
+import ai.vaarta.ui.theme.vaartaPressable
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,17 +38,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 /**
  * Home v2 (redesign spec §6.1): brand header + honest status chip, one slim PANIC banner (the only
@@ -104,6 +113,8 @@ fun HomeScreen(
                         stringResource(R.string.home_panic_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
                     VaartaIcon(R.drawable.ic_chevron_right, contentDescription = null, tint = Color.White, size = 20.dp)
@@ -156,8 +167,14 @@ fun HomeScreen(
             if (feedCards.isEmpty()) {
                 EmptyState(icon = R.drawable.ic_globe, text = stringResource(R.string.home_feed_empty))
             } else {
-                FeaturedScamCard(feedCards.first(), onClick = { onOpenArticle(feedCards.first()) })
-                feedCards.drop(1).forEach { card -> AwarenessCardRow(card, onClick = { onOpenArticle(card) }) }
+                StaggeredFadeIn(index = 0) {
+                    FeaturedScamCard(feedCards.first(), onClick = { onOpenArticle(feedCards.first()) })
+                }
+                feedCards.drop(1).forEachIndexed { i, card ->
+                    StaggeredFadeIn(index = i + 1) {
+                        AwarenessCardRow(card, onClick = { onOpenArticle(card) })
+                    }
+                }
             }
             Spacer(Modifier.height(VSpace.xxl))
         }
@@ -192,6 +209,8 @@ private fun StatusChip(aiConfigured: Boolean) {
                 stringResource(if (aiConfigured) R.string.home_status_ai_ready else R.string.home_status_on_device),
                 style = MaterialTheme.typography.labelMedium,
                 color = c.indigoInk,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -208,7 +227,7 @@ private fun FeaturedScamCard(card: AwarenessCard, onClick: () -> Unit) {
         border = if (c.isDark) BorderStroke(1.dp, c.line) else null,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .vaartaPressable(onClick)
             .semantics { contentDescription = "${card.title}. ${card.oneLine}" },
     ) {
         Column {
@@ -262,7 +281,7 @@ private fun AwarenessCardRow(card: AwarenessCard, onClick: () -> Unit) {
         border = if (c.isDark) BorderStroke(1.dp, c.line) else null,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .vaartaPressable(onClick)
             .semantics { contentDescription = "${card.title}. ${card.oneLine}" },
     ) {
         Row(
@@ -281,4 +300,22 @@ private fun AwarenessCardRow(card: AwarenessCard, onClick: () -> Unit) {
             VaartaIcon(R.drawable.ic_chevron_right, contentDescription = null, tint = c.faint, size = 20.dp)
         }
     }
+}
+
+/**
+ * A 40ms-staggered fade-in for the feed, first load only (redesign spec §9). Each row plays its own
+ * one-shot fade the moment it enters composition; a returning/refreshed feed doesn't replay it since
+ * Compose keeps the slot's remembered [Animatable] alive across recompositions with the same content.
+ */
+@Composable
+private fun StaggeredFadeIn(index: Int, content: @Composable () -> Unit) {
+    val reducedMotion = isReducedMotionEnabled(LocalContext.current)
+    val alpha = remember { Animatable(if (reducedMotion) 1f else 0f) }
+    LaunchedEffect(Unit) {
+        if (!reducedMotion) {
+            delay(index * 40L)
+            alpha.animateTo(1f, tween(200))
+        }
+    }
+    Box(Modifier.alpha(alpha.value)) { content() }
 }

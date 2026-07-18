@@ -4,12 +4,9 @@ import ai.vaarta.R
 import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
+import ai.vaarta.ui.theme.vaartaPressable
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,11 +28,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -117,9 +111,6 @@ fun IconChipCard(
     tone: ChipTone = ChipTone.BRAND,
 ) {
     val c = VaartaTheme.colors
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, label = "cardPress")
     val chipBg = if (tone == ChipTone.BRAND) c.indigoTint else c.track
     val chipTint = if (tone == ChipTone.BRAND) c.indigo else c.muted
 
@@ -130,8 +121,7 @@ fun IconChipCard(
         border = if (c.isDark) BorderStroke(1.dp, c.line) else null,
         modifier = modifier
             .fillMaxWidth()
-            .scale(scale)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .vaartaPressable(onClick),
     ) {
         Row(
             Modifier.fillMaxWidth().padding(VSpace.lg),
@@ -166,9 +156,6 @@ fun ActionTile(
     modifier: Modifier = Modifier,
 ) {
     val c = VaartaTheme.colors
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, label = "tilePress")
 
     Card(
         colors = CardDefaults.cardColors(containerColor = c.panel),
@@ -177,8 +164,7 @@ fun ActionTile(
         border = if (c.isDark) BorderStroke(1.dp, c.line) else null,
         modifier = modifier
             .heightIn(min = 104.dp)
-            .scale(scale)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .vaartaPressable(onClick),
     ) {
         Column(Modifier.padding(VSpace.lg), verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
             Surface(color = c.indigoTint, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(40.dp)) {
@@ -200,7 +186,7 @@ fun ActionTile(
 fun TextLinkRow(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = VaartaTheme.colors
     Box(
-        modifier = modifier.clickable(onClick = onClick).padding(vertical = VSpace.sm),
+        modifier = modifier.vaartaPressable(onClick).padding(vertical = VSpace.sm),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium, color = c.indigo)
@@ -222,7 +208,7 @@ fun LinkRow(
 ) {
     val c = VaartaTheme.colors
     Row(
-        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = VSpace.sm),
+        modifier = modifier.fillMaxWidth().vaartaPressable(onClick).padding(vertical = VSpace.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(VSpace.md),
     ) {
@@ -242,7 +228,7 @@ fun LinkRow(
 fun SourceLink(title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = VaartaTheme.colors
     Row(
-        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 3.dp),
+        modifier = modifier.fillMaxWidth().vaartaPressable(onClick).padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
     ) {
@@ -263,7 +249,7 @@ fun VaartaBackBar(title: String?, onBack: () -> Unit, trailing: (@Composable () 
         Surface(
             color = Color.Transparent,
             shape = CircleShape,
-            modifier = Modifier.size(44.dp).clickable(onClick = onBack),
+            modifier = Modifier.size(44.dp).vaartaPressable(onBack),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 VaartaIcon(R.drawable.ic_arrow_left, contentDescription = stringResource(R.string.common_back), tint = c.ink, size = 24.dp)
