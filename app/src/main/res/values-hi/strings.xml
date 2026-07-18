@@ -201,6 +201,8 @@
     <string name="language_picker_first_run_body">आप इसे कभी भी Help से बदल सकते हैं।</string>
     <string name="help_language_title">ऐप की भाषा</string>
     <string name="help_language_current">मौजूदा: %1$s</string>
+    <string name="settings_clear_voice_data">वॉइस डेटा मिटाएं</string>
+    <string name="settings_clear_voice_data_desc">VAARTA ने आपकी कॉल्स से जो वॉइस पहचान सीखी है, उसे मिटाता है</string>
 
     <!-- Floating overlay -->
     <string name="overlay_notif_channel_name">लाइव कॉल सुरक्षा</string>

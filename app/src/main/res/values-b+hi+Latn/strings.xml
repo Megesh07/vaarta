@@ -202,6 +202,8 @@
     <string name="language_picker_first_run_body">Isse aap kabhi bhi Help se badal sakte ho.</string>
     <string name="help_language_title">App language</string>
     <string name="help_language_current">Abhi: %1$s</string>
+    <string name="settings_clear_voice_data">Voice data clear karo</string>
+    <string name="settings_clear_voice_data_desc">VAARTA ne aapki calls se jo voice recognition seekha hai, use clear karta hai</string>
 
     <!-- Floating overlay -->
     <string name="overlay_notif_channel_name">Live call protection</string>
