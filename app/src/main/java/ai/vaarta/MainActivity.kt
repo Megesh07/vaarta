@@ -441,7 +441,7 @@ private fun SpeakerNudgeBanner(onDismiss: () -> Unit) {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
                 VaartaIcon(R.drawable.ic_mic, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
                 Text(
-                    stringResource(R.string.live_speaker_nudge),
+                    stringResource(R.string.live_active_caption),
                     style = MaterialTheme.typography.bodySmall,
                     color = VaartaTheme.colors.ink,
                 )
