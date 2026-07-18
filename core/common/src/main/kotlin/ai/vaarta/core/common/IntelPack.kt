@@ -40,12 +40,15 @@ data class Signal(
     val userSafe: Boolean = false,
 )
 
-/** The nine canonical signal categories — SCAM_INTELLIGENCE.md §5 (+ BENIGN for negative offsets). */
+/** The eleven canonical signal categories — SCAM_INTELLIGENCE.md §5 (+ BENIGN for negative offsets).
+ *  FINANCIAL_LURE and SERVICE_THREAT added for pack v2 (2026-07-18): the "you will gain money"
+ *  bait pattern (investment/job-task/loan-app/lottery/UPI-refund) and the "pay now or lose service"
+ *  threat pattern (electricity disconnection) that digital-arrest's categories didn't cover. */
 @Serializable
 enum class SignalCategory {
     AUTHORITY_CLAIM, LEGAL_THREAT, ISOLATION_ORDER, CHANNEL_SWITCH,
     URGENCY_PRESSURE, IDENTITY_PHISH, EXTRACTION_MOVE, LEGITIMACY_THEATER,
-    PARCEL_PRETEXT, BENIGN,
+    PARCEL_PRETEXT, FINANCIAL_LURE, SERVICE_THREAT, BENIGN,
 }
 
 /** The five-stage digital-arrest script grammar — SCAM_INTELLIGENCE.md §4. */

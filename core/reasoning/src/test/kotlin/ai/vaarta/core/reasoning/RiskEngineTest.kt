@@ -2,6 +2,7 @@ package ai.vaarta.core.reasoning
 
 import ai.vaarta.core.common.IntelPack
 import ai.vaarta.core.common.MatchMode
+import ai.vaarta.core.common.Normalization
 import ai.vaarta.core.common.RiskEvent
 import ai.vaarta.core.common.Signal
 import ai.vaarta.core.common.SignalCategory
@@ -104,5 +105,56 @@ class RiskEngineTest {
         val s = e.ingest(t("I will call the 1930 helpline", 5_000))
         assertEquals(0, s.score, "userSafe signal must be excluded from scoring")
         assertTrue(s.topSignals.isEmpty())
+    }
+
+    @Test
+    fun `investment lure with urgency and extraction reaches scam pattern`() {
+        val e = engine()
+        e.ingest(t("Double your money in 7 days with our guaranteed trading plan", 5_000))
+        e.ingest(t("This offer closes within two hours, act immediately", 20_000))
+        val s = e.ingest(t("Transfer the money to this UPI id to start your investment", 40_000))
+        assertTrue(s.score > 0, "investment hook + urgency + extraction should score above zero")
+    }
+
+    @Test
+    fun `job task lure is detected as a hook signal`() {
+        val e = engine()
+        val s = e.ingest(t("Earn money doing simple tasks from home, work from home job available", 5_000))
+        assertTrue(s.stage == Stage.HOOK, "job-task hook phrase should register at HOOK stage")
+    }
+
+    @Test
+    fun `loan app hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Your instant loan of fifty thousand rupees has been approved, no documents required", 5_000))
+        assertTrue(s.stage == Stage.HOOK)
+    }
+
+    @Test
+    fun `lottery hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Congratulations, you have won the KBC lottery prize of 25 lakh rupees", 5_000))
+        assertTrue(s.stage == Stage.HOOK)
+    }
+
+    @Test
+    fun `electricity disconnection hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Your electricity connection will be disconnected today for non payment of bill", 5_000))
+        assertTrue(s.stage == Stage.HOOK)
+    }
+
+    @Test
+    fun `upi wrong payment refund hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Sorry sir I sent money to your account by mistake, please refund the wrong payment", 5_000))
+        assertTrue(s.stage == Stage.HOOK)
+    }
+
+    @Test
+    fun `courier cod otp hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Your cash on delivery parcel needs an OTP confirmation before dispatch", 5_000))
+        assertTrue(s.stage == Stage.HOOK)
     }
 }
