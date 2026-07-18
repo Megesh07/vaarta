@@ -20,6 +20,10 @@ object SharedScamPrompt {
         can with imperfect audio; never refuse or ask the user to "switch to English" — if a stretch is
         unclear, just respond to whatever you did understand, or ask a generic verification question.
 
+        LANGUAGE — match the caller's language AND script exactly. If they spoke Hindi in Latin/
+        romanized letters (Hinglish), reply in Hinglish too — never switch to Devanagari. The user must
+        be able to read your reply aloud verbatim in the language the caller is already using.
+
         DOMAIN KNOWLEDGE — digital-arrest scams follow a 5-stage script: HOOK (fake parcel/SIM/FIR) ->
         AUTHORITY (impersonate CBI/police/ED/customs, badge numbers) -> ISOLATION ('tell no one', stay
         on line/camera, move to WhatsApp) -> ESCALATION (fake warrants, threats, urgency) -> EXTRACTION

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">VAARTA</string>
+    <string name="app_name" translatable="false">VAARTA</string>
 
     <!-- Home (redesign spec §6.1). Every future language adds a values-xx/ copy of these. -->
     <string name="home_status_ai_ready">AI ready</string>
@@ -99,4 +99,114 @@
     <string name="conv_undo">Undo</string>
     <string name="conv_section_week">This week</string>
     <string name="conv_section_earlier">Earlier</string>
+    <string name="conv_source_chat">Chat</string>
+    <string name="conv_source_recording">Recording</string>
+    <string name="conv_source_live">Live call</string>
+
+    <!-- Shared chrome (redesign spec §3B.1 string-extraction sweep). -->
+    <string name="common_back">Back</string>
+
+    <!-- Live screen controls + risk hero (spec §6.3). -->
+    <string name="live_ai_thinking">AI coach is thinking…</string>
+    <string name="live_alert_family">Alert my family</string>
+    <string name="live_alert_family_message">VAARTA alert: I may be on a scam call right now. Please call me back. (%1$s)</string>
+    <string name="live_no_agency_arrests">No agency arrests anyone over a phone or video call.</string>
+    <string name="live_ask_them">Ask them</string>
+    <string name="live_tap_another_question">Tap for another question</string>
+    <string name="live_share_via">Share via</string>
+    <string name="live_share_complaint_pdf">Share complaint PDF</string>
+
+    <!-- Analyze-a-recording screen (Phase 4D). -->
+    <string name="analyze_title">Analyze a recording</string>
+    <string name="analyze_intro">Pick a recorded call — VAARTA will transcribe it, check it against known scam patterns, and give you a verdict.</string>
+    <string name="analyze_pick_recording">Pick a recording</string>
+    <string name="analyze_transcribing">Transcribing and checking the recording…</string>
+    <string name="analyze_transcribing_sub">This can take up to a minute for a longer clip.</string>
+    <string name="analyze_disclaimer">Analyzed from a recording. The risk score is computed on-device from the transcript; the AI transcribed and helped classify it.</string>
+    <string name="analyze_share_warning">Share this warning</string>
+    <string name="analyze_share_warning_message">VAARTA: I analyzed a call recording and it looks like a scam (%1$s).</string>
+
+    <!-- Risk states + chat bubbles (design system §4/§6, ChatView.kt/RiskHero.kt/RiskRing.kt/Theme.kt). -->
+    <string name="state_observing">Listening &amp; checking</string>
+    <string name="state_caution">Some warning signs</string>
+    <string name="state_high">Strong scam signs</string>
+    <string name="state_scam">This matches a known scam</string>
+    <string name="risk_reassure_genuine">This looks like a genuine call</string>
+    <string name="risk_score_label">Risk %1$d / 100</string>
+    <string name="risk_flagged_web">Flagged from live web intelligence</string>
+    <string name="risk_ring_a11y">%1$s, risk %2$d of 100</string>
+    <string name="reply_kind_ask">Ask</string>
+    <string name="reply_kind_refuse">Refuse</string>
+    <string name="reply_kind_exit">End the call</string>
+    <string name="scamid_identified_web">Identified from the live web</string>
+    <plurals name="scamid_matches_reports">
+        <item quantity="one">Matches %1$d recent report:</item>
+        <item quantity="other">Matches %1$d recent reports:</item>
+    </plurals>
+    <string name="chat_caller_label">Caller</string>
+    <string name="chat_you_said">You said</string>
+    <string name="chat_say_this">Say this</string>
+    <string name="chat_vaarta_label">VAARTA</string>
+    <string name="chat_sources_label">Sources</string>
+
+    <!-- Signal tokens (design system, Signals.kt). -->
+    <string name="signal_hook">Hook</string>
+    <string name="signal_authority">Authority</string>
+    <string name="signal_secrecy">Secrecy</string>
+    <string name="signal_threat">Threat</string>
+    <string name="signal_money">Money</string>
+    <string name="signal_listening">Listening</string>
+
+    <!-- Help v2 remainder (spec §6.5) — safety-critical, needs native review before non-English ships. -->
+    <string name="help_warn_family_message">VAARTA: please be careful — scammers posing as police/CBI/courier are calling people, threatening arrest, and demanding money or OTPs. No real officer arrests anyone over a phone or video call. Never pay or share an OTP. If pressured, hang up and call 1930.</string>
+    <string name="help_scammed_step_1">Stop now — don\'t send any more money. Scammers often demand "one last payment" to reverse it. That is part of the scam.</string>
+    <string name="help_scammed_step_2">Call 1930 right away and report it. The sooner you call, the better the chance of stopping the money.</string>
+    <string name="help_scammed_step_3">Tell your bank immediately. Ask them to freeze the transaction and block any further debits.</string>
+    <string name="help_scammed_step_4">File a complaint on cybercrime.gov.in with the numbers, transaction IDs, and any screenshots.</string>
+    <string name="help_scammed_step_5">If you shared an OTP, PIN, or password, change it and turn on any extra security your bank offers.</string>
+    <string name="help_scammed_step_6">Keep everything — call logs, messages, and payment receipts — as evidence.</string>
+    <string name="help_scammed_step_7">Tell your family so they can help and stay alert too.</string>
+    <string name="help_title">Get help &amp; report</string>
+    <string name="help_call_1930">Call 1930</string>
+    <string name="help_share_as_text">Share as text</string>
+    <string name="help_export_pdf">Export PDF</string>
+    <string name="help_complaint_english_note">Filed in English — cybercrime.gov.in processes complaints in English regardless of your app language.</string>
+
+    <!-- Article share (spec §3B.3 edge case 2 — bilingual when UI ≠ English). -->
+    <string name="article_warn_prefix">⚠️ Scam alert from VAARTA: %1$s\n\n</string>
+    <string name="article_warn_suffix">\n\nIf this happens to you: stay calm, never pay or share an OTP/PIN, hang up, and report to 1930 or cybercrime.gov.in.</string>
+
+    <!-- Chat v2 remainder (ConversationScreen.kt). -->
+    <string name="chat_pending_photo">📷 Photo</string>
+    <string name="chat_pending_audio">🎧 Audio clip</string>
+    <string name="chat_speech_prompt">Speak your question</string>
+    <string name="chat_about_call_title">About this call</string>
+    <string name="chat_download_transcript">Download transcript</string>
+    <string name="chat_thinking">VAARTA is thinking…</string>
+    <string name="chat_remove_a11y">Remove</string>
+
+    <!-- Bottom nav (spec §6.8). -->
+    <string name="nav_home">Home</string>
+    <string name="nav_chats">Chats</string>
+    <string name="nav_help">Help</string>
+
+    <!-- Language picker (spec §3B.1). Labels are shown in the language\'s own script/style, never
+         translated into the current UI language — "English · हिन्दी · Hinglish" reads identically
+         everywhere so a user who can\'t read the current language can still find their own. -->
+    <!-- Fixed reference text — deliberately identical in every language (see LanguagePicker.kt). -->
+    <string name="language_picker_title" translatable="false">Choose your language</string>
+    <string name="language_picker_title_hi" translatable="false">अपनी भाषा चुनें</string>
+    <string name="language_picker_first_run_body">You can change this anytime from Help.</string>
+    <string name="language_hinglish_hint" translatable="false">Hinglish — Hindi, English letters mein</string>
+    <string name="help_language_title">App language</string>
+    <string name="help_language_current">Current: %1$s</string>
+
+    <!-- Floating overlay (Phase 4C) — foreground-service notification + the draggable panel. -->
+    <string name="overlay_notif_channel_name">Live call protection</string>
+    <string name="overlay_notif_channel_desc">Shown while VAARTA is listening to a call to coach your replies.</string>
+    <string name="overlay_notif_title">VAARTA is protecting your call</string>
+    <string name="overlay_notif_text">Listening for scam signs. Tap to open.</string>
+    <string name="overlay_notif_stop">Stop</string>
+    <string name="overlay_hide">Hide</string>
+    <string name="overlay_listening_coach">Listening — I\'ll show what to say.</string>
 </resources>

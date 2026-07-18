@@ -2,6 +2,7 @@ package ai.vaarta.feed
 
 import ai.vaarta.ai.GeminiClient
 import ai.vaarta.core.reasoning.AwarenessCard
+import ai.vaarta.i18n.AppLanguage
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -37,8 +38,9 @@ class AwarenessViewModel(app: Application) : AndroidViewModel(app) {
     private fun load() {
         viewModelScope.launch {
             val ctx = getApplication<Application>()
-            // 1) Show something immediately: cache if present, else the bundled seed.
-            val cached = withContext(Dispatchers.IO) { AwarenessStore.readCache(ctx) }
+            val language = AppLanguage.current()
+            // 1) Show something immediately: cache if present (for this language), else the seed.
+            val cached = withContext(Dispatchers.IO) { AwarenessStore.readCache(ctx, language) }
             if (cached != null) {
                 _state.value = FeedState(cached.cards, Origin.CACHED, refreshing = false)
             } else {
@@ -58,10 +60,11 @@ class AwarenessViewModel(app: Application) : AndroidViewModel(app) {
         _state.value = _state.value.copy(refreshing = true)
         viewModelScope.launch {
             val ctx = getApplication<Application>()
+            val language = AppLanguage.current()
             val fresh = withContext(Dispatchers.IO) { GeminiClient.awarenessFeed() }
             if (!fresh.isNullOrEmpty()) {
                 val now = System.currentTimeMillis()
-                withContext(Dispatchers.IO) { AwarenessStore.writeCache(ctx, fresh, now) }
+                withContext(Dispatchers.IO) { AwarenessStore.writeCache(ctx, language, fresh, now) }
                 _state.value = FeedState(fresh, Origin.LIVE, refreshing = false)
             } else {
                 _state.value = _state.value.copy(refreshing = false)

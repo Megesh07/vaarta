@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tier-1 UI languages (redesign spec §3B.1). Lets Android 13+ show/manage the app's language from
+     system Settings too, in addition to the in-app picker (LanguagePicker.kt). -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en"/>
+    <locale android:name="hi"/>
+    <locale android:name="hi-Latn"/>
+</locale-config>

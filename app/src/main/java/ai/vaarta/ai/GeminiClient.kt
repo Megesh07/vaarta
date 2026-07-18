@@ -13,6 +13,7 @@ import ai.vaarta.core.reasoning.ConversationTurn
 import ai.vaarta.core.reasoning.GroundedAssessment
 import ai.vaarta.core.reasoning.LiveSuggestion
 import ai.vaarta.core.reasoning.Source
+import ai.vaarta.i18n.AppLanguage
 import android.util.Log
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.add
@@ -327,7 +328,7 @@ object GeminiClient {
                 ChatPrompt.INSTRUCTION + "\n\nThe user is asking about this (untrusted) context:\n" + context
             }
             // Language directive goes LAST (after any context) so recency pins the reply language.
-            val instruction = withContext + "\n\n" + ChatPrompt.LANGUAGE_REMINDER
+            val instruction = withContext + "\n\n" + ChatPrompt.languageReminder(AppLanguage.current())
             putJsonArray("parts") { addJsonObject { put("text", instruction) } }
         }
         putJsonArray("contents") {
@@ -375,7 +376,9 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildGroundedBody(AwarenessPrompt.FEED, "List the scams Indians are being targeted with right now."), CHAT_TIMEOUT_MS) ?: return null
+            // Generated content follows the UI language (spec §3B.2) — no user text to mirror here.
+            val instruction = AwarenessPrompt.FEED + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, "List the scams Indians are being targeted with right now."), CHAT_TIMEOUT_MS) ?: return null
             AwarenessWireParser.parseFeed(extractText(response)).ifEmpty { null }
         } catch (e: Exception) {
             Log.w("GeminiClient", "awarenessFeed failed: ${e.javaClass.simpleName}: ${e.message}")
@@ -394,7 +397,9 @@ object GeminiClient {
         return try {
             // 2048: a grounded three-list JSON with thinking overhead truncates at 1024, and a
             // truncated object can never parse (observed live 2026-07-17).
-            val response = post("$ENDPOINT?key=$key", buildGroundedBody(AwarenessPrompt.SUMMARY_SYSTEM, AwarenessPrompt.summaryQuery(title, scamType), maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
+            // Generated content follows the UI language (spec §3B.2) — no user text to mirror here.
+            val instruction = AwarenessPrompt.SUMMARY_SYSTEM + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, AwarenessPrompt.summaryQuery(title, scamType), maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
             val text = extractText(response)?.trim().orEmpty()
             if (text.isEmpty()) {
                 Log.w("GeminiClient", "summarizeArticle: empty text in 200 response")

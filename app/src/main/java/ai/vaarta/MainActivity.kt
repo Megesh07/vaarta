@@ -12,7 +12,10 @@ import ai.vaarta.core.reasoning.Source
 import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
+import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.recording.AudioAnalyzerViewModel
+import ai.vaarta.share.BilingualShare
+import ai.vaarta.ui.FirstRunLanguagePicker
 import ai.vaarta.ui.RiskHero
 import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.VaartaNav
@@ -32,7 +35,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
@@ -102,7 +105,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+/**
+ * Extends AppCompatActivity (not the plain ComponentActivity) specifically so per-app language
+ * (redesign spec §3B.1) actually works: AppCompatDelegate's locale-resource wrapping is applied via
+ * AppCompatActivity#attachBaseContext — without it, setApplicationLocales() + recreate() silently
+ * relaunches the activity with the OLD locale's resources on API < 33 (caught live on the emulator).
+ */
+class MainActivity : AppCompatActivity() {
     private val vm: SessionViewModel by viewModels()
     private val historyVm: HistoryViewModel by viewModels()
     private val analyzerVm: AudioAnalyzerViewModel by viewModels()
@@ -114,7 +123,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge() // system-bar icons follow light/dark correctly (spec §8.1)
         setContent {
             VaartaTheme {
-                VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                // One-time, not-skippable language choice (redesign spec §3B.1) — gates the rest of
+                // the app on first launch only; permanently reachable afterward from Help.
+                var languageChosen by remember { mutableStateOf(AppLanguage.hasBeenChosen()) }
+                if (!languageChosen) {
+                    FirstRunLanguagePicker(onChosen = { languageChosen = true })
+                } else {
+                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                }
             }
         }
     }
@@ -124,7 +140,7 @@ class MainActivity : ComponentActivity() {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)
         }
-        startActivity(Intent.createChooser(send, "Share via"))
+        startActivity(Intent.createChooser(send, getString(R.string.live_share_via)))
     }
 
     private fun openUrl(url: String) {
@@ -140,7 +156,7 @@ class MainActivity : ComponentActivity() {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        startActivity(Intent.createChooser(send, "Share complaint PDF"))
+        startActivity(Intent.createChooser(send, getString(R.string.live_share_complaint_pdf)))
     }
 }
 
@@ -225,7 +241,7 @@ fun VaartaScreen(
             savedLive = false
         } else if (wasLive && !savedLive && chat.isNotEmpty()) {
             historyVm.save(SessionSource.LIVE, state.score, displayedLevel.name, scamType, chat) {
-                Toast.makeText(context, "Saved to your conversations", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.live_saved), Toast.LENGTH_SHORT).show()
             }
             savedLive = true
             wasLive = false
@@ -239,7 +255,7 @@ fun VaartaScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 VaartaIcon(
-                    R.drawable.ic_arrow_left, contentDescription = "Back", tint = VaartaTheme.colors.ink, size = 24.dp,
+                    R.drawable.ic_arrow_left, contentDescription = stringResource(R.string.common_back), tint = VaartaTheme.colors.ink, size = 24.dp,
                     modifier = Modifier.clickable(onClick = onBack).padding(end = VSpace.md),
                 )
                 Text(stringResource(R.string.live_title), style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink)
@@ -280,7 +296,7 @@ fun VaartaScreen(
                     if (aiLoading) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
                             CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
-                            Text("AI coach is thinking…", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                            Text(stringResource(R.string.live_ai_thinking), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
                         }
                     } else {
                         aiSuggestion?.let { s ->
@@ -352,17 +368,16 @@ fun VaartaScreen(
             }
 
             if (displayedLevel.ordinal >= RiskLevel.HIGH_RISK.ordinal && !reassure) {
+                val alertMessage = stringResource(R.string.live_alert_family_message, levelText(displayedLevel))
                 VaartaButton(
-                    text = "Alert my family",
-                    onClick = {
-                        onShare("VAARTA alert: I may be on a scam call right now. Please call me back. (${levelText(displayedLevel)})")
-                    },
+                    text = stringResource(R.string.live_alert_family),
+                    onClick = { onShare(BilingualShare.compose(alertMessage, AppLanguage.current())) },
                     leadingIcon = R.drawable.ic_bell,
                     destructive = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    "No agency arrests anyone over a phone or video call.",
+                    stringResource(R.string.live_no_agency_arrests),
                     style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink,
                 )
             }
@@ -379,11 +394,11 @@ private fun QuestionCard(text: String, onCycle: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint),
     ) {
         Column(Modifier.padding(VSpace.md)) {
-            Eyebrow("Ask them")
+            Eyebrow(stringResource(R.string.live_ask_them))
             Spacer(Modifier.height(VSpace.xs))
             Text(text, style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
             Spacer(Modifier.height(VSpace.xs))
-            Text("Tap for another question", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+            Text(stringResource(R.string.live_tap_another_question), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
         }
     }
 }
@@ -608,9 +623,9 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit) {
     val title = session.title
         ?: session.scamType
         ?: when (session.source) {
-            SessionSource.CHAT -> "Chat"
-            SessionSource.RECORDING -> "Recording"
-            else -> "Live call"
+            SessionSource.CHAT -> stringResource(R.string.conv_source_chat)
+            SessionSource.RECORDING -> stringResource(R.string.conv_source_recording)
+            else -> stringResource(R.string.conv_source_live)
         }
     val scored = session.source != SessionSource.CHAT && session.finalScore > 0
     Card(
@@ -670,16 +685,15 @@ internal fun AnalyzeScreen(
         if (uri != null) analyzerVm.analyze(uri)
     }
 
-    VaartaSubScreen(title = "Analyze a recording", onBack = onBack) {
+    VaartaSubScreen(title = stringResource(R.string.analyze_title), onBack = onBack) {
         when (val s = state) {
             AudioAnalyzerViewModel.UiState.Idle -> {
                 Text(
-                    "Pick a recorded call — VAARTA will transcribe it, check it against known scam " +
-                        "patterns, and give you a verdict.",
+                    stringResource(R.string.analyze_intro),
                     style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
                 )
                 VaartaSecondaryButton(
-                    text = "Pick a recording",
+                    text = stringResource(R.string.analyze_pick_recording),
                     onClick = { picker.launch("audio/*") },
                     leadingIcon = R.drawable.ic_headphones,
                     modifier = Modifier.fillMaxWidth(),
@@ -690,8 +704,8 @@ internal fun AnalyzeScreen(
                 Spacer(Modifier.height(40.dp))
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
                     CircularProgressIndicator(color = VaartaTheme.colors.indigo)
-                    Text("Transcribing and checking the recording…", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
-                    Text("This can take up to a minute for a longer clip.", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                    Text(stringResource(R.string.analyze_transcribing), style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+                    Text(stringResource(R.string.analyze_transcribing_sub), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
                 }
             }
 
@@ -699,16 +713,17 @@ internal fun AnalyzeScreen(
                 Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.scamTint)) {
                     Text(s.message, modifier = Modifier.padding(VSpace.lg), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.scam)
                 }
-                VaartaSecondaryButton(text = "Back", onClick = onBack, leadingIcon = R.drawable.ic_arrow_left, modifier = Modifier.fillMaxWidth())
+                VaartaSecondaryButton(text = stringResource(R.string.common_back), onClick = onBack, leadingIcon = R.drawable.ic_arrow_left, modifier = Modifier.fillMaxWidth())
             }
 
             is AudioAnalyzerViewModel.UiState.Done -> {
                 val r = s.result
+                val savedToast = stringResource(R.string.live_saved)
                 // Auto-save the analyzed recording to Conversations (v2 — keyed on the result so it
                 // saves once per analysis; the user picked the clip, which is the consent).
                 LaunchedEffect(r) {
                     historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
-                        Toast.makeText(context, "Saved to your conversations", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
                     }
                 }
                 RiskHero(
@@ -720,16 +735,16 @@ internal fun AnalyzeScreen(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 Text(
-                    "Analyzed from a recording. The risk score is computed on-device from the transcript; " +
-                        "the AI transcribed and helped classify it.",
+                    stringResource(R.string.analyze_disclaimer),
                     style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
                 )
                 if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
 
                 if (r.level.ordinal >= RiskLevel.HIGH_RISK.ordinal && !r.reassure) {
+                    val warningMessage = stringResource(R.string.analyze_share_warning_message, levelText(r.level))
                     VaartaButton(
-                        text = "Share this warning",
-                        onClick = { onShare("VAARTA: I analyzed a call recording and it looks like a scam (${levelText(r.level)}).") },
+                        text = stringResource(R.string.analyze_share_warning),
+                        onClick = { onShare(BilingualShare.compose(warningMessage, AppLanguage.current())) },
                         leadingIcon = R.drawable.ic_bell,
                         destructive = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -738,7 +753,7 @@ internal fun AnalyzeScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
                     VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.muted, size = 16.dp)
-                    Text("Saved to your conversations", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                    Text(stringResource(R.string.live_saved), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
                 }
             }
         }

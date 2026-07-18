@@ -62,6 +62,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -179,8 +180,8 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CHANNEL_ID) == null) {
             nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Live call protection", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Shown while VAARTA is listening to a call to coach your replies."
+                NotificationChannel(CHANNEL_ID, getString(R.string.overlay_notif_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
+                    description = getString(R.string.overlay_notif_channel_desc)
                     setShowBadge(false)
                 },
             )
@@ -194,11 +195,11 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notif: Notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("VAARTA is protecting your call")
-            .setContentText("Listening for scam signs. Tap to open.")
+            .setContentTitle(getString(R.string.overlay_notif_title))
+            .setContentText(getString(R.string.overlay_notif_text))
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
             .setContentIntent(open)
-            .addAction(Notification.Action.Builder(null, "Stop", stop).build())
+            .addAction(Notification.Action.Builder(null, getString(R.string.overlay_notif_stop), stop).build())
             .setOngoing(true)
             .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -467,13 +468,13 @@ private fun PanelContent(
                     Spacer(Modifier.width(6.dp))
                     ai.vaarta.ui.VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = c.indigo, size = 18.dp)
                     Spacer(Modifier.width(6.dp))
-                    Text("VAARTA", style = MaterialTheme.typography.titleMedium, color = c.ink)
+                    Text(stringResource(R.string.chat_vaarta_label), style = MaterialTheme.typography.titleMedium, color = c.ink)
                     if (liveStatus != null) {
                         Spacer(Modifier.width(8.dp))
                         Text("● $liveStatus", color = c.indigo, style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.weight(1f))
-                    TextButton(onClick = onCollapse) { Text("Hide", style = MaterialTheme.typography.labelLarge, color = c.muted) }
+                    TextButton(onClick = onCollapse) { Text(stringResource(R.string.overlay_hide), style = MaterialTheme.typography.labelLarge, color = c.muted) }
                 }
 
                 StatusBanner(level = displayedLevel, score = state.score, reassure = reassure, aiRaised = aiRaised)
@@ -485,7 +486,7 @@ private fun PanelContent(
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll)) {
                     if (chat.isEmpty()) {
                         Text(
-                            "Listening — I'll show what to say.",
+                            stringResource(R.string.overlay_listening_coach),
                             style = MaterialTheme.typography.bodyMedium,
                             color = c.muted,
                             modifier = Modifier.padding(vertical = 12.dp),
@@ -499,7 +500,7 @@ private fun PanelContent(
                     onClick = onStop,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = c.scam),
-                ) { Text("Stop protection", style = MaterialTheme.typography.titleMedium, color = Color.White) }
+                ) { Text(stringResource(R.string.live_stop), style = MaterialTheme.typography.titleMedium, color = Color.White) }
             }
 
             // Corner resize handle (bottom-end). Drag to grow/shrink within min/max bounds.

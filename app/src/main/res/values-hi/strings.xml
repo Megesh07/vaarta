@@ -1,0 +1,213 @@
+<resources>
+    <!-- हिन्दी (Devanagari) — Tier 1 (redesign spec §3B.1). MACHINE-DRAFTED, PENDING NATIVE REVIEW.
+         Safety-critical strings (panic_*, help_scammed_step_*, help_warn_family_message,
+         help_complaint_english_note) MUST be reviewed by a native Hindi speaker before this
+         language is considered shipped — see PROJECT_STATUS.md §8 for the review checklist.
+         Invariant across all languages (never translate): 1930, cybercrime.gov.in, Sanchar Saathi,
+         Chakshu, UPI, OTP, PIN, CVV, Aadhaar, VAARTA. -->
+
+    <!-- Home -->
+    <string name="home_status_ai_ready">AI तैयार</string>
+    <string name="home_status_on_device">डिवाइस पर ही</string>
+    <string name="home_panic_title">मैं अभी स्कैम कॉल पर हूं</string>
+    <string name="home_panic_a11y">मैं अभी स्कैम कॉल पर हूं। आपातकालीन कदम खोलें।</string>
+    <string name="home_action_live_title">कॉल पर मेरी मदद करें</string>
+    <string name="home_action_live_subtitle">VAARTA स्पीकर पर सुनकर आपको लाइव मार्गदर्शन देता है</string>
+    <string name="home_action_ask">VAARTA से पूछें</string>
+    <string name="home_action_recording">रिकॉर्डिंग जांचें</string>
+    <string name="home_feed_title">भारत में चर्चित स्कैम</string>
+    <string name="home_feed_origin_live">वेब से लाइव</string>
+    <string name="home_feed_origin_cached">आपके पिछले रिफ्रेश से</string>
+    <string name="home_feed_origin_seed">बिल्ट-इन गाइड — ऑनलाइन होने पर अपडेट होगी</string>
+    <string name="home_feed_empty">ऑनलाइन होने पर यहां स्कैम-जागरूकता की कहानियां दिखेंगी।</string>
+    <string name="home_feed_seen_in">%1$s में देखा गया</string>
+
+    <!-- Panic sheet — SAFETY-CRITICAL, needs native review. -->
+    <string name="panic_heading">अभी यह करें</string>
+    <string name="panic_step_1">किसी को पैसे न दें। कोई असली अधिकारी या बैंक कॉल पर पैसे नहीं मांगता।</string>
+    <string name="panic_step_2">OTP, PIN, या पासवर्ड कभी शेयर न करें।</string>
+    <string name="panic_step_3">फोन काट दें। कॉल खत्म करना सुरक्षित है — फोन कॉल पर किसी को गिरफ्तार नहीं किया जाता।</string>
+    <string name="panic_step_4">1930 पर कॉल करें (सरकारी साइबर-क्राइम हेल्पलाइन)।</string>
+    <string name="panic_call_1930">अभी 1930 पर कॉल करें</string>
+    <string name="panic_get_live_help">VAARTA से लाइव मदद लें →</string>
+
+    <!-- Live v2 -->
+    <string name="live_title">लाइव सुरक्षा</string>
+    <string name="live_idle_title">सुरक्षा के लिए तैयार</string>
+    <string name="live_idle_caption">शुरू करते समय कॉल को स्पीकर पर रखें।</string>
+    <string name="live_active_caption">कॉल को स्पीकर पर रखें ताकि VAARTA कॉलर को सुन सके।</string>
+    <string name="live_start">लाइव सुरक्षा शुरू करें</string>
+    <string name="live_float">अपनी कॉल पर फ्लोट करें</string>
+    <string name="live_watch_demo">देखें यह कैसे काम करता है</string>
+    <string name="live_ai_consent_compact">AI लाइव कोच — ऑप्ट-इन, कॉलर के शब्द Google को भेजता है। बंद = पूरी तरह डिवाइस पर।</string>
+    <string name="live_saved">आपकी बातचीत में सेव हो गया</string>
+    <string name="live_done">हो गया</string>
+    <string name="live_start_again">फिर से शुरू करें</string>
+    <string name="live_stop">सुरक्षा रोकें</string>
+
+    <!-- Help v2 -->
+    <string name="help_emergency_title">अभी स्कैम हो रहा है?</string>
+    <string name="help_emergency_open_steps">अभी करने वाली 4 बातें देखें →</string>
+    <string name="help_lost_money_title">अगर आपने पहले ही पैसे गंवा दिए हैं</string>
+    <string name="help_lost_money_intro">शांत रहें — तेज़ी से काम करने पर भी पैसे वापस मिल सकते हैं। इस क्रम में करें:</string>
+    <string name="help_lost_money_footer">पहले कुछ घंटों में रिपोर्ट करने से पैसे रुकने का सबसे अच्छा मौका मिलता है।</string>
+    <string name="help_show_all_steps">सभी %1$d कदम देखें</string>
+    <string name="help_show_fewer_steps">कम कदम देखें</string>
+    <string name="help_report_title">ऑनलाइन रिपोर्ट करें</string>
+    <string name="help_report_caption">पूरी शिकायत दर्ज करने के लिए cybercrime.gov.in इस्तेमाल करें। सिर्फ धोखाधड़ी वाला नंबर/SMS रिपोर्ट करने के लिए Chakshu इस्तेमाल करें।</string>
+    <string name="help_report_cybercrime">cybercrime.gov.in — शिकायत दर्ज करें</string>
+    <string name="help_report_chakshu">Sanchar Saathi (Chakshu) — धोखाधड़ी वाला नंबर/SMS रिपोर्ट करें</string>
+    <string name="help_tools_title">टूल्स</string>
+    <string name="help_tools_complaint">शिकायत का ड्राफ्ट बनाएं</string>
+    <string name="help_tools_complaint_sub">VAARTA ने जो पहचाना उसे फाइल करने लायक ड्राफ्ट में बदलें</string>
+    <string name="help_tools_warn_family">अपने परिवार को आगाह करें</string>
+    <string name="help_tools_warn_family_sub">एक छोटा चेतावनी संदेश भेजें — एक मैसेज स्कैम रोक सकता है</string>
+
+    <!-- Chat v2 -->
+    <string name="chat_title">VAARTA से पूछें</string>
+    <string name="chat_empty_title">किसी संदिग्ध कॉल या मैसेज के बारे में मुझसे कुछ भी पूछें</string>
+    <string name="chat_starter_1">एक कॉलर कहता है मेरे पार्सल में ड्रग्स हैं</string>
+    <string name="chat_starter_2">वे डिजिटल अरेस्ट की धमकी दे रहे हैं</string>
+    <string name="chat_starter_3">क्या यह UPI पेमेंट रिक्वेस्ट सुरक्षित है?</string>
+    <string name="chat_composer_hint">अपना सवाल लिखें…</string>
+    <string name="chat_attach_sheet_title">अटैच करें</string>
+    <string name="chat_attach_photo">फोटो</string>
+    <string name="chat_attach_audio">ऑडियो क्लिप</string>
+    <string name="chat_mic_a11y">बोलें</string>
+    <string name="chat_attach_a11y">अटैच करें</string>
+    <string name="chat_send_a11y">भेजें</string>
+
+    <!-- Article -->
+    <string name="article_reading">VAARTA इस पर नई जानकारी पढ़ रहा है…</string>
+    <string name="article_what_it_is">यह क्या है</string>
+    <string name="article_how_to_spot">कैसे पहचानें</string>
+    <string name="article_what_to_do">क्या करें</string>
+    <string name="article_sources">स्रोत</string>
+    <string name="article_ask">इसके बारे में VAARTA से पूछें</string>
+    <string name="article_share_a11y">इस स्कैम के बारे में मेरे परिवार को आगाह करें</string>
+
+    <!-- Conversations -->
+    <string name="conv_title">बातचीत</string>
+    <string name="conv_count">%1$d सेव्ड</string>
+    <string name="conv_new_chat">नई चैट</string>
+    <string name="conv_menu_a11y">सूची विकल्प</string>
+    <string name="conv_empty_title">अभी कोई बातचीत नहीं</string>
+    <string name="conv_empty_body">किसी संदिग्ध कॉल या मैसेज के बारे में VAARTA से पूछने के लिए नई चैट पर टैप करें — या Home से लाइव कॉल सुरक्षित करें।</string>
+    <string name="conv_encrypted">सिर्फ इस फोन पर, एन्क्रिप्टेड सेव है।</string>
+    <string name="conv_menu_title">बातचीत प्रबंधित करें</string>
+    <string name="conv_autodelete">इसके बाद अपने आप डिलीट करें</string>
+    <string name="conv_keep">रखें</string>
+    <string name="conv_7d">7 दिन</string>
+    <string name="conv_30d">30 दिन</string>
+    <string name="conv_delete_all">सभी बातचीत डिलीट करें</string>
+    <string name="conv_deleted">बातचीत डिलीट हो गई</string>
+    <string name="conv_undo">पूर्ववत करें</string>
+    <string name="conv_section_week">इस हफ्ते</string>
+    <string name="conv_section_earlier">पहले</string>
+    <string name="conv_source_chat">चैट</string>
+    <string name="conv_source_recording">रिकॉर्डिंग</string>
+    <string name="conv_source_live">लाइव कॉल</string>
+
+    <!-- Shared chrome -->
+    <string name="common_back">पीछे</string>
+
+    <!-- Live screen controls + risk hero -->
+    <string name="live_ai_thinking">AI कोच सोच रहा है…</string>
+    <string name="live_alert_family">परिवार को अलर्ट करें</string>
+    <string name="live_alert_family_message">VAARTA अलर्ट: शायद मैं अभी स्कैम कॉल पर हूं। कृपया मुझे वापस कॉल करें। (%1$s)</string>
+    <string name="live_no_agency_arrests">कोई भी एजेंसी फोन या वीडियो कॉल पर किसी को गिरफ्तार नहीं करती।</string>
+    <string name="live_ask_them">उनसे पूछें</string>
+    <string name="live_tap_another_question">दूसरे सवाल के लिए टैप करें</string>
+    <string name="live_share_via">इसके ज़रिए शेयर करें</string>
+    <string name="live_share_complaint_pdf">शिकायत PDF शेयर करें</string>
+
+    <!-- Analyze-a-recording screen -->
+    <string name="analyze_title">रिकॉर्डिंग जांचें</string>
+    <string name="analyze_intro">एक रिकॉर्ड की गई कॉल चुनें — VAARTA उसे ट्रांसक्राइब करेगा, जाने-पहचाने स्कैम पैटर्न से जांचेगा, और आपको नतीजा देगा।</string>
+    <string name="analyze_pick_recording">रिकॉर्डिंग चुनें</string>
+    <string name="analyze_transcribing">रिकॉर्डिंग को ट्रांसक्राइब और जांच रहे हैं…</string>
+    <string name="analyze_transcribing_sub">लंबी क्लिप के लिए इसमें एक मिनट तक लग सकता है।</string>
+    <string name="analyze_disclaimer">एक रिकॉर्डिंग से जांचा गया। जोखिम स्कोर ट्रांसक्रिप्ट से डिवाइस पर ही निकाला जाता है; AI ने इसे ट्रांसक्राइब करने और पहचानने में मदद की।</string>
+    <string name="analyze_share_warning">यह चेतावनी शेयर करें</string>
+    <string name="analyze_share_warning_message">VAARTA: मैंने एक कॉल रिकॉर्डिंग जांची और यह स्कैम लग रहा है (%1$s)।</string>
+
+    <!-- Risk states + chat bubbles -->
+    <string name="state_observing">सुन रहे हैं और जांच रहे हैं</string>
+    <string name="state_caution">कुछ चेतावनी संकेत</string>
+    <string name="state_high">स्कैम के मजबूत संकेत</string>
+    <string name="state_scam">यह जाने-पहचाने स्कैम से मेल खाता है</string>
+    <string name="risk_reassure_genuine">यह असली कॉल लग रही है</string>
+    <string name="risk_score_label">जोखिम %1$d / 100</string>
+    <string name="risk_flagged_web">लाइव वेब जानकारी से फ्लैग किया गया</string>
+    <string name="risk_ring_a11y">%1$s, जोखिम 100 में से %2$d</string>
+    <string name="reply_kind_ask">पूछें</string>
+    <string name="reply_kind_refuse">मना करें</string>
+    <string name="reply_kind_exit">कॉल खत्म करें</string>
+    <string name="scamid_identified_web">लाइव वेब से पहचाना गया</string>
+    <plurals name="scamid_matches_reports">
+        <item quantity="one">%1$d हाल की रिपोर्ट से मेल खाता है:</item>
+        <item quantity="other">%1$d हाल की रिपोर्ट्स से मेल खाता है:</item>
+    </plurals>
+    <string name="chat_caller_label">कॉलर</string>
+    <string name="chat_you_said">आपने कहा</string>
+    <string name="chat_say_this">यह कहें</string>
+    <string name="chat_vaarta_label">VAARTA</string>
+    <string name="chat_sources_label">स्रोत</string>
+
+    <!-- Signal tokens -->
+    <string name="signal_hook">हुक</string>
+    <string name="signal_authority">अथॉरिटी</string>
+    <string name="signal_secrecy">गोपनीयता</string>
+    <string name="signal_threat">धमकी</string>
+    <string name="signal_money">पैसा</string>
+    <string name="signal_listening">सुन रहे हैं</string>
+
+    <!-- Help v2 remainder — SAFETY-CRITICAL, needs native review. -->
+    <string name="help_warn_family_message">VAARTA: सावधान रहें — पुलिस/CBI/कूरियर बनकर स्कैमर्स लोगों को कॉल कर रहे हैं, गिरफ्तारी की धमकी दे रहे हैं, और पैसे या OTP मांग रहे हैं। कोई भी असली अधिकारी फोन या वीडियो कॉल पर किसी को गिरफ्तार नहीं करता। कभी OTP न दें या पैसे न भेजें। दबाव में आएं तो फोन काट दें और 1930 पर कॉल करें।</string>
+    <string name="help_scammed_step_1">अभी रुकें — और पैसे न भेजें। स्कैमर्स अक्सर पैसे वापस करने के लिए \"आखिरी पेमेंट\" मांगते हैं। यह भी स्कैम का हिस्सा है।</string>
+    <string name="help_scammed_step_2">तुरंत 1930 पर कॉल करके रिपोर्ट करें। जितनी जल्दी कॉल करेंगे, पैसे रोकने का मौका उतना बेहतर होगा।</string>
+    <string name="help_scammed_step_3">तुरंत अपने बैंक को बताएं। ट्रांजैक्शन फ्रीज करने और आगे की निकासी रोकने के लिए कहें।</string>
+    <string name="help_scammed_step_4">नंबर, ट्रांजैक्शन ID, और स्क्रीनशॉट के साथ cybercrime.gov.in पर शिकायत दर्ज करें।</string>
+    <string name="help_scammed_step_5">अगर आपने OTP, PIN, या पासवर्ड शेयर किया है, तो उसे बदलें और बैंक की अतिरिक्त सुरक्षा चालू करें।</string>
+    <string name="help_scammed_step_6">सब कुछ सुरक्षित रखें — कॉल लॉग, मैसेज, और पेमेंट रसीदें — सबूत के तौर पर।</string>
+    <string name="help_scammed_step_7">अपने परिवार को बताएं ताकि वे मदद कर सकें और सतर्क रहें।</string>
+    <string name="help_title">मदद पाएं और रिपोर्ट करें</string>
+    <string name="help_call_1930">1930 पर कॉल करें</string>
+    <string name="help_share_as_text">टेक्स्ट के रूप में शेयर करें</string>
+    <string name="help_export_pdf">PDF एक्सपोर्ट करें</string>
+    <string name="help_complaint_english_note">अंग्रेज़ी में दर्ज — cybercrime.gov.in आपकी ऐप भाषा चाहे जो हो, शिकायतें अंग्रेज़ी में ही प्रोसेस करता है।</string>
+
+    <!-- Article share (bilingual composition handled in code — see ArticleScreen.kt). -->
+    <string name="article_warn_prefix">⚠️ VAARTA से स्कैम अलर्ट: %1$s\n\n</string>
+    <string name="article_warn_suffix">\n\nअगर आपके साथ ऐसा हो: शांत रहें, कभी OTP/PIN न दें, फोन काट दें, और 1930 या cybercrime.gov.in पर रिपोर्ट करें।</string>
+
+    <!-- Chat v2 remainder -->
+    <string name="chat_pending_photo">📷 फोटो</string>
+    <string name="chat_pending_audio">🎧 ऑडियो क्लिप</string>
+    <string name="chat_speech_prompt">अपना सवाल बोलें</string>
+    <string name="chat_about_call_title">इस कॉल के बारे में</string>
+    <string name="chat_download_transcript">ट्रांसक्रिप्ट डाउनलोड करें</string>
+    <string name="chat_thinking">VAARTA सोच रहा है…</string>
+    <string name="chat_remove_a11y">हटाएं</string>
+
+    <!-- Bottom nav -->
+    <string name="nav_home">होम</string>
+    <string name="nav_chats">चैट्स</string>
+    <string name="nav_help">मदद</string>
+
+    <!-- Language picker: help_language_* changes per locale. language_picker_title,
+         language_picker_title_hi, and language_hinglish_hint are deliberately NOT overridden
+         here — they must stay fixed reference text in every language (see strings.xml). -->
+    <string name="language_picker_first_run_body">आप इसे कभी भी Help से बदल सकते हैं।</string>
+    <string name="help_language_title">ऐप की भाषा</string>
+    <string name="help_language_current">मौजूदा: %1$s</string>
+
+    <!-- Floating overlay -->
+    <string name="overlay_notif_channel_name">लाइव कॉल सुरक्षा</string>
+    <string name="overlay_notif_channel_desc">जब VAARTA कॉल सुनकर आपके जवाबों में मदद कर रहा हो, तब दिखता है।</string>
+    <string name="overlay_notif_title">VAARTA आपकी कॉल सुरक्षित कर रहा है</string>
+    <string name="overlay_notif_text">स्कैम के संकेतों के लिए सुन रहे हैं। खोलने के लिए टैप करें।</string>
+    <string name="overlay_notif_stop">रोकें</string>
+    <string name="overlay_hide">छुपाएं</string>
+    <string name="overlay_listening_coach">सुन रहे हैं — मैं बताऊंगा क्या कहना है।</string>
+</resources>

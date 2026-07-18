@@ -1,5 +1,7 @@
 package ai.vaarta.ai
 
+import ai.vaarta.i18n.AppLanguage
+
 /**
  * System instruction for the free-form "Ask VAARTA" chat (v2, spec §6.5). Safety for the chat is
  * enforced here, at the prompt, plus fail-closed on any error — deliberately NOT via the coaching
@@ -41,10 +43,8 @@ object ChatPrompt {
      * A final, unmissable language directive appended AFTER any context so it is the last thing the
      * model reads (recency). Grounding on India-centric topics pulls Hindi sources and was biasing
      * replies into Hindi even for English questions (regression found 2026-07-15) — this pins the
-     * reply to the user's own language regardless of the context or source language.
+     * reply to the user's own language regardless of the context or source language. Parameterized
+     * with the current UI language (spec §3B.2) as the stated fallback for ambiguous input.
      */
-    val LANGUAGE_REMINDER =
-        "MOST IMPORTANT: Write your ENTIRE reply in the SAME language and script as the user's LATEST " +
-            "message — even if the context, the article, or your web search results are in a different " +
-            "language. If the user's latest message is in English, you MUST reply in English."
+    fun languageReminder(uiLanguage: AppLanguage): String = LanguageDirectives.mirrorUserLanguage(uiLanguage)
 }

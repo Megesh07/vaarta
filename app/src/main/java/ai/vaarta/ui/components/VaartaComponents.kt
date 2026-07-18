@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 /**
@@ -265,7 +266,7 @@ fun VaartaBackBar(title: String?, onBack: () -> Unit, trailing: (@Composable () 
             modifier = Modifier.size(44.dp).clickable(onClick = onBack),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                VaartaIcon(R.drawable.ic_arrow_left, contentDescription = "Back", tint = c.ink, size = 24.dp)
+                VaartaIcon(R.drawable.ic_arrow_left, contentDescription = stringResource(R.string.common_back), tint = c.ink, size = 24.dp)
             }
         }
         if (title != null) Text(title, style = MaterialTheme.typography.titleLarge, color = c.ink)

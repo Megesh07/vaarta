@@ -5,6 +5,8 @@ import ai.vaarta.ai.GeminiClient
 import ai.vaarta.core.reasoning.ArticleSummary
 import ai.vaarta.core.reasoning.AwarenessCard
 import ai.vaarta.core.reasoning.StructuredSummary
+import ai.vaarta.i18n.AppLanguage
+import ai.vaarta.share.BilingualShare
 import ai.vaarta.ui.components.Eyebrow
 import ai.vaarta.ui.components.ShimmerLines
 import ai.vaarta.ui.components.SourceLink
@@ -83,6 +85,8 @@ fun ArticleScreen(
     }
 
     val shareA11y = stringResource(R.string.article_share_a11y)
+    val warnPrefix = stringResource(R.string.article_warn_prefix, card.title)
+    val warnSuffix = stringResource(R.string.article_warn_suffix)
     VaartaSubScreen(
         title = null,
         onBack = onBack,
@@ -91,7 +95,9 @@ fun ArticleScreen(
             Surface(
                 color = Color.Transparent,
                 shape = CircleShape,
-                modifier = Modifier.size(44.dp).clickable(enabled = !loading) { onShare(warnFamilyText(card, summaryText)) },
+                modifier = Modifier.size(44.dp).clickable(enabled = !loading) {
+                    onShare(BilingualShare.compose(warnFamilyText(card, summaryText, warnPrefix, warnSuffix), AppLanguage.current()))
+                },
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     VaartaIcon(R.drawable.ic_bell, contentDescription = shareA11y, tint = c.ink, size = 22.dp)
@@ -210,8 +216,8 @@ private fun StructuredSections(s: StructuredSummary) {
 }
 
 /** Shareable plain-text warning built from the topic + summary, with the 1930 call-to-action. */
-private fun warnFamilyText(card: AwarenessCard, summaryText: String): String = buildString {
-    append("⚠️ Scam alert from VAARTA: ${card.title}\n\n")
+private fun warnFamilyText(card: AwarenessCard, summaryText: String, prefix: String, suffix: String): String = buildString {
+    append(prefix)
     append(summaryText)
-    append("\n\nIf this happens to you: stay calm, never pay or share an OTP/PIN, hang up, and report to 1930 or cybercrime.gov.in.")
+    append(suffix)
 }

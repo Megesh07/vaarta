@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +63,7 @@ fun RiskRing(
 
     val target = (score.coerceIn(0, 100)) / 100f
     val sweep by animateFloatAsState(targetValue = target, animationSpec = tween(650), label = "ringSweep")
+    val a11y = stringResource(R.string.risk_ring_a11y, stateText, score)
 
     // Breathe only at the top state (respects the "no flashing" rule — a slow 1.2s scale, not a blink).
     val scale = if (isScam) {
@@ -77,7 +79,7 @@ fun RiskRing(
     Box(
         modifier = modifier
             .size(ringSize)
-            .semantics { contentDescription = "$stateText, risk $score of 100" },
+            .semantics { contentDescription = a11y },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.size(ringSize).graphicsLayer { scaleX = scale; scaleY = scale }) {

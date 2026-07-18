@@ -29,6 +29,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 // --- The shared WhatsApp-style chat view (design system §6). Every surface — the in-app live screen,
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 internal fun levelColor(level: RiskLevel): Color = VaartaTheme.colors.riskColor(level)
 
 /** Plain-language state line (kept for the overlay banner + history verdict). */
+@Composable
 internal fun levelText(level: RiskLevel): String = stateLabel(level)
 
 private data class ReplyStyle(val label: String, val accent: Color, val tint: Color, val ink: Color)
@@ -48,9 +51,9 @@ private data class ReplyStyle(val label: String, val accent: Color, val tint: Co
 private fun replyStyle(kind: ReplyKind): ReplyStyle {
     val c = VaartaTheme.colors
     return when (kind) {
-        ReplyKind.VERIFY -> ReplyStyle("Ask", c.verify, c.verifyTint, c.verifyInk)
-        ReplyKind.REFUSE -> ReplyStyle("Refuse", c.refuse, c.refuseTint, c.refuseInk)
-        ReplyKind.EXIT -> ReplyStyle("End the call", c.exit, c.exitTint, c.exitInk)
+        ReplyKind.VERIFY -> ReplyStyle(stringResource(R.string.reply_kind_ask), c.verify, c.verifyTint, c.verifyInk)
+        ReplyKind.REFUSE -> ReplyStyle(stringResource(R.string.reply_kind_refuse), c.refuse, c.refuseTint, c.refuseInk)
+        ReplyKind.EXIT -> ReplyStyle(stringResource(R.string.reply_kind_exit), c.exit, c.exitTint, c.exitInk)
     }
 }
 
@@ -59,15 +62,15 @@ private fun replyStyle(kind: ReplyKind): ReplyStyle {
 internal fun StatusBanner(level: RiskLevel, score: Int, reassure: Boolean, aiRaised: Boolean) {
     val c = VaartaTheme.colors
     val color = if (reassure) c.safe else c.riskColor(level)
-    val headline = if (reassure) "This looks like a genuine call" else stateLabel(level)
+    val headline = if (reassure) stringResource(R.string.risk_reassure_genuine) else stateLabel(level)
     Card(colors = CardDefaults.cardColors(containerColor = color)) {
         Column(Modifier.fillMaxWidth().padding(VSpace.xl)) {
             Text(headline, color = Color.White, style = MaterialTheme.typography.headlineSmall)
             if (!reassure) {
-                Text("Risk $score / 100", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.risk_score_label, score), color = Color.White, style = MaterialTheme.typography.bodyMedium)
                 if (aiRaised) {
                     Spacer(Modifier.height(VSpace.xs))
-                    IconLabel(R.drawable.ic_alert_triangle, "Flagged from live web intelligence", Color.White)
+                    IconLabel(R.drawable.ic_alert_triangle, stringResource(R.string.risk_flagged_web), Color.White)
                 }
             }
         }
@@ -93,13 +96,13 @@ internal fun ScamIdCard(scamType: String, sources: List<Source>, onOpenUrl: (Str
     val c = VaartaTheme.colors
     Card(colors = CardDefaults.cardColors(containerColor = c.indigoTint)) {
         Column(Modifier.fillMaxWidth().padding(VSpace.md)) {
-            Eyebrow("Identified from the live web", color = c.indigoInk)
+            Eyebrow(stringResource(R.string.scamid_identified_web), color = c.indigoInk)
             Spacer(Modifier.height(VSpace.xs))
             Text(scamType, style = MaterialTheme.typography.titleMedium, color = c.indigoInk)
             if (sources.isNotEmpty()) {
                 Spacer(Modifier.height(VSpace.xs))
                 Text(
-                    "Matches ${sources.size} recent report${if (sources.size == 1) "" else "s"}:",
+                    pluralStringResource(R.plurals.scamid_matches_reports, sources.size, sources.size),
                     style = MaterialTheme.typography.bodySmall, color = c.indigoInk,
                 )
                 for (s in sources.take(3)) SourceLink(title = s.title, onClick = { onOpenUrl(s.uri) })
@@ -138,7 +141,7 @@ private fun CallerBubble(text: String) {
             modifier = Modifier.fillMaxWidth(0.85f),
         ) {
             Column(Modifier.padding(11.dp)) {
-                Text("Caller", style = MaterialTheme.typography.labelMedium, color = c.muted)
+                Text(stringResource(R.string.chat_caller_label), style = MaterialTheme.typography.labelMedium, color = c.muted)
                 Text(text, style = MaterialTheme.typography.bodyMedium, color = c.ink)
             }
         }
@@ -156,7 +159,7 @@ private fun YouBubble(text: String) {
             modifier = Modifier.fillMaxWidth(0.85f),
         ) {
             Column(Modifier.padding(11.dp)) {
-                Text("You said", style = MaterialTheme.typography.labelMedium, color = c.indigoInk)
+                Text(stringResource(R.string.chat_you_said), style = MaterialTheme.typography.labelMedium, color = c.indigoInk)
                 Text(text, style = MaterialTheme.typography.bodyMedium, color = c.ink)
             }
         }
@@ -190,7 +193,7 @@ internal fun CoachBubble(item: ChatItem.Coach, onOpenUrl: (String) -> Unit) {
                 }
                 // A recorded-call verdict (Phase 4D) has no live replies — show the header + chips only when present.
                 if (item.replies.isNotEmpty()) {
-                    Eyebrow("Say this", color = c.indigo)
+                    Eyebrow(stringResource(R.string.chat_say_this), color = c.indigo)
                     item.replies.forEachIndexed { i, reply -> ReplyLine(reply, primary = i == 0) }
                 }
             }
@@ -209,10 +212,10 @@ internal fun AssistantBubble(item: ChatItem.Assistant, onOpenUrl: (String) -> Un
             modifier = Modifier.fillMaxWidth(0.92f),
         ) {
             Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(VSpace.xs)) {
-                IconLabel(R.drawable.ic_sparkle, "VAARTA", c.indigoInk, bold = true)
+                IconLabel(R.drawable.ic_sparkle, stringResource(R.string.chat_vaarta_label), c.indigoInk, bold = true)
                 MarkdownText(item.text, color = c.ink)
                 if (item.sources.isNotEmpty()) {
-                    Eyebrow("Sources")
+                    Eyebrow(stringResource(R.string.chat_sources_label))
                     for (s in item.sources.take(3)) SourceLink(title = s.title, onClick = { onOpenUrl(s.uri) })
                 }
             }

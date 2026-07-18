@@ -3,6 +3,8 @@ package ai.vaarta.ui
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.i18n.AppLanguage
+import ai.vaarta.share.BilingualShare
 import ai.vaarta.ui.components.LinkRow
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.components.TextLinkRow
@@ -27,9 +29,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
@@ -41,32 +46,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
-private const val WARN_FAMILY_MESSAGE =
-    "VAARTA: please be careful — scammers posing as police/CBI/courier are calling people, " +
-        "threatening arrest, and demanding money or OTPs. No real officer arrests anyone over a " +
-        "phone or video call. Never pay or share an OTP. If pressured, hang up and call 1930."
-
 /**
  * Plain, calm steps for someone who has already been defrauded (spec §4.3). Ordered by urgency —
  * stop the bleeding, then report fast (1930's money-freeze window), then bank + evidence. Procedural
  * safety guidance only; deliberately no financial advice.
  */
-private val SCAMMED_STEPS = listOf(
-    "Stop now — don't send any more money. Scammers often demand \"one last payment\" to reverse " +
-        "it. That is part of the scam.",
-    "Call 1930 right away and report it. The sooner you call, the better the chance of stopping " +
-        "the money.",
-    "Tell your bank immediately. Ask them to freeze the transaction and block any further debits.",
-    "File a complaint on cybercrime.gov.in with the numbers, transaction IDs, and any screenshots.",
-    "If you shared an OTP, PIN, or password, change it and turn on any extra security your bank offers.",
-    "Keep everything — call logs, messages, and payment receipts — as evidence.",
-    "Tell your family so they can help and stay alert too.",
+private val SCAMMED_STEP_IDS = listOf(
+    R.string.help_scammed_step_1,
+    R.string.help_scammed_step_2,
+    R.string.help_scammed_step_3,
+    R.string.help_scammed_step_4,
+    R.string.help_scammed_step_5,
+    R.string.help_scammed_step_6,
+    R.string.help_scammed_step_7,
 )
 
 /**
  * The social-good pillar (spec §4.3): how and where to get help and report a scam, always reachable.
  * The complaint draft (reused from the deterministic engine) lives here now, off the live screen.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpScreen(
     vm: SessionViewModel,
@@ -82,6 +81,8 @@ fun HelpScreen(
     val complaintDraft by vm.session.complaintDraft.collectAsState()
     var showPanic by remember { mutableStateOf(false) }
     var showAllSteps by remember { mutableStateOf(false) }
+    var showLanguagePicker by remember { mutableStateOf(false) }
+    var currentLanguage by remember { mutableStateOf(AppLanguage.current()) }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -89,7 +90,7 @@ fun HelpScreen(
             verticalArrangement = Arrangement.spacedBy(VSpace.lg),
         ) {
             Spacer(Modifier.height(VSpace.sm))
-            Text("Get help & report", style = MaterialTheme.typography.headlineMedium, color = c.ink)
+            Text(stringResource(R.string.help_title), style = MaterialTheme.typography.headlineMedium, color = c.ink)
 
             // Emergency (redesign spec §6.5) — compact red-tinted card. The 4-step guidance itself
             // lives once in the shared panic sheet (spec §6.2), opened here so copy never drifts.
@@ -102,7 +103,7 @@ fun HelpScreen(
                     Text(stringResource(R.string.help_emergency_title), style = MaterialTheme.typography.titleLarge, color = c.scam)
                     Spacer(Modifier.height(VSpace.md))
                     VaartaButton(
-                        text = "Call 1930",
+                        text = stringResource(R.string.help_call_1930),
                         onClick = { onOpenUrl("tel:1930") },
                         leadingIcon = R.drawable.ic_phone,
                         destructive = true,
@@ -122,16 +123,16 @@ fun HelpScreen(
                     style = MaterialTheme.typography.bodyMedium, color = c.muted,
                 )
                 Spacer(Modifier.height(VSpace.md))
-                val visibleSteps = if (showAllSteps) SCAMMED_STEPS else SCAMMED_STEPS.take(3)
-                visibleSteps.forEachIndexed { i, step ->
+                val visibleStepIds = if (showAllSteps) SCAMMED_STEP_IDS else SCAMMED_STEP_IDS.take(3)
+                visibleStepIds.forEachIndexed { i, stepId ->
                     if (i > 0) Spacer(Modifier.height(VSpace.md))
-                    StepRow(number = i + 1, text = step)
+                    StepRow(number = i + 1, text = stringResource(stepId))
                 }
                 Spacer(Modifier.height(VSpace.md))
                 TextLinkRow(
                     text = stringResource(
                         if (showAllSteps) R.string.help_show_fewer_steps else R.string.help_show_all_steps,
-                        SCAMMED_STEPS.size,
+                        SCAMMED_STEP_IDS.size,
                     ),
                     onClick = { showAllSteps = !showAllSteps },
                 )
@@ -171,24 +172,37 @@ fun HelpScreen(
                     Spacer(Modifier.height(VSpace.sm))
                     Card(colors = CardDefaults.cardColors(containerColor = c.panel)) {
                         Column(Modifier.padding(VSpace.md)) {
+                            // Edge case 1 (spec §3B.3): the complaint filing itself stays English —
+                            // cybercrime.gov.in is English-first — but the reason why is localized.
+                            if (currentLanguage != AppLanguage.ENGLISH) {
+                                Text(
+                                    stringResource(R.string.help_complaint_english_note),
+                                    style = MaterialTheme.typography.bodySmall, color = c.muted,
+                                )
+                                Spacer(Modifier.height(VSpace.sm))
+                            }
                             Text(text, style = MaterialTheme.typography.bodySmall, color = c.ink)
                             Spacer(Modifier.height(VSpace.md))
                             Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
-                                VaartaButton(text = "Share as text", onClick = { onShare(text) })
+                                VaartaButton(text = stringResource(R.string.help_share_as_text), onClick = { onShare(text) })
                                 complaintDraft?.let { draft ->
-                                    VaartaSecondaryButton(text = "Export PDF", onClick = { onExportPdf(draft) })
+                                    VaartaSecondaryButton(text = stringResource(R.string.help_export_pdf), onClick = { onExportPdf(draft) })
                                 }
                             }
                         }
                     }
                     Spacer(Modifier.height(VSpace.sm))
                 }
+                val warnFamilyMessage = stringResource(R.string.help_warn_family_message)
                 LinkRow(
                     icon = R.drawable.ic_bell,
                     title = stringResource(R.string.help_tools_warn_family),
                     subtitle = stringResource(R.string.help_tools_warn_family_sub),
-                    onClick = { onShare(WARN_FAMILY_MESSAGE) },
+                    onClick = { onShare(BilingualShare.compose(warnFamilyMessage, currentLanguage)) },
                 )
+            }
+            HelpSection(title = "") {
+                HelpLanguageRow(current = currentLanguage, onClick = { showLanguagePicker = true })
             }
             Spacer(Modifier.height(VSpace.xxl))
         }
@@ -200,6 +214,23 @@ fun HelpScreen(
             onOpenUrl = onOpenUrl,
             onStartLive = onStartLive,
         )
+    }
+
+    if (showLanguagePicker) {
+        ModalBottomSheet(
+            onDismissRequest = { showLanguagePicker = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = VSpace.xxl).padding(bottom = VSpace.xxxl)) {
+                Text(stringResource(R.string.language_picker_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
+                Spacer(Modifier.height(VSpace.md))
+                LanguageOptionsList(onSelect = { language ->
+                    currentLanguage = language
+                    showLanguagePicker = false
+                    AppLanguage.apply(language) // AppCompatActivity recreates itself — no manual recreate()
+                })
+            }
+        }
     }
 }
 
@@ -232,8 +263,10 @@ private fun HelpSection(title: String, content: @Composable () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(VSpace.lg)) {
-            Text(title, style = MaterialTheme.typography.titleLarge, color = c.ink)
-            Spacer(Modifier.height(VSpace.sm))
+            if (title.isNotBlank()) {
+                Text(title, style = MaterialTheme.typography.titleLarge, color = c.ink)
+                Spacer(Modifier.height(VSpace.sm))
+            }
             content()
         }
     }

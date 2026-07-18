@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 enum class VaartaTab { HOME, HISTORY, HELP }
@@ -153,9 +154,9 @@ private fun VaartaBottomNav(tab: VaartaTab, onSelect: (VaartaTab) -> Unit) {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                NavItem(R.drawable.ic_nav_shield, "Home", tab == VaartaTab.HOME) { onSelect(VaartaTab.HOME) }
-                NavItem(R.drawable.ic_nav_chat, "Chats", tab == VaartaTab.HISTORY) { onSelect(VaartaTab.HISTORY) }
-                NavItem(R.drawable.ic_nav_help, "Help", tab == VaartaTab.HELP) { onSelect(VaartaTab.HELP) }
+                NavItem(R.drawable.ic_nav_shield, stringResource(R.string.nav_home), tab == VaartaTab.HOME) { onSelect(VaartaTab.HOME) }
+                NavItem(R.drawable.ic_nav_chat, stringResource(R.string.nav_chats), tab == VaartaTab.HISTORY) { onSelect(VaartaTab.HISTORY) }
+                NavItem(R.drawable.ic_nav_help, stringResource(R.string.nav_help), tab == VaartaTab.HELP) { onSelect(VaartaTab.HELP) }
             }
         }
     }

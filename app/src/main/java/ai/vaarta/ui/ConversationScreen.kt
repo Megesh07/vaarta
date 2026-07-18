@@ -5,6 +5,7 @@ import ai.vaarta.R
 import ai.vaarta.StatusBanner
 import ai.vaarta.ai.ChatAttachment
 import ai.vaarta.conversation.ConversationViewModel
+import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
@@ -103,11 +104,14 @@ fun ConversationScreen(
         }
     }
 
+    val pendingPhotoLabel = stringResource(R.string.chat_pending_photo)
+    val pendingAudioLabel = stringResource(R.string.chat_pending_audio)
+    val speechPrompt = stringResource(R.string.chat_speech_prompt)
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        attach(uri, "📷 Photo", "image/jpeg")
+        attach(uri, pendingPhotoLabel, "image/jpeg")
     }
     val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        attach(uri, "🎧 Audio clip", "audio/mpeg")
+        attach(uri, pendingAudioLabel, "audio/mpeg")
     }
     val voice = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -118,7 +122,8 @@ fun ConversationScreen(
     fun startVoice() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your question")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, AppLanguage.current().speechLocaleTag())
+            putExtra(RecognizerIntent.EXTRA_PROMPT, speechPrompt)
         }
         runCatching { voice.launch(intent) }
     }
@@ -131,7 +136,7 @@ fun ConversationScreen(
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            VaartaBackBar(title = if (header != null) "About this call" else stringResource(R.string.chat_title), onBack = onBack)
+            VaartaBackBar(title = if (header != null) stringResource(R.string.chat_about_call_title) else stringResource(R.string.chat_title), onBack = onBack)
 
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = VSpace.lg),
@@ -152,7 +157,7 @@ fun ConversationScreen(
                         modifier = Modifier.clickable { onShare(vm.transcriptText()) }.padding(vertical = VSpace.xs),
                     ) {
                         VaartaIcon(R.drawable.ic_download, contentDescription = null, tint = c.indigo, size = 16.dp)
-                        Text("Download transcript", style = MaterialTheme.typography.bodySmall, color = c.indigo)
+                        Text(stringResource(R.string.chat_download_transcript), style = MaterialTheme.typography.bodySmall, color = c.indigo)
                     }
                 }
                 if (turns.isEmpty() && header == null) {
@@ -178,7 +183,7 @@ fun ConversationScreen(
                 if (sending) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
                         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
-                        Text("VAARTA is thinking…", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                        Text(stringResource(R.string.chat_thinking), style = MaterialTheme.typography.bodySmall, color = c.muted)
                     }
                 }
                 Spacer(Modifier.height(VSpace.xs))
@@ -193,7 +198,7 @@ fun ConversationScreen(
                                 Row(Modifier.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
                                     Text(a.label, style = MaterialTheme.typography.bodySmall, color = c.indigoInk)
                                     VaartaIcon(
-                                        R.drawable.ic_close, contentDescription = "Remove", tint = c.indigoInk, size = 14.dp,
+                                        R.drawable.ic_close, contentDescription = stringResource(R.string.chat_remove_a11y), tint = c.indigoInk, size = 14.dp,
                                         modifier = Modifier.clickable { pending = pending - a },
                                     )
                                 }

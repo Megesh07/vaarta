@@ -1,5 +1,6 @@
 package ai.vaarta.ui.theme
 
+import ai.vaarta.R
 import ai.vaarta.core.reasoning.RiskLevel
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 /** Access the semantic VAARTA tokens anywhere: `VaartaTheme.colors.scam`. */
@@ -77,9 +79,10 @@ fun VaartaColors.riskTint(level: RiskLevel): Color = when (level) {
 }
 
 /** Plain-language state line, ≤2s glanceable (MOBILE_UX_SPEC §2). */
+@Composable
 fun stateLabel(level: RiskLevel): String = when (level) {
-    RiskLevel.OBSERVING -> "Listening & checking"
-    RiskLevel.CAUTION -> "Some warning signs"
-    RiskLevel.HIGH_RISK -> "Strong scam signs"
-    RiskLevel.SCAM_PATTERN -> "This matches a known scam"
+    RiskLevel.OBSERVING -> stringResource(R.string.state_observing)
+    RiskLevel.CAUTION -> stringResource(R.string.state_caution)
+    RiskLevel.HIGH_RISK -> stringResource(R.string.state_high)
+    RiskLevel.SCAM_PATTERN -> stringResource(R.string.state_scam)
 }

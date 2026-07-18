@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,7 +58,7 @@ fun RiskHero(
     liveBadge: Boolean = false,
 ) {
     val colors = VaartaTheme.colors
-    val stateText = idleLabel ?: if (reassure) "This looks like a genuine call" else stateLabel(level)
+    val stateText = idleLabel ?: if (reassure) stringResource(ai.vaarta.R.string.risk_reassure_genuine) else stateLabel(level)
     val stateColor = if (idleLabel != null) colors.muted else if (reassure) colors.safe else colors.riskColor(level)
 
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -82,7 +83,7 @@ fun RiskHero(
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 VaartaIcon(ai.vaarta.R.drawable.ic_alert_triangle, contentDescription = null, tint = colors.muted, size = 15.dp)
-                Text("Flagged from live web intelligence", style = MaterialTheme.typography.bodySmall, color = colors.muted)
+                Text(stringResource(ai.vaarta.R.string.risk_flagged_web), style = MaterialTheme.typography.bodySmall, color = colors.muted)
             }
         }
 

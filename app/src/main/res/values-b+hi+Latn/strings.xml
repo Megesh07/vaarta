@@ -1,0 +1,214 @@
+<resources>
+    <!-- Hinglish (romanized Hindi/English code-mix, BCP-47 hi-Latn) — Tier 1, first-class peer
+         (redesign spec §3B.1), NOT a fallback. MACHINE-DRAFTED, PENDING NATIVE REVIEW.
+         Safety-critical strings (panic_*, help_scammed_step_*, help_warn_family_message,
+         help_complaint_english_note) MUST be reviewed by a native/fluent Hinglish speaker before
+         this language is considered shipped — see PROJECT_STATUS.md §8 for the review checklist.
+         Invariant across all languages (never translate): 1930, cybercrime.gov.in, Sanchar Saathi,
+         Chakshu, UPI, OTP, PIN, CVV, Aadhaar, VAARTA. -->
+
+    <!-- Home -->
+    <string name="home_status_ai_ready">AI ready hai</string>
+    <string name="home_status_on_device">Device pe hi</string>
+    <string name="home_panic_title">Main abhi scam call pe hoon</string>
+    <string name="home_panic_a11y">Main abhi scam call pe hoon. Emergency steps kholo.</string>
+    <string name="home_action_live_title">Call pe meri help karo</string>
+    <string name="home_action_live_subtitle">VAARTA speaker pe sunkar aapko live guide karta hai</string>
+    <string name="home_action_ask">VAARTA se poocho</string>
+    <string name="home_action_recording">Recording check karo</string>
+    <string name="home_feed_title">India mein trending scams</string>
+    <string name="home_feed_origin_live">Web se live</string>
+    <string name="home_feed_origin_cached">Aapke last refresh se</string>
+    <string name="home_feed_origin_seed">Built-in guide — online hone par update hogi</string>
+    <string name="home_feed_empty">Online hone par yahan scam-awareness stories aayengi.</string>
+    <string name="home_feed_seen_in">%1$s mein dekha gaya</string>
+
+    <!-- Panic sheet — SAFETY-CRITICAL, needs native review. -->
+    <string name="panic_heading">Abhi yeh karo</string>
+    <string name="panic_step_1">Kisi ko paise mat do. Koi bhi real officer ya bank call pe paise nahi maangta.</string>
+    <string name="panic_step_2">OTP, PIN, ya password kabhi share mat karo.</string>
+    <string name="panic_step_3">Call kaat do. Call end karna safe hai — phone call pe kisi ko arrest nahi kiya jaata.</string>
+    <string name="panic_step_4">1930 pe call karo (government cyber-crime helpline).</string>
+    <string name="panic_call_1930">Abhi 1930 pe call karo</string>
+    <string name="panic_get_live_help">VAARTA se live help lo →</string>
+
+    <!-- Live v2 -->
+    <string name="live_title">Live protection</string>
+    <string name="live_idle_title">Protect karne ke liye ready</string>
+    <string name="live_idle_caption">Start karte waqt call ko speaker pe rakho.</string>
+    <string name="live_active_caption">Call ko speaker pe rakho taaki VAARTA caller ko sun sake.</string>
+    <string name="live_start">Live protection start karo</string>
+    <string name="live_float">Apni call pe float karo</string>
+    <string name="live_watch_demo">Dekho yeh kaise kaam karta hai</string>
+    <string name="live_ai_consent_compact">AI live coach — opt-in, caller ke words Google ko bhejta hai. Off = fully on-device.</string>
+    <string name="live_saved">Aapki conversations mein save ho gaya</string>
+    <string name="live_done">Done</string>
+    <string name="live_start_again">Phir se start karo</string>
+    <string name="live_stop">Protection roko</string>
+
+    <!-- Help v2 -->
+    <string name="help_emergency_title">Abhi scam ho raha hai?</string>
+    <string name="help_emergency_open_steps">Abhi karne wali 4 baatein dekho →</string>
+    <string name="help_lost_money_title">Agar aapne pehle hi paise gawa diye hain</string>
+    <string name="help_lost_money_intro">Calm raho — fast action se bhi paise wapas mil sakte hain. Isi order mein karo:</string>
+    <string name="help_lost_money_footer">Pehle kuch ghanton mein report karne se paise rukne ka best chance milta hai.</string>
+    <string name="help_show_all_steps">Saare %1$d steps dekho</string>
+    <string name="help_show_fewer_steps">Kam steps dekho</string>
+    <string name="help_report_title">Online report karo</string>
+    <string name="help_report_caption">Full complaint file karne ke liye cybercrime.gov.in use karo. Sirf fraud number/SMS report karne ke liye Chakshu use karo.</string>
+    <string name="help_report_cybercrime">cybercrime.gov.in — complaint file karo</string>
+    <string name="help_report_chakshu">Sanchar Saathi (Chakshu) — fraud number/SMS report karo</string>
+    <string name="help_tools_title">Tools</string>
+    <string name="help_tools_complaint">Complaint draft banao</string>
+    <string name="help_tools_complaint_sub">VAARTA ne jo detect kiya usse ready-to-file draft mein badlo</string>
+    <string name="help_tools_warn_family">Apne family ko warn karo</string>
+    <string name="help_tools_warn_family_sub">Ek chhota warning message bhejo — ek message scam rok sakta hai</string>
+
+    <!-- Chat v2 -->
+    <string name="chat_title">VAARTA se poocho</string>
+    <string name="chat_empty_title">Kisi suspicious call ya message ke baare mein mujhse kuch bhi poocho</string>
+    <string name="chat_starter_1">Ek caller bol raha hai mere parcel mein drugs hain</string>
+    <string name="chat_starter_2">Woh digital arrest ki threat de rahe hain</string>
+    <string name="chat_starter_3">Kya yeh UPI payment request safe hai?</string>
+    <string name="chat_composer_hint">Apna question type karo…</string>
+    <string name="chat_attach_sheet_title">Attach karo</string>
+    <string name="chat_attach_photo">Photo</string>
+    <string name="chat_attach_audio">Audio clip</string>
+    <string name="chat_mic_a11y">Bolo</string>
+    <string name="chat_attach_a11y">Attach karo</string>
+    <string name="chat_send_a11y">Send karo</string>
+
+    <!-- Article -->
+    <string name="article_reading">VAARTA isme latest padh raha hai…</string>
+    <string name="article_what_it_is">Yeh kya hai</string>
+    <string name="article_how_to_spot">Kaise pehchaane</string>
+    <string name="article_what_to_do">Kya karein</string>
+    <string name="article_sources">Sources</string>
+    <string name="article_ask">Iske baare mein VAARTA se poocho</string>
+    <string name="article_share_a11y">Is scam ke baare mein mere family ko warn karo</string>
+
+    <!-- Conversations -->
+    <string name="conv_title">Conversations</string>
+    <string name="conv_count">%1$d saved</string>
+    <string name="conv_new_chat">Nayi chat</string>
+    <string name="conv_menu_a11y">List options</string>
+    <string name="conv_empty_title">Abhi koi conversation nahi</string>
+    <string name="conv_empty_body">Kisi suspicious call ya message ke baare mein VAARTA se poochne ke liye New chat pe tap karo — ya Home se live call protect karo.</string>
+    <string name="conv_encrypted">Sirf isi phone pe, encrypted save hai.</string>
+    <string name="conv_menu_title">Conversations manage karo</string>
+    <string name="conv_autodelete">Iske baad auto-delete karo</string>
+    <string name="conv_keep">Rakho</string>
+    <string name="conv_7d">7 din</string>
+    <string name="conv_30d">30 din</string>
+    <string name="conv_delete_all">Saari conversations delete karo</string>
+    <string name="conv_deleted">Conversation delete ho gayi</string>
+    <string name="conv_undo">Undo karo</string>
+    <string name="conv_section_week">Is hafte</string>
+    <string name="conv_section_earlier">Pehle</string>
+    <string name="conv_source_chat">Chat</string>
+    <string name="conv_source_recording">Recording</string>
+    <string name="conv_source_live">Live call</string>
+
+    <!-- Shared chrome -->
+    <string name="common_back">Peeche</string>
+
+    <!-- Live screen controls + risk hero -->
+    <string name="live_ai_thinking">AI coach soch raha hai…</string>
+    <string name="live_alert_family">Family ko alert karo</string>
+    <string name="live_alert_family_message">VAARTA alert: Shaayad main abhi scam call pe hoon. Please mujhe call back karo. (%1$s)</string>
+    <string name="live_no_agency_arrests">Koi bhi agency phone ya video call pe kisi ko arrest nahi karti.</string>
+    <string name="live_ask_them">Unse poocho</string>
+    <string name="live_tap_another_question">Doosre question ke liye tap karo</string>
+    <string name="live_share_via">Iske through share karo</string>
+    <string name="live_share_complaint_pdf">Complaint PDF share karo</string>
+
+    <!-- Analyze-a-recording screen -->
+    <string name="analyze_title">Recording check karo</string>
+    <string name="analyze_intro">Ek recorded call pick karo — VAARTA usse transcribe karega, known scam patterns se check karega, aur aapko verdict dega.</string>
+    <string name="analyze_pick_recording">Recording pick karo</string>
+    <string name="analyze_transcribing">Recording transcribe aur check ho rahi hai…</string>
+    <string name="analyze_transcribing_sub">Lambi clip ke liye ismein ek minute tak lag sakta hai.</string>
+    <string name="analyze_disclaimer">Ek recording se analyze kiya gaya. Risk score transcript se on-device hi nikala jaata hai; AI ne isse transcribe aur classify karne mein madad ki.</string>
+    <string name="analyze_share_warning">Yeh warning share karo</string>
+    <string name="analyze_share_warning_message">VAARTA: Maine ek call recording analyze ki aur yeh scam lag raha hai (%1$s).</string>
+
+    <!-- Risk states + chat bubbles -->
+    <string name="state_observing">Sun rahe hain aur check kar rahe hain</string>
+    <string name="state_caution">Kuch warning signs</string>
+    <string name="state_high">Scam ke strong signs</string>
+    <string name="state_scam">Yeh ek known scam se match karta hai</string>
+    <string name="risk_reassure_genuine">Yeh genuine call lag rahi hai</string>
+    <string name="risk_score_label">Risk %1$d / 100</string>
+    <string name="risk_flagged_web">Live web intelligence se flag kiya gaya</string>
+    <string name="risk_ring_a11y">%1$s, risk 100 mein se %2$d</string>
+    <string name="reply_kind_ask">Poocho</string>
+    <string name="reply_kind_refuse">Mana karo</string>
+    <string name="reply_kind_exit">Call khatam karo</string>
+    <string name="scamid_identified_web">Live web se identify kiya gaya</string>
+    <plurals name="scamid_matches_reports">
+        <item quantity="one">%1$d recent report se match karta hai:</item>
+        <item quantity="other">%1$d recent reports se match karta hai:</item>
+    </plurals>
+    <string name="chat_caller_label">Caller</string>
+    <string name="chat_you_said">Aapne kaha</string>
+    <string name="chat_say_this">Yeh kaho</string>
+    <string name="chat_vaarta_label">VAARTA</string>
+    <string name="chat_sources_label">Sources</string>
+
+    <!-- Signal tokens -->
+    <string name="signal_hook">Hook</string>
+    <string name="signal_authority">Authority</string>
+    <string name="signal_secrecy">Secrecy</string>
+    <string name="signal_threat">Threat</string>
+    <string name="signal_money">Paisa</string>
+    <string name="signal_listening">Sun rahe hain</string>
+
+    <!-- Help v2 remainder — SAFETY-CRITICAL, needs native review. -->
+    <string name="help_warn_family_message">VAARTA: careful raho — police/CBI/courier bankar scammers logon ko call kar rahe hain, arrest ki threat de rahe hain, aur paise ya OTP maang rahe hain. Koi bhi real officer phone ya video call pe kisi ko arrest nahi karta. Kabhi OTP mat do ya paise mat bhejo. Pressure mein aao toh call kaat do aur 1930 pe call karo.</string>
+    <string name="help_scammed_step_1">Abhi ruko — aur paise mat bhejo. Scammers often \"ek last payment\" maangte hain paise wapas karne ke liye. Yeh bhi scam ka hissa hai.</string>
+    <string name="help_scammed_step_2">Turant 1930 pe call karke report karo. Jitni jaldi call karoge, paise rukne ka chance utna better hoga.</string>
+    <string name="help_scammed_step_3">Turant apne bank ko batao. Transaction freeze karne aur aage ki debits rokne ke liye kaho.</string>
+    <string name="help_scammed_step_4">Numbers, transaction IDs, aur screenshots ke saath cybercrime.gov.in pe complaint file karo.</string>
+    <string name="help_scammed_step_5">Agar aapne OTP, PIN, ya password share kiya hai, toh use change karo aur bank ki extra security on karo.</string>
+    <string name="help_scammed_step_6">Sab kuch safe rakho — call logs, messages, aur payment receipts — evidence ke taur pe.</string>
+    <string name="help_scammed_step_7">Apne family ko batao taaki woh help kar sakein aur alert rahein.</string>
+    <string name="help_title">Help paao aur report karo</string>
+    <string name="help_call_1930">1930 pe call karo</string>
+    <string name="help_share_as_text">Text ke roop mein share karo</string>
+    <string name="help_export_pdf">PDF export karo</string>
+    <string name="help_complaint_english_note">English mein file hota hai — cybercrime.gov.in aapki app language chahe jo ho, complaints English mein hi process karta hai.</string>
+
+    <!-- Article share (bilingual composition handled in code — see ArticleScreen.kt). -->
+    <string name="article_warn_prefix">⚠️ VAARTA se scam alert: %1$s\n\n</string>
+    <string name="article_warn_suffix">\n\nAgar aapke saath aisa ho: calm raho, kabhi OTP/PIN mat do, call kaat do, aur 1930 ya cybercrime.gov.in pe report karo.</string>
+
+    <!-- Chat v2 remainder -->
+    <string name="chat_pending_photo">📷 Photo</string>
+    <string name="chat_pending_audio">🎧 Audio clip</string>
+    <string name="chat_speech_prompt">Apna question bolo</string>
+    <string name="chat_about_call_title">Is call ke baare mein</string>
+    <string name="chat_download_transcript">Transcript download karo</string>
+    <string name="chat_thinking">VAARTA soch raha hai…</string>
+    <string name="chat_remove_a11y">Hatao</string>
+
+    <!-- Bottom nav -->
+    <string name="nav_home">Home</string>
+    <string name="nav_chats">Chats</string>
+    <string name="nav_help">Help</string>
+
+    <!-- Language picker: help_language_* changes per locale. language_picker_title,
+         language_picker_title_hi, and language_hinglish_hint are deliberately NOT overridden
+         here — they must stay fixed reference text in every language (see strings.xml). -->
+    <string name="language_picker_first_run_body">Isse aap kabhi bhi Help se badal sakte ho.</string>
+    <string name="help_language_title">App language</string>
+    <string name="help_language_current">Abhi: %1$s</string>
+
+    <!-- Floating overlay -->
+    <string name="overlay_notif_channel_name">Live call protection</string>
+    <string name="overlay_notif_channel_desc">Jab VAARTA call sunkar aapke replies mein help kar raha ho, tab dikhta hai.</string>
+    <string name="overlay_notif_title">VAARTA aapki call protect kar raha hai</string>
+    <string name="overlay_notif_text">Scam signs ke liye sun rahe hain. Kholne ke liye tap karo.</string>
+    <string name="overlay_notif_stop">Roko</string>
+    <string name="overlay_hide">Hide karo</string>
+    <string name="overlay_listening_coach">Sun rahe hain — main bataunga kya kehna hai.</string>
+</resources>
