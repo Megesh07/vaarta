@@ -400,7 +400,14 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
         return withContext(Dispatchers.Default) {
             withTimeoutOrNull(200L) {
                 val embedding = speakerEmbedder.embed(pcm, pcm.size) ?: return@withTimeoutOrNull false
-                voiceGallery.verify(embedding, VERIFY_THRESHOLD)
+                try {
+                    voiceGallery.verify(embedding, VERIFY_THRESHOLD)
+                } catch (e: Exception) {
+                    // Fail closed like every other step in this pipeline: a native verify() failure
+                    // must not propagate out of processCallerTurn and drop the whole turn unscored.
+                    android.util.Log.w("CopilotSession", "voice verify failed, treating as unverified: ${e.javaClass.simpleName}")
+                    false
+                }
             } ?: false
         }
     }

@@ -16,9 +16,14 @@ class VoiceGallery(dim: Int) {
 
     private val manager = SpeakerEmbeddingManager(dim)
 
-    /** Replace the current enrollment with [embeddings] (typically all samples loaded from disk). */
+    /** Replace the current enrollment with [embeddings] (typically all samples loaded from disk).
+     *  sherpa-onnx's [SpeakerEmbeddingManager.add] is "insert if absent" — it returns false and does
+     *  NOT overwrite an existing name — so a prior enrollment must be explicitly removed first, or
+     *  every call after the first one here would be a silent no-op and the enrolled voiceprint would
+     *  never actually grow across a session. */
     fun enroll(embeddings: List<FloatArray>) {
         if (embeddings.isEmpty()) return
+        manager.remove(NAME) // no-op (returns false) if nothing was enrolled yet — fine either way
         manager.add(NAME, embeddings.toTypedArray())
     }
 
