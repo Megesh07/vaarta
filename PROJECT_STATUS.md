@@ -231,6 +231,66 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-19 — Live-call core hardening DONE (Parts A-D, 8 tasks, subagent-driven with task
+  review + fix loops on every task).** Spec: `docs/superpowers/specs/2026-07-18-live-call-core-hardening-design.md`.
+  Plan: `docs/superpowers/plans/2026-07-18-live-call-core-hardening-plan.md`. Broadens detection
+  coverage, wires the grounded classifier into the coach, generalizes the coach's reasoning beyond
+  digital-arrest-only, and adds zero-enrollment on-device speaker attribution — all four parts
+  keep `RiskEngine` as the sole, deterministic score owner and the AI-raise-only ratchet unchanged.
+  - **Part A — pack v2:** 7 new HOOK-stage signals (`SIG_HOOK_INVESTMENT`, `_JOB_TASK`, `_LOAN_APP`,
+    `_LOTTERY`, `_ELECTRICITY`, `_UPI_REFUND`, `_COURIER_COD`) in `core-scam-v1.json`
+    (`packId` → `core-scam@2026.07.2`), 2 new `SignalCategory` values (`FINANCIAL_LURE`,
+    `SERVICE_THREAT`). `RiskEngine.kt` itself untouched. TDD surfaced a real pre-existing bug during
+    review: `SIG_LEGAL_THREAT`'s 3-character `hi_latn` fuzzy pattern `"fir"` false-positive-matches
+    "from"/"for"/"Sir" — flagged as a tracked follow-up (task_ecd0ce74), not fixed in this pass.
+  - **Part B:** the grounded classifier's source-backed scam-type now reaches the coach call as one
+    advisory `[CONTEXT]` line (`GroundedContext.kt`, gated through the same
+    `HybridAlert.mayShowScamType` the UI banner uses — an uncited claim can never reach the prompt).
+  - **Part C:** `CoachPrompt`/`SharedScamPrompt` rewritten from a single fixed digital-arrest script
+    to universal manipulation-pattern reasoning (authority-impersonation / urgency-manufacturing /
+    isolation-demanding / financial-extraction), known scam families kept as illustrative examples
+    only, plus adversarial-probing-question guidance for the "verify" reply kind. HARD RULES text
+    regression-tested byte-for-byte (`CoachPromptGeneralizationTest`) — confirmed unchanged by an
+    independent reviewer pass, not just self-reported.
+  - **Part D — zero-enrollment speaker attribution:** new `core:voice` module wrapping sherpa-onnx
+    (vendored AAR + a 3D-Speaker CAM++ English model, ~78MB total, both real downloads verified by
+    the controller before implementation started — no JitPack/Maven build-time dependency). A real,
+    previously-unknown Android Gradle Plugin restriction surfaced and was fixed during implementation:
+    a `com.android.library` module cannot take a raw `files()` reference to another local `.aar` —
+    resolved with a centralized `flatDir` repo + module-notation dependency, independently
+    re-verified with a clean rebuild. `core:data` gained a `voice_sample` table (migration 2→3,
+    additive only, column-matched against the entity by an independent reviewer). `core:reasoning`
+    gained the pure `SpeakerAttributor` decision rule — `SpeakerLabel.USER` is producible only when
+    BOTH the segment is ≥1.5s AND it matches the on-device voiceprint; every other case is
+    `UNVERIFIED` and scored exactly as before Part D existed. `CopilotSession` wires it all together:
+    a parallel PCM ring buffer coalesced on the same schedule as the existing text buffer, harvesting
+    silently from `OwnWordsGate`-confirmed echoes only (chat voice-input harvesting was dropped from
+    scope — Android's system speech-recognition dialog owns the mic itself and exposes no raw audio,
+    discovered while grounding the plan against the real code). No enrollment screen exists or was
+    built. A speaker-off nudge (reusing the already-translated `live_active_caption` string, not a
+    new untranslated one — a review finding) was wired into the in-app Live screen; the floating
+    overlay panel doesn't show it yet (tracked follow-up, task_0682d091). "Clear voice data" settings
+    row added to Help, translated into Hindi/Hinglish immediately (closing a translation-coverage gap
+    the review caught in the same pass) — it deletes irreversibly with no confirmation, matching this
+    app's one existing precedent for a destructive row; a reviewer flagged that both destructive rows
+    arguably deserve a confirm step given the app's audience, tracked as a follow-up (task_517a16be).
+  - **Verification:** full build/lint/unit-test matrix green (150 tests, 0 lint errors across every
+    module); `core:voice`/`core:data`'s instrumented tests, written in earlier tasks with no device
+    available to run them, ran for real on a live emulator in the final pass — both pass. Demo-call
+    regression baseline confirmed byte-identical to pre-Part-D behavior. Two of the seven new HOOK
+    signals were independently fired end-to-end through a real (non-unit-test) Gemini-audio-analysis
+    path with correctly topical AI commentary; a third attempt hit a Gemini free-tier quota limit,
+    not a bug. The live-mic speaker-attribution activation gate itself (harvest → exclude → re-score
+    after Clear voice data) could not be exercised in this headless environment — no mic/speaker
+    loopback available to inject distinguishable speech into the emulator without a restart — so that
+    exact path remains unit-tested (via `SpeakerAttributor`) but not live-exercised end-to-end; flag
+    this to a human tester with a real device before considering Part D fully proven in practice.
+  - **Separately discovered, not part of this plan:** a full verification pass found the
+    "Manual Mode" cue-tapping UI specified in `docs/MOBILE_UX_SPEC.md` §3.3 was never actually built —
+    the engine-side support (`RiskEvent.ManualCue`, `PackParityTest`'s manualCue-per-signal guardrail)
+    is complete and tested, but no screen anywhere in the app exposes it to a real user. Tracked as a
+    follow-up (task_6a52885f), not fixed in this pass.
+
 - **2026-07-18 (later still) — Premium redesign Phase 9 (Sweep) DONE — the 9-phase premium redesign
   is now complete.** Spec §9/§11/§12 item 9. A pre-implementation audit (Explore subagent) mapped
   exactly what motion/dark-mode/a11y work was real vs. already in place before touching any code —
