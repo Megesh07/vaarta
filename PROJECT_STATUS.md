@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-17 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-18 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -230,6 +230,32 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   other way around.
 
 ## 8. Change log
+
+- **2026-07-18 — Premium redesign Phase 6 (Live v2 + panic sheet) DONE + emulator-verified.**
+  Spec §6.2/§6.3/§6.5:
+  - **Shared `PanicSheet`/`RightNowSteps`** (`ui/components/PanicSheet.kt`) extracted from Home's
+    inline sheet — the 4 emergency steps + "Call 1930 now" + a quiet "Get live help from VAARTA →"
+    link row (new `TextLinkRow` component) now exist in exactly one place. Home's red banner and
+    Help's new compact "Scam happening now?" card both open the same composable — verified live
+    that both render identical copy with zero drift.
+  - **Live screen — three explicit states** replacing the old binary liveStatus branch (spec
+    §6.3): **Idle** (`isIdle` = no liveStatus/chat/question/aiSuggestion) shows "Ready to protect"
+    with the score hidden — fixes the old "Listening & checking" + fake "0" shown before anything
+    had happened; **Active** (a real live call) shows a small pulsing indigo dot next to the state
+    line (new `RiskHero(idleLabel, liveBadge)` params) replacing the raw "● Live: CONNECTING"
+    header text; **Post-session** (a demo just played or a call just ended) shows "Done" +
+    "Start again" — Reset now lives here, not in idle — plus a "Saved to your conversations" row
+    only when a real call was actually auto-saved (never for demos).
+  - **Idle controls decluttered**: dropped "Try a demo"/"Reset" row and "Analyze a recorded call"
+    (moved entirely to Home's tile per the §4.1 canonical-homes table — `onOpenAnalyze` and the
+    unused `recordingPicker`/`analyzerVm` param removed from `VaartaScreen`); "Try a demo" reborn
+    as a quiet "Watch how it works" text link.
+  - **Compact AI-consent row**: the old 5-line paragraph card is now one line + switch.
+  - Verified live end-to-end on the emulator: idle ring (no "0"), demo → post-session (Done/Start
+    again, no false "Saved" row), Start again → back to clean idle, real `startLiveListening()` →
+    active state with pulsing dot and honest live "0", panic sheet from both Home and Help.
+  - 127 tests green, `assembleDebug` green. **Next: Phase 7 — Help v2 + Chat composer v2 + nav
+    restyle.**
 
 - **2026-07-17 (night) — Premium redesign Phase 5 (Conversations v2) DONE + emulator-verified
   (`ed691dd`).** Spec §6.6, all behaviors driven live on the emulator:
