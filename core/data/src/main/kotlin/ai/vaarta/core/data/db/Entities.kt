@@ -63,3 +63,36 @@ data class TurnEntity(
     @ColumnInfo(name = "sources_json") val sourcesJson: String? = null,
     @ColumnInfo(name = "at_ms") val atMs: Long,
 )
+
+/**
+ * One harvested voice sample's embedding (Part D, redesign spec §6.5/§6.6). Harvested silently from
+ * `OwnWordsGate`-confirmed live-call echoes only (see the plan's scope note — chat voice input uses
+ * a system dialog with no raw-audio access). [embedding] is the raw sherpa-onnx FloatArray reinterpreted
+ * as bytes (4 bytes per float, native order) — never the original audio, which is discarded after
+ * embedding (privacy rule, spec §6.5). Encrypted at rest by the same SQLCipher database as everything
+ * else here; deleted entirely by "Clear voice data" (`VoiceprintDao.deleteAll`).
+ */
+@Entity(tableName = "voice_sample")
+data class VoiceSampleEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "embedding") val embedding: ByteArray,
+    @ColumnInfo(name = "duration_ms") val durationMs: Long,
+    @ColumnInfo(name = "captured_at_ms") val capturedAtMs: Long,
+) {
+    // Room needs a data class, but ByteArray breaks the generated equals/hashCode contract used by
+    // some Room internals — override explicitly rather than let a silent bug hide here.
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is VoiceSampleEntity) return false
+        return id == other.id && embedding.contentEquals(other.embedding) &&
+            durationMs == other.durationMs && capturedAtMs == other.capturedAtMs
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + embedding.contentHashCode()
+        result = 31 * result + durationMs.hashCode()
+        result = 31 * result + capturedAtMs.hashCode()
+        return result
+    }
+}
