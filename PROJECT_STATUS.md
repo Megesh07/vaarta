@@ -231,6 +231,56 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-18 (later still) — Premium redesign Phase 9 (Sweep) DONE — the 9-phase premium redesign
+  is now complete.** Spec §9/§11/§12 item 9. A pre-implementation audit (Explore subagent) mapped
+  exactly what motion/dark-mode/a11y work was real vs. already in place before touching any code —
+  dark mode and `contentDescription` coverage turned out structurally solid already (see below), so
+  the actual work concentrated on motion and font-scale:
+  - **Motion** (new `ui/theme/Motion.kt`): a shared `Modifier.vaartaPressable()` — 0.98 scale, stock
+    ripple switched off (the scale itself is the tonal feedback) — replaces ~20 bare `clickable{}`
+    call sites across `VaartaComponents.kt`, `VaartaNav.kt`, `HomeScreen.kt`, `MainActivity.kt`,
+    `ConversationScreen.kt`, `ArticleScreen.kt`, `LanguagePicker.kt` (`IconChipCard`/`ActionTile`
+    refactored onto the same helper instead of their own inline copies). The panic banner
+    deliberately keeps its plain `clickable` — spec says **no** press animation there. Sub-screen
+    transitions wired via `AnimatedContent` in `VaartaNav.kt`: 220ms fade + 8dp slide-up enter,
+    110ms fade+slide-down exit. Feed cards get a 40ms-staggered one-shot fade-in
+    (`HomeScreen.kt`'s `StaggeredFadeIn`, a `remember`ed `Animatable` per row so a refresh doesn't
+    replay it). All three respect **reduced-motion**, read via `Settings.Global.ANIMATOR_DURATION_SCALE`
+    (not the API-33+ `ValueAnimator.getDurationScale()` convenience — minSdk here is 29; lint caught
+    this as a real `NewApi` error on the first pass, fixed by threading a `Context`-based check
+    through instead).
+  - **Dark mode: verified, not rebuilt.** `VaartaColors` is a single `data class` with `VaartaLight`/
+    `VaartaDark` as full instances — the compiler already enforces field parity, so no light-color
+    leak was structurally possible. Screenshot-verified on the emulator across Home, Article, and
+    Help: panic red, feed cards, cover-art category pill, shimmer skeleton, Tools/language rows all
+    read correctly against the dark palette. No code changes were needed here.
+  - **Font-scale 1.3 stress test:** fixed the 5 real overflow risks the audit found — `HistoryRow`'s
+    level+time row (`MainActivity.kt`) now gives the level label `weight(1f, fill=false)` +
+    ellipsis instead of letting it push the timestamp off-row; `VaartaNav`'s bottom-nav labels,
+    the panic banner title, `StatusChip`'s label, and `ConversationScreen`'s attachment chip label
+    all gained `maxLines`/ellipsis/width caps they were missing. Verified live at font-scale 1.3
+    in both Hinglish and हिन्दी (Tamil has no resource folder by design — spec treats it as a
+    fallback-rendering stress test, not a translation deliverable): panic banner, status chip, nav
+    labels, and Help's numbered steps all held up with no truncated safety copy. Conversations was
+    empty during this session so `HistoryRow`'s live-data rendering wasn't visually confirmed — the
+    fix follows the same weight+ellipsis pattern already verified safe on the title row above it.
+  - **contentDescription / TalkBack: audited, found already solid.** `VaartaIcon` declares
+    `contentDescription` as a required (non-defaulted) parameter, so it's structurally impossible to
+    add an icon without one — verified via `uiautomator dump` on Home/Article/Help in both English
+    and Hindi: the panic banner, feed cards, and back button all carry correct, localized semantic
+    descriptions ("Peeche"/"Back", "Main abhi scam call pe hoon. Emergency steps kholo."). No gaps
+    found; no changes made.
+  - **Bonus finding:** the Article screen's structured-summary live render — pending since Phase 4
+    on a Gemini free-tier quota question — was observed rendering correctly live during this
+    session's emulator pass. That open item is now considered resolved.
+  - `assembleDebug` green, 127 unit tests green, `lintDebug` green (zero errors after the reduced-
+    motion API fix). Emulator screenshot matrix covered light+dark × EN/HI/Hinglish across Home,
+    Article, Help, Conversations, and sub-screen transitions.
+  - **What's still open, unchanged from Phase 8:** the native-review checklist for
+    Hindi/Hinglish translations (below) remains the binding gate before those languages "ship";
+    the bundled seed feed, `relativeTimeLabel`, and the demo-call script remain the same
+    documented English-only gaps.
+
 - **2026-07-18 (late night) — Premium redesign Phase 8 (Language) DONE + emulator-verified in all
   3 languages.** Spec §3B — the full architecture, all three layers:
   - **Per-app locale plumbing:** added `androidx.appcompat`; `MainActivity` now extends
