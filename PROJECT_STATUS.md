@@ -231,6 +231,33 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-18 (night) — Premium redesign Phase 7 (Help v2 + Chat composer v2 + nav restyle) DONE
+  + emulator-verified.** Spec §6.5/§6.7/§6.8:
+  - **Help v2 remainder:** "If you've already lost money" collapses to the first 3 of 7 steps +
+    a "Show all 7 steps" `TextLinkRow` expander (verified live, toggles both ways). "Report online"
+    rebuilt as two compact `LinkRow`s — cybercrime.gov.in (full complaint) + **Sanchar Saathi
+    (Chakshu)** (report just the fraud number/SMS, `sancharsaathi.gov.in`) — with one caption
+    explaining when to use which. "Prepare a complaint" + "Warn your family" merged into a single
+    "Tools" section card as two compact rows. New shared `LinkRow` component
+    (`VaartaComponents.kt`) — icon + title/subtitle + chevron, no full-width button.
+  - **Chat composer v2** (`ConversationScreen.kt`): the 3 always-visible gray icons (mic/image/
+    headphones) + `OutlinedTextField` + rectangular Send button collapse into one rounded pill
+    (mic + a new "+" trailing icon inside the field) + a circular indigo send FAB-let (new
+    `ic_send.xml`); "+" opens a small `ModalBottomSheet` with Photo/Audio rows — verified live.
+  - **Chat empty state:** the two-sentence paragraph is replaced by **3 India-specific starter
+    chips** (parcel/drugs, digital arrest, UPI safety) that send immediately on tap — verified live
+    end-to-end against the real Gemini chat endpoint (got a real grounded answer back).
+  - **Quote glyphs dropped**: `ReplyLine` (`ChatView.kt`) and `QuestionCard` (`MainActivity.kt`) no
+    longer wrap text in "❝ ❞" — coach replies read as clean "SAY THIS" chips.
+  - **Bottom nav restyle** (`VaartaNav.kt`): the stock M3 `NavigationBar` (tonal-pill indicator) is
+    replaced by a custom `VaartaBottomNav` — panel background + top hairline, active item = indigo
+    icon + label + a 3dp dot, no pill. Labels shortened to **Home · Chats · Help** (was
+    "Conversations", which overflows at large font scale) — a restyle only, no navigation change.
+  - 127 tests green, `assembleDebug` green. All flows screenshot-verified live: step expander,
+    Chakshu link row, merged Tools card, pill composer, attach sheet, starter-chip → real AI
+    response, and the nav bar across all three tabs. **Next: Phase 8 — Language** (per-app locale
+    picker, हिन्दी + Hinglish translations, parameterized LLM language contract).
+
 - **2026-07-18 — Premium redesign Phase 6 (Live v2 + panic sheet) DONE + emulator-verified.**
   Spec §6.2/§6.3/§6.5:
   - **Shared `PanicSheet`/`RightNowSteps`** (`ui/components/PanicSheet.kt`) extracted from Home's
