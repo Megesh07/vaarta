@@ -231,6 +231,79 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 
 ## 8. Change log
 
+- **2026-07-18 (late night) — Premium redesign Phase 8 (Language) DONE + emulator-verified in all
+  3 languages.** Spec §3B — the full architecture, all three layers:
+  - **Per-app locale plumbing:** added `androidx.appcompat`; `MainActivity` now extends
+    `AppCompatActivity` (was plain `ComponentActivity`) and `Theme.Vaarta`'s parent changed from
+    `android:Theme.Material.Light.NoActionBar` to `Theme.AppCompat.DayNight.NoActionBar` — both
+    are **required** for `AppCompatDelegate.setApplicationLocales()` to actually take effect, not
+    optional hardening. New `AppLanguage` enum (`i18n/AppLanguage.kt`) wraps
+    `current()`/`apply()`/`hasBeenChosen()`/`speechLocaleTag()`. `android:localeConfig` +
+    `res/xml/locales_config.xml` added for API 33+ system-settings integration.
+  - **⚠️ Real bug found + fixed live on the emulator:** `AppLanguage.apply()` originally called
+    `activity.recreate()` manually after `setApplicationLocales()`. `setApplicationLocales()`
+    already recreates the Activity itself on `AppCompatActivity` — the extra manual call caused a
+    **double-recreate race** where the UI silently kept rendering English forever (no crash, no
+    error — just always the wrong language). Confirmed via official AndroidX docs and fixed by
+    removing the manual `recreate()` entirely. Also hit and fixed en route: `MainActivity` crashed
+    with `IllegalStateException: You need to use a Theme.AppCompat theme` immediately after
+    switching to `AppCompatActivity`, until the theme parent was changed. Both fixes are documented
+    inline (`AppLanguage.kt`, `MainActivity.kt`, `themes.xml`) so they can't be silently reverted.
+  - **Complete string extraction:** ~180 previously-hardcoded strings across 13 files
+    (`MainActivity.kt`, `ChatView.kt`, `HelpScreen.kt`, `ArticleScreen.kt`, `ConversationScreen.kt`,
+    `VaartaNav.kt`, `RiskHero.kt`, `RiskRing.kt`, `Signals.kt`, `Theme.kt`, `OverlayService.kt`, +2)
+    moved to `strings.xml` — the prerequisite the spec calls out ("permanently unblocks every
+    future language at zero refactor cost"). `stateLabel()`/`levelText()`/`signalVisualForStage()`
+    became `@Composable` to read `stringResource()`.
+  - **Language picker** (`ui/LanguagePicker.kt`): one-time, not-skippable first-run screen (title
+    shown in English **and** Hindi stacked, since a reader who knows neither yet still needs to
+    recognise their row) + a permanent "App language" row in Help opening the same list in a sheet.
+    Each option renders in its own script — "English · हिन्दी · Hinglish" — never translated.
+  - **हिन्दी (Devanagari) + Hinglish (`values-b+hi+Latn`, BCP-47 `hi-Latn`) translation files** —
+    every extracted string in both, **MACHINE-DRAFTED, PENDING NATIVE REVIEW** (see checklist
+    below). `lintDebug` passes clean (`MissingTranslation` check) — the 4 deliberately-invariant
+    strings (`app_name`, the two picker-title lines, the Hinglish hint) are marked
+    `translatable="false"`, not silently missing.
+  - **LLM language contract** (new `ai/LanguageDirectives.kt`): conversational surfaces (chat) now
+    call `ChatPrompt.languageReminder(AppLanguage.current())` — mirrors the user's latest
+    language/script, with explicit script-preservation (never "correct" Hinglish into Devanagari),
+    code-mix-is-valid, latest-message-wins, and ambiguous-input-falls-back-to-UI-language rules.
+    `SharedScamPrompt` (demo/single-shot path) got the same script-preservation line.
+    `AwarenessPrompt` (feed + article summaries) now appends `LanguageDirectives.followUiLanguage()`
+    as the last prompt element — generated content states its target language outright since
+    there's no user text to mirror. Feed cache (`AwarenessStore`) is now keyed by language tag
+    (`awareness_feed_<tag>.json`) so switching languages naturally lands on a different cache, no
+    explicit invalidation needed; the bundled seed stays English-only (noted, not silently gapped).
+  - **Edge cases** (spec §3B.3): complaint draft stays English + a localized one-line explainer
+    (`help_complaint_english_note`) when UI ≠ English; new `share/BilingualShare.kt` appends one
+    fixed English safety line to every family broadcast (Help's warn-family, Article's warn-family,
+    Live's alert-family, Analyze's share-warning) when UI ≠ English — a family broadcast can't
+    assume the recipients' language; voice input (`RecognizerIntent.EXTRA_LANGUAGE`) now follows
+    the UI language via `AppLanguage.speechLocaleTag()` (Hinglish requests hi-IN like Hindi, an
+    accepted quirk per spec — the mirror rule then replies in whatever script came back).
+  - Verified live end-to-end on the emulator: first-run picker (bilingual title, own-script
+    labels), selecting हिन्दी → entire app (Home/Live/Help/nav) switches, Help's language row →
+    sheet → selecting Hinglish → entire app switches again, panic sheet + lost-money steps +
+    Chakshu row all render correctly in Hindi. 127 tests green, `assembleDebug` green, `lintDebug`
+    green (zero `MissingTranslation`).
+  - **⚠️ NATIVE-REVIEW CHECKLIST (binding gate, spec §3B.1) — non-English does not "ship" until
+    this is done.** These are machine-drafted; a native/fluent speaker must review before treating
+    Hindi/Hinglish as production-ready, starting with the safety-critical strings:
+    - [ ] `panic_step_1..4` + `panic_heading` (both `values-hi` and `values-b+hi+Latn`)
+    - [ ] `help_scammed_step_1..7` (the "already lost money" 7-step list)
+    - [ ] `help_warn_family_message` (the family broadcast text)
+    - [ ] `help_complaint_english_note` (make sure the English-filing reason is clear, not just literal)
+    - [ ] `live_alert_family_message`, `analyze_share_warning_message` (family-facing alerts)
+    - [ ] Spot-check the rest of `values-hi/strings.xml` and `values-b+hi+Latn/strings.xml` for
+      tone/register (the Hinglish file aims for casual Gen-Z code-mix, not textbook Hindi)
+  - **Known deferred gaps** (noted, not silently gapped): the bundled seed feed (~8 cards) stays
+    English-only until a native speaker translates it; numbers/dates (`relativeTimeLabel` in
+    core:reasoning) still format as `en-IN` regardless of UI language (edge case 9 — a pure-JVM
+    module with no Android locale access today); the demo-call script (`CopilotSession.runDemoCall`)
+    is English-only fixture content, not localized. **Next: Phase 9 — Sweep** (dark mode, TalkBack,
+    font-scale 1.3 incl. Tamil stress test, the still-pending Article structured-summary live
+    recheck, full screenshot matrix in EN + HI + Hinglish).
+
 - **2026-07-18 (night) — Premium redesign Phase 7 (Help v2 + Chat composer v2 + nav restyle) DONE
   + emulator-verified.** Spec §6.5/§6.7/§6.8:
   - **Help v2 remainder:** "If you've already lost money" collapses to the first 3 of 7 steps +
