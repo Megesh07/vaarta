@@ -325,8 +325,13 @@ class CopilotSession(private val scope: CoroutineScope) {
             .takeLast(4)
             .joinToString("\n") { it.text }
 
+        // Only forward a scam type that already passed the same source-backed gate the UI banner
+        // uses (HybridAlert.mayShowScamType) — never an uncited claim, mirroring the display rule.
+        val g0 = _grounded.value
+        val groundedScamTypeForCoach = if (g0 != null && HybridAlert.mayShowScamType(g0)) g0.scamType else null
+
         scope.launch {
-            val coachDeferred = async(Dispatchers.IO) { GeminiClient.coach(historySnapshot, stage, next) }
+            val coachDeferred = async(Dispatchers.IO) { GeminiClient.coach(historySnapshot, stage, next, groundedScamTypeForCoach) }
             val groundDeferred =
                 if (shouldGround) async(Dispatchers.IO) { GeminiClient.classify(callerContext) } else null
 

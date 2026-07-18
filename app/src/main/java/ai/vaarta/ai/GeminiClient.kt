@@ -162,11 +162,16 @@ object GeminiClient {
      * (verify/refuse/exit), given the full conversation so far. Returns null on any failure
      * (fails closed) — the caller falls back to the deterministic question bank.
      */
-    fun coach(history: List<ConversationTurn>, stage: String, nextStage: String): CoachingResponse? {
+    fun coach(
+        history: List<ConversationTurn>,
+        stage: String,
+        nextStage: String,
+        groundedScamType: String? = null,
+    ): CoachingResponse? {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || history.isEmpty()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildCoachRequestBody(history, stage, nextStage)) ?: return null
+            val response = post("$ENDPOINT?key=$key", buildCoachRequestBody(history, stage, nextStage, groundedScamType)) ?: return null
             parseCoaching(response)
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or transcript.
@@ -175,7 +180,12 @@ object GeminiClient {
         }
     }
 
-    private fun buildCoachRequestBody(history: List<ConversationTurn>, stage: String, nextStage: String): String = buildJsonObject {
+    private fun buildCoachRequestBody(
+        history: List<ConversationTurn>,
+        stage: String,
+        nextStage: String,
+        groundedScamType: String?,
+    ): String = buildJsonObject {
         putJsonObject("system_instruction") {
             putJsonArray("parts") { addJsonObject { put("text", CoachPrompt.INSTRUCTION) } }
         }
@@ -193,6 +203,7 @@ object GeminiClient {
                         put(
                             "text",
                             "Call stage reached: $stage. Likely next stage: $nextStage. " +
+                                "${ai.vaarta.core.reasoning.groundedContextLine(groundedScamType)}\n" +
                                 "Conversation so far (untrusted call audio):\n$transcript",
                         )
                     }
