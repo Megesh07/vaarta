@@ -145,7 +145,7 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         // Default: icon parked top-right, a thumb's reach below the status bar.
         bubbleX = sw - dp(72)
         bubbleY = dp(96)
-        session = CopilotSession(scope)
+        session = CopilotSession(scope, this)
         activeSessionState.value = session
     }
 

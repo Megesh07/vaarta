@@ -182,8 +182,12 @@ fun VaartaScreen(
     val aiSuggestion by vm.session.aiSuggestion.collectAsState()
     val aiLoading by vm.session.aiLoading.collectAsState()
     val liveStatus by vm.session.liveStatus.collectAsState()
+    val showSpeakerNudge by vm.session.showSpeakerNudge.collectAsState()
     val chat by vm.session.chat.collectAsState()
     val scroll = rememberScrollState()
+    // Only fires once per session (CopilotSession.nudgeShown), so a simple local dismiss is enough —
+    // nothing needs to signal back into the session.
+    var speakerNudgeDismissed by remember { mutableStateOf(false) }
 
     // Three explicit states (redesign spec §6.3): idle (nothing has happened yet — no fake
     // "Listening & checking 0"), active (a real live call), post-session (a demo or a call just
@@ -278,6 +282,10 @@ fun VaartaScreen(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+
+            if (showSpeakerNudge && !speakerNudgeDismissed) {
+                SpeakerNudgeBanner(onDismiss = { speakerNudgeDismissed = true })
             }
 
             if (scamType != null) {
@@ -420,6 +428,28 @@ private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
                 )
             }
             Switch(checked = enabled, onCheckedChange = onToggle)
+        }
+    }
+}
+
+/** Speaker-off nudge (redesign spec §6.4, Part D): the voiceprint match ratio suggests the mic is
+ *  mostly hearing the user, not the caller — dismissible, same Card+icon-row idiom as [AiConsentRow]. */
+@Composable
+private fun SpeakerNudgeBanner(onDismiss: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(VSpace.md), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                VaartaIcon(R.drawable.ic_mic, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
+                Text(
+                    stringResource(R.string.live_speaker_nudge),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VaartaTheme.colors.ink,
+                )
+            }
+            VaartaIcon(
+                R.drawable.ic_close, contentDescription = stringResource(R.string.chat_remove_a11y), tint = VaartaTheme.colors.indigoInk, size = 16.dp,
+                modifier = Modifier.vaartaPressable(onDismiss),
+            )
         }
     }
 }

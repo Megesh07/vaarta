@@ -1,6 +1,7 @@
 package ai.vaarta
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 
 /**
@@ -10,10 +11,14 @@ import androidx.lifecycle.viewModelScope
  * tears it down with the ViewModel; observe its state via `vm.session.<flow>`.
  *
  * One instance == one in-app call session; state lives in RAM only (DATABASE_DESIGN.md §2).
+ *
+ * AndroidViewModel (not plain ViewModel) since Part D's speaker-attribution wiring needs a Context
+ * (SpeakerEmbedder's asset manager, VaartaDatabase.get) — `getApplication()` supplies it without this
+ * class taking on any Activity lifecycle dependency.
  */
-class SessionViewModel : ViewModel() {
+class SessionViewModel(application: Application) : AndroidViewModel(application) {
 
-    val session = CopilotSession(viewModelScope)
+    val session = CopilotSession(viewModelScope, application)
 
     override fun onCleared() {
         session.close()

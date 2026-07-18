@@ -39,6 +39,7 @@
     <string name="live_done">Done</string>
     <string name="live_start_again">Start again</string>
     <string name="live_stop">Stop protection</string>
+    <string name="live_speaker_nudge">Put the call on speaker so VAARTA can hear the caller</string>
 
     <!-- Help v2 (redesign spec §6.5). -->
     <string name="help_emergency_title">Scam happening now?</string>

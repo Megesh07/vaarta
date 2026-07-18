@@ -31,8 +31,11 @@ kotlin {
 dependencies {
     implementation(project(":core:common"))
 
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
+    // api, not implementation: VaartaDatabase (extends RoomDatabase) and its DAOs are now called
+    // directly from :app (CopilotSession, Part D) — Room's types must be visible on that consumer's
+    // compile classpath, not just this module's own.
+    api(libs.room.runtime)
+    api(libs.room.ktx)
     ksp(libs.room.compiler)
 
     // SQLCipher provides the encrypted SQLite; androidx.sqlite is the SupportSQLiteOpenHelper API

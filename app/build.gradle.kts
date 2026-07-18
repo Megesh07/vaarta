@@ -61,6 +61,7 @@ dependencies {
     implementation(project(":core:reasoning"))
     implementation(project(":core:complaint"))
     implementation(project(":core:data"))
+    implementation(project(":core:voice"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
