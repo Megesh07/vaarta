@@ -11,10 +11,24 @@ import ai.vaarta.core.reasoning.AwarenessCard
 import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.recording.AudioAnalyzerViewModel
+import ai.vaarta.ui.theme.VaartaTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,7 +36,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 enum class VaartaTab { HOME, HISTORY, HELP }
@@ -89,28 +105,7 @@ fun VaartaNav(
     }
 
     Scaffold(
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = tab == VaartaTab.HOME,
-                    onClick = { tab = VaartaTab.HOME },
-                    icon = { VaartaIcon(R.drawable.ic_nav_shield, contentDescription = null, size = 24.dp) },
-                    label = { Text("Home") },
-                )
-                NavigationBarItem(
-                    selected = tab == VaartaTab.HISTORY,
-                    onClick = { tab = VaartaTab.HISTORY },
-                    icon = { VaartaIcon(R.drawable.ic_nav_chat, contentDescription = null, size = 24.dp) },
-                    label = { Text("Conversations") },
-                )
-                NavigationBarItem(
-                    selected = tab == VaartaTab.HELP,
-                    onClick = { tab = VaartaTab.HELP },
-                    icon = { VaartaIcon(R.drawable.ic_nav_help, contentDescription = null, size = 24.dp) },
-                    label = { Text("Help") },
-                )
-            }
-        },
+        bottomBar = { VaartaBottomNav(tab, onSelect = { tab = it }) },
     ) { pad ->
         when (tab) {
             VaartaTab.HOME -> HomeScreen(
@@ -140,5 +135,49 @@ fun VaartaNav(
                 modifier = Modifier.padding(pad),
             )
         }
+    }
+}
+
+/**
+ * Custom quiet bottom nav (redesign spec §6.8) — panel bg + top hairline, no tonal pill; the
+ * active item is just an indigo icon + label + a 3dp dot. A restyle only, not a navigation change.
+ */
+@Composable
+private fun VaartaBottomNav(tab: VaartaTab, onSelect: (VaartaTab) -> Unit) {
+    val c = VaartaTheme.colors
+    Surface(color = c.panel) {
+        Column {
+            HorizontalDivider(thickness = 1.dp, color = c.line)
+            Row(
+                Modifier.fillMaxWidth().navigationBarsPadding().height(64.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                NavItem(R.drawable.ic_nav_shield, "Home", tab == VaartaTab.HOME) { onSelect(VaartaTab.HOME) }
+                NavItem(R.drawable.ic_nav_chat, "Chats", tab == VaartaTab.HISTORY) { onSelect(VaartaTab.HISTORY) }
+                NavItem(R.drawable.ic_nav_help, "Help", tab == VaartaTab.HELP) { onSelect(VaartaTab.HELP) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.NavItem(icon: Int, label: String, selected: Boolean, onClick: () -> Unit) {
+    val c = VaartaTheme.colors
+    val tint = if (selected) c.indigo else c.faint
+    Column(
+        Modifier.weight(1f).fillMaxHeight().clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        VaartaIcon(icon, contentDescription = null, tint = tint, size = 24.dp)
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = tint)
+        Spacer(Modifier.height(3.dp))
+        Surface(
+            color = if (selected) c.indigo else Color.Transparent,
+            shape = CircleShape,
+            modifier = Modifier.size(3.dp),
+        ) {}
     }
 }

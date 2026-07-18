@@ -40,9 +40,37 @@
     <string name="live_start_again">Start again</string>
     <string name="live_stop">Stop protection</string>
 
-    <!-- Help emergency card (redesign spec §6.5). -->
+    <!-- Help v2 (redesign spec §6.5). -->
     <string name="help_emergency_title">Scam happening now?</string>
     <string name="help_emergency_open_steps">See the 4 things to do right now →</string>
+    <string name="help_lost_money_title">If you\'ve already lost money</string>
+    <string name="help_lost_money_intro">Stay calm — acting fast can still get your money back. Do these in order:</string>
+    <string name="help_lost_money_footer">Reporting within the first few hours gives the best chance of freezing the money before it moves.</string>
+    <string name="help_show_all_steps">Show all %1$d steps</string>
+    <string name="help_show_fewer_steps">Show fewer steps</string>
+    <string name="help_report_title">Report online</string>
+    <string name="help_report_caption">Use cybercrime.gov.in to file a full complaint. Use Chakshu just to report the fraud number or SMS.</string>
+    <string name="help_report_cybercrime">cybercrime.gov.in — file a complaint</string>
+    <string name="help_report_chakshu">Sanchar Saathi (Chakshu) — report the fraud number/SMS</string>
+    <string name="help_tools_title">Tools</string>
+    <string name="help_tools_complaint">Generate a complaint draft</string>
+    <string name="help_tools_complaint_sub">Turn what VAARTA detected into a ready-to-file draft</string>
+    <string name="help_tools_warn_family">Warn your family</string>
+    <string name="help_tools_warn_family_sub">Send a short warning — one message can stop a scam</string>
+
+    <!-- Chat v2 (redesign spec §6.7). -->
+    <string name="chat_title">Ask VAARTA</string>
+    <string name="chat_empty_title">Ask me anything about a suspicious call or message</string>
+    <string name="chat_starter_1">A caller says my parcel has drugs in it</string>
+    <string name="chat_starter_2">They\'re threatening digital arrest</string>
+    <string name="chat_starter_3">Is this UPI payment request safe?</string>
+    <string name="chat_composer_hint">Type your question…</string>
+    <string name="chat_attach_sheet_title">Attach</string>
+    <string name="chat_attach_photo">Photo</string>
+    <string name="chat_attach_audio">Audio clip</string>
+    <string name="chat_mic_a11y">Speak</string>
+    <string name="chat_attach_a11y">Attach</string>
+    <string name="chat_send_a11y">Send</string>
 
     <!-- Article (redesign spec §6.4). -->
     <string name="article_reading">VAARTA is reading the latest on this…</string>

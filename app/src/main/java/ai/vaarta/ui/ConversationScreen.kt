@@ -16,6 +16,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,15 +29,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,19 +51,24 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private val CHAT_STARTERS = listOf(R.string.chat_starter_1, R.string.chat_starter_2, R.string.chat_starter_3)
+
 /**
- * A free-form "Ask VAARTA" conversation (v2, spec §6.5) — a ChatGPT-style chat with a multimodal
+ * A free-form "Ask VAARTA" conversation (v2, spec §6.7) — a ChatGPT-style chat with a multimodal
  * composer: type, speak (device speech-to-text), or attach a screenshot or a call clip. Full-screen
  * sub-screen: back bar, the shared [ChatThread], pending-attachment chips, and the composer. AI
  * answers render through [MarkdownText] inside the thread, so no raw markup ever shows.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversationScreen(
     vm: ConversationViewModel,
@@ -77,6 +86,7 @@ fun ConversationScreen(
     val header by vm.header.collectAsState()
     var input by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<List<ChatAttachment>>(emptyList()) }
+    var showAttachSheet by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
 
     LaunchedEffect(turns.size, sending) { scroll.animateScrollTo(scroll.maxValue) }
@@ -121,7 +131,7 @@ fun ConversationScreen(
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            VaartaBackBar(title = if (header != null) "About this call" else "Ask VAARTA", onBack = onBack)
+            VaartaBackBar(title = if (header != null) "About this call" else stringResource(R.string.chat_title), onBack = onBack)
 
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = VSpace.lg),
@@ -154,14 +164,13 @@ fun ConversationScreen(
                     ) {
                         VaartaIcon(R.drawable.ic_nav_shield, contentDescription = null, tint = c.faint, size = 40.dp)
                         Text(
-                            "Ask me anything about a suspicious call or message",
+                            stringResource(R.string.chat_empty_title),
                             style = MaterialTheme.typography.titleLarge, color = c.ink, textAlign = TextAlign.Center,
                         )
-                        Text(
-                            "Type, speak, or attach a screenshot or a call recording. I'll tell you if it's a " +
-                                "scam and what to do — in plain language.",
-                            style = MaterialTheme.typography.bodyMedium, color = c.muted, textAlign = TextAlign.Center,
-                        )
+                        Spacer(Modifier.height(VSpace.xs))
+                        for (starter in CHAT_STARTERS) {
+                            StarterChip(stringResource(starter), onClick = { vm.send(ctx.getString(starter), emptyList()) })
+                        }
                     }
                 } else {
                     ChatThread(turns, onOpenUrl)
@@ -192,24 +201,95 @@ fun ConversationScreen(
                         }
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
-                    VaartaIcon(R.drawable.ic_mic, contentDescription = "Speak", tint = c.muted, size = 24.dp, modifier = Modifier.clickable { startVoice() }.padding(4.dp))
-                    VaartaIcon(R.drawable.ic_image, contentDescription = "Attach image", tint = c.muted, size = 24.dp, modifier = Modifier.clickable { imagePicker.launch("image/*") }.padding(4.dp))
-                    VaartaIcon(R.drawable.ic_headphones, contentDescription = "Attach recording", tint = c.muted, size = 24.dp, modifier = Modifier.clickable { audioPicker.launch("audio/*") }.padding(4.dp))
-                    OutlinedTextField(
-                        value = input,
-                        onValueChange = { input = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type your question…") },
-                        maxLines = 4,
-                    )
-                    Button(
-                        onClick = { submit() },
-                        enabled = (input.isNotBlank() || pending.isNotEmpty()) && !sending,
-                        colors = ButtonDefaults.buttonColors(containerColor = c.indigo),
-                    ) { Text("Send") }
+                // The pill composer (redesign spec §6.7): one rounded field with mic + attach as
+                // trailing icons inside it, and a circular indigo send button outside — 3 always-visible
+                // gray icons collapse to 1 ("+", which opens the attach sheet).
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                    Surface(color = c.panel, shape = RoundedCornerShape(28.dp), modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextField(
+                                value = input,
+                                onValueChange = { input = it },
+                                modifier = Modifier.weight(1f),
+                                placeholder = { Text(stringResource(R.string.chat_composer_hint)) },
+                                maxLines = 4,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                ),
+                            )
+                            VaartaIcon(
+                                R.drawable.ic_mic, contentDescription = stringResource(R.string.chat_mic_a11y), tint = c.muted, size = 22.dp,
+                                modifier = Modifier.clickable { startVoice() }.padding(8.dp),
+                            )
+                            VaartaIcon(
+                                R.drawable.ic_plus, contentDescription = stringResource(R.string.chat_attach_a11y), tint = c.muted, size = 22.dp,
+                                modifier = Modifier.clickable { showAttachSheet = true }.padding(end = VSpace.sm).padding(8.dp),
+                            )
+                        }
+                    }
+                    Surface(
+                        color = if ((input.isNotBlank() || pending.isNotEmpty()) && !sending) c.indigo else c.track,
+                        shape = CircleShape,
+                        modifier = Modifier.size(52.dp).clickable(enabled = (input.isNotBlank() || pending.isNotEmpty()) && !sending) { submit() },
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            VaartaIcon(R.drawable.ic_send, contentDescription = stringResource(R.string.chat_send_a11y), tint = Color.White, size = 20.dp)
+                        }
+                    }
                 }
             }
         }
+    }
+
+    if (showAttachSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAttachSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = VSpace.xxl).padding(bottom = VSpace.xxxl)) {
+                Text(stringResource(R.string.chat_attach_sheet_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
+                Spacer(Modifier.height(VSpace.sm))
+                AttachRow(R.drawable.ic_image, stringResource(R.string.chat_attach_photo)) {
+                    showAttachSheet = false; imagePicker.launch("image/*")
+                }
+                AttachRow(R.drawable.ic_headphones, stringResource(R.string.chat_attach_audio)) {
+                    showAttachSheet = false; audioPicker.launch("audio/*")
+                }
+            }
+        }
+    }
+}
+
+/** One India-specific prompt starter (spec §6.7) — tapping sends it immediately, no typing needed. */
+@Composable
+private fun StarterChip(text: String, onClick: () -> Unit) {
+    val c = VaartaTheme.colors
+    Surface(
+        color = c.indigoTint, shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+    ) {
+        Text(
+            text, style = MaterialTheme.typography.bodyMedium, color = c.indigoInk,
+            modifier = Modifier.padding(horizontal = VSpace.lg, vertical = VSpace.md),
+        )
+    }
+}
+
+/** One row inside the attach bottom sheet. */
+@Composable
+private fun AttachRow(icon: Int, text: String, onClick: () -> Unit) {
+    val c = VaartaTheme.colors
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = VSpace.md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(VSpace.md),
+    ) {
+        VaartaIcon(icon, contentDescription = null, tint = c.indigo, size = 22.dp)
+        Text(text, style = MaterialTheme.typography.titleMedium, color = c.ink)
     }
 }

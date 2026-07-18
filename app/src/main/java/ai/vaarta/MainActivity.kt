@@ -381,7 +381,7 @@ private fun QuestionCard(text: String, onCycle: () -> Unit) {
         Column(Modifier.padding(VSpace.md)) {
             Eyebrow("Ask them")
             Spacer(Modifier.height(VSpace.xs))
-            Text("❝ $text ❞", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+            Text(text, style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
             Spacer(Modifier.height(VSpace.xs))
             Text("Tap for another question", style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
         }

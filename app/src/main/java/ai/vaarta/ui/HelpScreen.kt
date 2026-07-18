@@ -3,6 +3,7 @@ package ai.vaarta.ui
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.ui.components.LinkRow
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.components.TextLinkRow
 import ai.vaarta.ui.components.VaartaButton
@@ -80,6 +81,7 @@ fun HelpScreen(
     val complaint by vm.session.complaint.collectAsState()
     val complaintDraft by vm.session.complaintDraft.collectAsState()
     var showPanic by remember { mutableStateOf(false) }
+    var showAllSteps by remember { mutableStateOf(false) }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -114,52 +116,59 @@ fun HelpScreen(
                 }
             }
 
-            HelpSection(title = "If you've already lost money") {
+            HelpSection(title = stringResource(R.string.help_lost_money_title)) {
                 Text(
-                    "Stay calm — acting fast can still get your money back. Do these in order:",
+                    stringResource(R.string.help_lost_money_intro),
                     style = MaterialTheme.typography.bodyMedium, color = c.muted,
                 )
                 Spacer(Modifier.height(VSpace.md))
-                SCAMMED_STEPS.forEachIndexed { i, step ->
+                val visibleSteps = if (showAllSteps) SCAMMED_STEPS else SCAMMED_STEPS.take(3)
+                visibleSteps.forEachIndexed { i, step ->
                     if (i > 0) Spacer(Modifier.height(VSpace.md))
                     StepRow(number = i + 1, text = step)
                 }
                 Spacer(Modifier.height(VSpace.md))
+                TextLinkRow(
+                    text = stringResource(
+                        if (showAllSteps) R.string.help_show_fewer_steps else R.string.help_show_all_steps,
+                        SCAMMED_STEPS.size,
+                    ),
+                    onClick = { showAllSteps = !showAllSteps },
+                )
+                Spacer(Modifier.height(VSpace.xs))
                 Text(
-                    "Reporting within the first few hours gives the best chance of freezing the " +
-                        "money before it moves.",
+                    stringResource(R.string.help_lost_money_footer),
                     style = MaterialTheme.typography.bodySmall, color = c.muted,
                 )
             }
 
-            HelpSection(title = "Report online") {
-                Text(
-                    "File a complaint on the National Cyber Crime Reporting Portal.",
-                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
-                )
-                Spacer(Modifier.height(VSpace.md))
-                VaartaSecondaryButton(
-                    text = "Open cybercrime.gov.in",
+            HelpSection(title = stringResource(R.string.help_report_title)) {
+                LinkRow(
+                    icon = R.drawable.ic_globe,
+                    title = stringResource(R.string.help_report_cybercrime),
                     onClick = { onOpenUrl("https://cybercrime.gov.in") },
-                    leadingIcon = R.drawable.ic_globe,
-                    modifier = Modifier.fillMaxWidth(),
+                )
+                LinkRow(
+                    icon = R.drawable.ic_globe,
+                    title = stringResource(R.string.help_report_chakshu),
+                    onClick = { onOpenUrl("https://sancharsaathi.gov.in") },
+                )
+                Spacer(Modifier.height(VSpace.xs))
+                Text(
+                    stringResource(R.string.help_report_caption),
+                    style = MaterialTheme.typography.bodySmall, color = c.muted,
                 )
             }
 
-            HelpSection(title = "Prepare a complaint") {
-                Text(
-                    "Turn what VAARTA detected into a ready-to-file complaint draft.",
-                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
-                )
-                Spacer(Modifier.height(VSpace.md))
-                VaartaSecondaryButton(
-                    text = "Generate complaint draft",
+            HelpSection(title = stringResource(R.string.help_tools_title)) {
+                LinkRow(
+                    icon = R.drawable.ic_file_text,
+                    title = stringResource(R.string.help_tools_complaint),
+                    subtitle = stringResource(R.string.help_tools_complaint_sub),
                     onClick = { vm.session.generateComplaint() },
-                    leadingIcon = R.drawable.ic_file_text,
-                    modifier = Modifier.fillMaxWidth(),
                 )
                 complaint?.let { text ->
-                    Spacer(Modifier.height(VSpace.md))
+                    Spacer(Modifier.height(VSpace.sm))
                     Card(colors = CardDefaults.cardColors(containerColor = c.panel)) {
                         Column(Modifier.padding(VSpace.md)) {
                             Text(text, style = MaterialTheme.typography.bodySmall, color = c.ink)
@@ -172,20 +181,13 @@ fun HelpScreen(
                             }
                         }
                     }
+                    Spacer(Modifier.height(VSpace.sm))
                 }
-            }
-
-            HelpSection(title = "Warn your family") {
-                Text(
-                    "Send a short warning to the people most at risk — one message can stop a scam.",
-                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
-                )
-                Spacer(Modifier.height(VSpace.md))
-                VaartaSecondaryButton(
-                    text = "Share a warning",
+                LinkRow(
+                    icon = R.drawable.ic_bell,
+                    title = stringResource(R.string.help_tools_warn_family),
+                    subtitle = stringResource(R.string.help_tools_warn_family_sub),
                     onClick = { onShare(WARN_FAMILY_MESSAGE) },
-                    leadingIcon = R.drawable.ic_bell,
-                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             Spacer(Modifier.height(VSpace.xxl))

@@ -206,6 +206,36 @@ fun TextLinkRow(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
     }
 }
 
+/**
+ * A compact tappable link row — leading icon + title (+ optional subtitle) + trailing chevron, no
+ * card/border (redesign spec §6.5: "compact link-rows, not full-width buttons"). For entries that
+ * are a destination or reference action rather than a screen's primary call to action.
+ */
+@Composable
+fun LinkRow(
+    @DrawableRes icon: Int,
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+) {
+    val c = VaartaTheme.colors
+    Row(
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = VSpace.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(VSpace.md),
+    ) {
+        VaartaIcon(icon, contentDescription = null, tint = c.indigo, size = 20.dp)
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.muted)
+            }
+        }
+        VaartaIcon(R.drawable.ic_chevron_right, contentDescription = null, tint = c.faint, size = 18.dp)
+    }
+}
+
 /** One cited web source: link glyph + title, tappable. Replaces the old copy-pasted "🔗 title" rows. */
 @Composable
 fun SourceLink(title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {

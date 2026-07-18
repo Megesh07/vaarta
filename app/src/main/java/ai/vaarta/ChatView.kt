@@ -229,7 +229,7 @@ private fun ReplyLine(reply: Reply, primary: Boolean) {
             Eyebrow(style.label, color = style.accent)
             Spacer(Modifier.height(2.dp))
             Text(
-                "❝ ${reply.text} ❞",
+                reply.text,
                 style = if (primary) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
                 color = style.ink,
             )
