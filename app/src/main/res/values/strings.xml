@@ -17,6 +17,33 @@
     <string name="home_feed_empty">Scam-awareness stories will appear here once you\'re online.</string>
     <string name="home_feed_seen_in">Seen in %1$s</string>
 
+    <!-- Panic sheet (redesign spec §6.2) — shared verbatim between Home and Help so copy never drifts. -->
+    <string name="panic_heading">Do this right now</string>
+    <string name="panic_step_1">Don\'t pay anyone. No real officer or bank asks for money on a call.</string>
+    <string name="panic_step_2">Never share an OTP, PIN, or password. Ever.</string>
+    <string name="panic_step_3">Hang up. It is safe to end the call — no one is arrested over a phone call.</string>
+    <string name="panic_step_4">Call 1930 (the government cyber-crime helpline).</string>
+    <string name="panic_call_1930">Call 1930 now</string>
+    <string name="panic_get_live_help">Get live help from VAARTA →</string>
+
+    <!-- Live v2 (redesign spec §6.3). -->
+    <string name="live_title">Live protection</string>
+    <string name="live_idle_title">Ready to protect</string>
+    <string name="live_idle_caption">Put the call on speaker when you start.</string>
+    <string name="live_active_caption">Put the call on speaker so VAARTA can hear the caller.</string>
+    <string name="live_start">Start live protection</string>
+    <string name="live_float">Float over your call</string>
+    <string name="live_watch_demo">Watch how it works</string>
+    <string name="live_ai_consent_compact">AI live coach — opt-in, sends the caller\'s words to Google. Off = fully on-device.</string>
+    <string name="live_saved">Saved to your conversations</string>
+    <string name="live_done">Done</string>
+    <string name="live_start_again">Start again</string>
+    <string name="live_stop">Stop protection</string>
+
+    <!-- Help emergency card (redesign spec §6.5). -->
+    <string name="help_emergency_title">Scam happening now?</string>
+    <string name="help_emergency_open_steps">See the 4 things to do right now →</string>
+
     <!-- Article (redesign spec §6.4). -->
     <string name="article_reading">VAARTA is reading the latest on this…</string>
     <string name="article_what_it_is">What it is</string>

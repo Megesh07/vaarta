@@ -7,8 +7,7 @@ import ai.vaarta.ui.components.ActionTile
 import ai.vaarta.ui.components.Eyebrow
 import ai.vaarta.ui.components.EmptyState
 import ai.vaarta.ui.components.IconChipCard
-import ai.vaarta.ui.components.VaartaButton
-import ai.vaarta.ui.components.VaartaSecondaryButton
+import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import androidx.compose.foundation.BorderStroke
@@ -26,18 +25,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,7 +52,6 @@ import androidx.compose.ui.unit.dp
  * a featured cover-banner story + compact thumbnail rows. Strong red is reserved for the panic
  * context only; everything else is indigo/neutral chrome.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     aiConfigured: Boolean,
@@ -170,35 +164,11 @@ fun HomeScreen(
     }
 
     if (showPanic) {
-        ModalBottomSheet(
+        PanicSheet(
             onDismissRequest = { showPanic = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
-            Column(
-                Modifier.fillMaxWidth().padding(horizontal = VSpace.xxl).padding(bottom = VSpace.xxxl),
-                verticalArrangement = Arrangement.spacedBy(VSpace.md),
-            ) {
-                Text("Do this right now", style = MaterialTheme.typography.headlineSmall, color = c.scam)
-                PanicStep("1", "Don't pay anyone. No real officer or bank asks for money on a call.")
-                PanicStep("2", "Never share an OTP, PIN, or password. Ever.")
-                PanicStep("3", "Hang up. It is safe to end the call — no one is arrested over a phone call.")
-                PanicStep("4", "Call 1930 (the government cyber-crime helpline).")
-                Spacer(Modifier.height(VSpace.xs))
-                VaartaButton(
-                    text = "Call 1930 now",
-                    onClick = { onOpenUrl("tel:1930") },
-                    leadingIcon = R.drawable.ic_phone,
-                    destructive = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                VaartaSecondaryButton(
-                    text = "Start live help",
-                    onClick = { showPanic = false; onStartLive() },
-                    leadingIcon = R.drawable.ic_mic,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
+            onOpenUrl = onOpenUrl,
+            onStartLive = onStartLive,
+        )
     }
 }
 
@@ -310,18 +280,5 @@ private fun AwarenessCardRow(card: AwarenessCard, onClick: () -> Unit) {
             }
             VaartaIcon(R.drawable.ic_chevron_right, contentDescription = null, tint = c.faint, size = 20.dp)
         }
-    }
-}
-
-@Composable
-private fun PanicStep(number: String, text: String) {
-    val c = VaartaTheme.colors
-    Row(horizontalArrangement = Arrangement.spacedBy(VSpace.md)) {
-        Surface(color = c.scamTint, shape = CircleShape, modifier = Modifier.size(28.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(number, style = MaterialTheme.typography.titleMedium, color = c.scam)
-            }
-        }
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.weight(1f))
     }
 }

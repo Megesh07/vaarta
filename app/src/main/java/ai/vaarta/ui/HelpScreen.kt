@@ -3,6 +3,8 @@ package ai.vaarta.ui
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.ui.components.PanicSheet
+import ai.vaarta.ui.components.TextLinkRow
 import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSecondaryButton
 import ai.vaarta.ui.theme.VSpace
@@ -30,8 +32,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 private const val WARN_FAMILY_MESSAGE =
@@ -66,12 +72,14 @@ fun HelpScreen(
     onShare: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
+    onStartLive: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = VaartaTheme.colors
     val scroll = rememberScrollState()
     val complaint by vm.session.complaint.collectAsState()
     val complaintDraft by vm.session.complaintDraft.collectAsState()
+    var showPanic by remember { mutableStateOf(false) }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -81,19 +89,29 @@ fun HelpScreen(
             Spacer(Modifier.height(VSpace.sm))
             Text("Get help & report", style = MaterialTheme.typography.headlineMedium, color = c.ink)
 
-            HelpSection(title = "If this is happening now") {
-                Text(
-                    "Call the government cyber-crime helpline. It's free and open 24×7.",
-                    style = MaterialTheme.typography.bodyMedium, color = c.muted,
-                )
-                Spacer(Modifier.height(VSpace.md))
-                VaartaButton(
-                    text = "Call 1930",
-                    onClick = { onOpenUrl("tel:1930") },
-                    leadingIcon = R.drawable.ic_phone,
-                    destructive = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            // Emergency (redesign spec §6.5) — compact red-tinted card. The 4-step guidance itself
+            // lives once in the shared panic sheet (spec §6.2), opened here so copy never drifts.
+            Card(
+                colors = CardDefaults.cardColors(containerColor = c.scamTint),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(VSpace.lg)) {
+                    Text(stringResource(R.string.help_emergency_title), style = MaterialTheme.typography.titleLarge, color = c.scam)
+                    Spacer(Modifier.height(VSpace.md))
+                    VaartaButton(
+                        text = "Call 1930",
+                        onClick = { onOpenUrl("tel:1930") },
+                        leadingIcon = R.drawable.ic_phone,
+                        destructive = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    TextLinkRow(
+                        text = stringResource(R.string.help_emergency_open_steps),
+                        onClick = { showPanic = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             HelpSection(title = "If you've already lost money") {
@@ -172,6 +190,14 @@ fun HelpScreen(
             }
             Spacer(Modifier.height(VSpace.xxl))
         }
+    }
+
+    if (showPanic) {
+        PanicSheet(
+            onDismissRequest = { showPanic = false },
+            onOpenUrl = onOpenUrl,
+            onStartLive = onStartLive,
+        )
     }
 }
 

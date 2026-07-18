@@ -17,6 +17,7 @@ import ai.vaarta.ui.RiskHero
 import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.VaartaNav
 import ai.vaarta.ui.components.Eyebrow
+import ai.vaarta.ui.components.TextLinkRow
 import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSecondaryButton
@@ -147,9 +148,7 @@ class MainActivity : ComponentActivity() {
 fun VaartaScreen(
     vm: SessionViewModel,
     historyVm: HistoryViewModel,
-    analyzerVm: AudioAnalyzerViewModel,
     onOpenHistory: () -> Unit,
-    onOpenAnalyze: () -> Unit,
     onShare: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -170,15 +169,14 @@ fun VaartaScreen(
     val chat by vm.session.chat.collectAsState()
     val scroll = rememberScrollState()
 
+    // Three explicit states (redesign spec §6.3): idle (nothing has happened yet — no fake
+    // "Listening & checking 0"), active (a real live call), post-session (a demo or a call just
+    // ended — Reset lives here now, not in idle).
+    val isIdle = liveStatus == null && chat.isEmpty() && question == null && aiSuggestion == null
+
     val context = LocalContext.current
     val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) vm.session.startLiveListening()
-    }
-
-    // Recorded-call analyzer (Phase 4D): pick any audio clip → transcribe + classify → verdict screen.
-    // GetContent needs no storage permission (the picker grants a scoped read on the chosen file only).
-    val recordingPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) { analyzerVm.analyze(uri); onOpenAnalyze() }
     }
 
     // --- Floating overlay launch (Phase 4C): grant "draw over other apps" once, then RECORD_AUDIO,
@@ -244,15 +242,7 @@ fun VaartaScreen(
                     R.drawable.ic_arrow_left, contentDescription = "Back", tint = VaartaTheme.colors.ink, size = 24.dp,
                     modifier = Modifier.clickable(onClick = onBack).padding(end = VSpace.md),
                 )
-                Text("Live protection", style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink)
-                Spacer(Modifier.weight(1f))
-                if (liveStatus != null) {
-                    Text(
-                        "● Live: $liveStatus",
-                        color = VaartaTheme.colors.indigo,
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
+                Text(stringResource(R.string.live_title), style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink)
             }
 
             RiskHero(
@@ -262,7 +252,17 @@ fun VaartaScreen(
                 aiRaised = aiRaised,
                 detectedStages = state.topSignals.map { it.stage },
                 modifier = Modifier.padding(vertical = 8.dp),
+                idleLabel = if (isIdle) stringResource(R.string.live_idle_title) else null,
+                liveBadge = liveStatus != null,
             )
+            if (isIdle) {
+                Text(
+                    stringResource(R.string.live_idle_caption),
+                    style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             if (scamType != null) {
                 ScamIdCard(scamType = scamType!!, sources = scamSources, onOpenUrl = onOpenUrl)
@@ -294,51 +294,61 @@ fun VaartaScreen(
                 CoachBubble(ChatItem.Coach(warning = "", replies = listOf(Reply(aiSuggestion!!, ReplyKind.VERIFY))), onOpenUrl)
             }
 
-            // Live controls.
-            if (liveStatus == null) {
-                VaartaButton(
-                    text = "Start live protection",
-                    onClick = {
-                        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                            PackageManager.PERMISSION_GRANTED
-                        if (granted) vm.session.startLiveListening() else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    },
-                    leadingIcon = R.drawable.ic_mic,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                // The real in-call mode: float over the dialer as a bubble (Phase 4C).
-                VaartaSecondaryButton(
-                    text = "Use as a floating window (during a call)",
-                    onClick = { launchFloating() },
-                    leadingIcon = R.drawable.ic_pip,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
-                    VaartaSecondaryButton(text = "Try a demo", onClick = { vm.session.runDemoCall() })
-                    VaartaSecondaryButton(text = "Reset", onClick = { vm.session.reset() })
-                }
-                // Analyze a recorded call after the fact (Phase 4D) — only when the AI layer is present.
-                if (vm.session.aiConfigured) {
+            // Live controls — bottom-anchored group; three explicit states (redesign spec §6.3).
+            when {
+                liveStatus != null -> {
+                    // Active: the ring + pulsing dot above already say "this is live" — just the exit.
+                    Text(
+                        stringResource(R.string.live_active_caption),
+                        style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
+                    )
                     VaartaSecondaryButton(
-                        text = "Analyze a recorded call",
-                        onClick = { recordingPicker.launch("audio/*") },
-                        leadingIcon = R.drawable.ic_headphones,
+                        text = stringResource(R.string.live_stop),
+                        onClick = { vm.session.stopLiveListening() },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                if (vm.session.aiConfigured) {
-                    AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
+                !isIdle -> {
+                    // Post-session: a demo just played, or a real call just ended. Reset lives here.
+                    if (savedLive) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                            VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.safe, size = 18.dp)
+                            Text(stringResource(R.string.live_saved), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.safe)
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
+                        VaartaSecondaryButton(text = stringResource(R.string.live_done), onClick = onBack, modifier = Modifier.weight(1f))
+                        VaartaButton(text = stringResource(R.string.live_start_again), onClick = { vm.session.reset() }, modifier = Modifier.weight(1f))
+                    }
                 }
-            } else {
-                Text(
-                    "Put the call on speaker so VAARTA can hear the caller.",
-                    style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
-                )
-                VaartaSecondaryButton(
-                    text = "Stop protection",
-                    onClick = { vm.session.stopLiveListening() },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                else -> {
+                    // Idle: primary Start, secondary Float, a quiet demo link, compact AI-consent row.
+                    VaartaButton(
+                        text = stringResource(R.string.live_start),
+                        onClick = {
+                            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                                PackageManager.PERMISSION_GRANTED
+                            if (granted) vm.session.startLiveListening() else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        },
+                        leadingIcon = R.drawable.ic_mic,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    // The real in-call mode: float over the dialer as a bubble (Phase 4C).
+                    VaartaSecondaryButton(
+                        text = stringResource(R.string.live_float),
+                        onClick = { launchFloating() },
+                        leadingIcon = R.drawable.ic_pip,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    TextLinkRow(
+                        text = stringResource(R.string.live_watch_demo),
+                        onClick = { vm.session.runDemoCall() },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (vm.session.aiConfigured) {
+                        AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
+                    }
+                }
             }
 
             if (displayedLevel.ordinal >= RiskLevel.HIGH_RISK.ordinal && !reassure) {
@@ -378,21 +388,20 @@ private fun QuestionCard(text: String, onCycle: () -> Unit) {
     }
 }
 
-/** Opt-in consent for the cloud AI layer (ADR-0002/0003) — OFF by default, honest about what it does. */
+/**
+ * Opt-in consent for the cloud AI layer (ADR-0002/0003) — OFF by default. Compacted to one line +
+ * switch (redesign spec §6.3) — the old 5-line paragraph was a major source of "text text text".
+ */
 @Composable
 private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint)) {
         Row(modifier = Modifier.fillMaxWidth().padding(VSpace.md), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
-                    VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
-                    Text("AI live coach", style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
-                }
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
                 Text(
-                    "Opt-in. Sends the caller's words to Google (and searches the web for current scams) " +
-                        "to coach your reply. Off = fully on-device. Never replaces the safe question.",
+                    stringResource(R.string.live_ai_consent_compact),
                     style = MaterialTheme.typography.bodySmall,
-                    color = VaartaTheme.colors.muted,
+                    color = VaartaTheme.colors.ink,
                 )
             }
             Switch(checked = enabled, onCheckedChange = onToggle)

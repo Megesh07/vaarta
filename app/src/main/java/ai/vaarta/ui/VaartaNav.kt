@@ -60,9 +60,8 @@ fun VaartaNav(
     if (sub != SubScreen.None) {
         when (sub) {
             SubScreen.Live -> VaartaScreen(
-                vm = vm, historyVm = historyVm, analyzerVm = analyzerVm,
+                vm = vm, historyVm = historyVm,
                 onOpenHistory = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
-                onOpenAnalyze = { sub = SubScreen.Analyze },
                 onShare = onShare, onExportPdf = onExportPdf, onOpenUrl = onOpenUrl,
                 onBack = { sub = SubScreen.None },
             )
@@ -137,6 +136,7 @@ fun VaartaNav(
                 onShare = onShare,
                 onExportPdf = onExportPdf,
                 onOpenUrl = onOpenUrl,
+                onStartLive = { sub = SubScreen.Live },
                 modifier = Modifier.padding(pad),
             )
         }

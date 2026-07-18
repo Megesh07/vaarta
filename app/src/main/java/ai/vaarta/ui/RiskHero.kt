@@ -5,6 +5,11 @@ import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.ui.theme.VaartaTheme
 import ai.vaarta.ui.theme.riskColor
 import ai.vaarta.ui.theme.stateLabel
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,12 +19,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -32,6 +39,11 @@ import androidx.compose.ui.unit.sp
  * of detected-signal tokens. This replaces the old text banner — the ring and the icons do the work a
  * paragraph used to, so it reads in ≤2s and in any language. Reassurance (cited consensus that the call
  * is genuine) turns the ring green; otherwise the risk ramp drives it.
+ *
+ * [idleLabel] overrides the computed state line and hides the score for the true at-rest state
+ * (redesign spec §6.3) — "Listening & checking" + a big "0" was a lie before anything had happened.
+ * [liveBadge] shows a small pulsing dot beside the state line during an active call, replacing the
+ * old raw "● Live: CONNECTING" header text.
  */
 @Composable
 fun RiskHero(
@@ -41,25 +53,31 @@ fun RiskHero(
     aiRaised: Boolean,
     detectedStages: List<Stage>,
     modifier: Modifier = Modifier,
+    idleLabel: String? = null,
+    liveBadge: Boolean = false,
 ) {
     val colors = VaartaTheme.colors
-    val stateText = if (reassure) "This looks like a genuine call" else stateLabel(level)
-    val stateColor = if (reassure) colors.safe else colors.riskColor(level)
+    val stateText = idleLabel ?: if (reassure) "This looks like a genuine call" else stateLabel(level)
+    val stateColor = if (idleLabel != null) colors.muted else if (reassure) colors.safe else colors.riskColor(level)
 
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         RiskRing(
             level = level,
             score = score,
             stateText = stateText,
+            showScore = idleLabel == null,
             ringColorOverride = if (reassure) colors.safe else null,
         )
         Spacer(Modifier.height(12.dp))
-        Text(
-            stateText,
-            style = MaterialTheme.typography.headlineSmall,
-            color = stateColor,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stateText,
+                style = MaterialTheme.typography.headlineSmall,
+                color = stateColor,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            if (liveBadge) LivePulseDot()
+        }
         if (aiRaised && !reassure) {
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -78,6 +96,18 @@ fun RiskHero(
             }
         }
     }
+}
+
+/** A small breathing dot marking an active call — replaces the raw "● Live: CONNECTING" header text. */
+@Composable
+private fun LivePulseDot() {
+    val colors = VaartaTheme.colors
+    val inf = rememberInfiniteTransition(label = "livePulse")
+    val alpha by inf.animateFloat(
+        initialValue = 1f, targetValue = 0.25f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "liveAlpha",
+    )
+    Surface(color = colors.indigo.copy(alpha = alpha), shape = CircleShape, modifier = Modifier.size(8.dp)) {}
 }
 
 @Composable

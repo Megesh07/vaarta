@@ -190,6 +190,22 @@ fun ActionTile(
     }
 }
 
+/**
+ * A quiet, centered text link — the replacement for a secondary-button clone of another screen's
+ * primary action (redesign spec §6.2, e.g. "Get live help from VAARTA →"). No card, no border —
+ * reads as a lightweight way out, not a competing call to action.
+ */
+@Composable
+fun TextLinkRow(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = VaartaTheme.colors
+    Box(
+        modifier = modifier.clickable(onClick = onClick).padding(vertical = VSpace.sm),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.titleMedium, color = c.indigo)
+    }
+}
+
 /** One cited web source: link glyph + title, tappable. Replaces the old copy-pasted "🔗 title" rows. */
 @Composable
 fun SourceLink(title: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
