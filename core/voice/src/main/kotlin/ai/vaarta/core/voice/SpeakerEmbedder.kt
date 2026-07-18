@@ -66,8 +66,8 @@ class SpeakerEmbedder(context: Context) {
     }
 
     fun close() {
-        // SpeakerEmbeddingExtractor has no public release(); it is finalized by the JVM/JNI layer
-        // like OnlineStream. Nothing to do here beyond dropping the reference, kept as an explicit
-        // lifecycle method so CopilotSession's close() has one obvious place to call.
+        // Frees native ONNX runtime buffers deterministically rather than relying on JVM
+        // finalization — verified via javap that SpeakerEmbeddingExtractor.release() is public.
+        extractor?.release()
     }
 }
