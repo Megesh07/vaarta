@@ -2,7 +2,6 @@ package ai.vaarta.core.reasoning
 
 import ai.vaarta.core.common.IntelPack
 import ai.vaarta.core.common.MatchMode
-import ai.vaarta.core.common.Normalization
 import ai.vaarta.core.common.RiskEvent
 import ai.vaarta.core.common.Signal
 import ai.vaarta.core.common.SignalCategory
@@ -110,7 +109,11 @@ class RiskEngineTest {
     @Test
     fun `investment lure with urgency and extraction reaches scam pattern`() {
         val e = engine()
-        e.ingest(t("Double your money in 7 days with our guaranteed trading plan", 5_000))
+        val hookState = e.ingest(t("Double your money in 7 days with our guaranteed trading plan", 5_000))
+        assertTrue(
+            hookState.topSignals.any { it.signalId == "SIG_HOOK_INVESTMENT" },
+            "SIG_HOOK_INVESTMENT should fire on the investment hook line — fired signals were ${hookState.topSignals.map { it.signalId }}",
+        )
         e.ingest(t("This offer closes within two hours, act immediately", 20_000))
         val s = e.ingest(t("Transfer the money to this UPI id to start your investment", 40_000))
         assertTrue(s.score > 0, "investment hook + urgency + extraction should score above zero")
