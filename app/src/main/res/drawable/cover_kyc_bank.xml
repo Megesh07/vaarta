@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: KYC / bank / SIM / identity fraud — bank card guarded by a shield (spec §5.1). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="0" android:startY="120" android:endX="120" android:endY="0" android:type="linear">
+                <item android:offset="0" android:color="#FF352FA0"/>
+                <item android:offset="1" android:color="#FF4B45C6"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- card -->
+    <path android:fillColor="#E6FFFFFF" android:pathData="M28,42 h58 v36 h-58 z"/>
+    <!-- stripe -->
+    <path android:fillColor="#59FFFFFF" android:pathData="M28,48 h58 v8 h-58 z"/>
+    <!-- chip -->
+    <path android:fillColor="#FF8F8AF0" android:pathData="M34,62 h10 v7 h-10 z"/>
+    <!-- shield -->
+    <path android:fillColor="#FF8F8AF0" android:pathData="M80,60 l14,5.5 v8 c0,8.5 -14,13.5 -14,13.5 c0,0 -14,-5 -14,-13.5 v-8 Z"/>
+    <path android:pathData="M74,71 l4.5,4.5 l8,-9" android:strokeColor="#E6FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+</vector>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: electricity/utility disconnection scam — meter gauge and bolt (spec §5.1). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="0" android:startY="0" android:endX="120" android:endY="120" android:type="linear">
+                <item android:offset="0" android:color="#FF3B35A8"/>
+                <item android:offset="1" android:color="#FF4B45C6"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- gauge arc -->
+    <path android:pathData="M36,72 A24,24 0 0 1 84,72" android:strokeColor="#E6FFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <!-- needle -->
+    <path android:pathData="M60,72 L74,56" android:strokeColor="#FF8F8AF0" android:strokeWidth="4" android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <path android:fillColor="#E6FFFFFF" android:pathData="M60,72 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
+    <!-- bolt -->
+    <path android:fillColor="#59FFFFFF" android:pathData="M58,80 h11 l-6,10 h11 l-20,16 l5,-12 h-8 Z"/>
+</vector>

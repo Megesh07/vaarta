@@ -42,6 +42,7 @@ class AudioScamAnalyzer {
         val reassure: Boolean,
         val summary: String,
         val language: String?,
+        val detectedStages: List<Stage>,
     )
 
     /**
@@ -115,6 +116,7 @@ class AudioScamAnalyzer {
             reassure = reassure,
             summary = analysis.summary,
             language = analysis.language,
+            detectedStages = last.topSignals.map { it.stage },
         )
     }
 

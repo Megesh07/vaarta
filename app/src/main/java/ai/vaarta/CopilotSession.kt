@@ -10,6 +10,8 @@ import ai.vaarta.core.complaint.DetectedSignal
 import ai.vaarta.ai.GeminiClient
 import ai.vaarta.ai.GeminiLiveClient
 import ai.vaarta.audio.AudioCapture
+import ai.vaarta.core.data.db.VaartaDatabase
+import ai.vaarta.core.data.db.VoiceSampleEntity
 import ai.vaarta.core.reasoning.ConversationTurn
 import ai.vaarta.core.reasoning.GroundedAssessment
 import ai.vaarta.core.reasoning.HybridAlert
@@ -23,8 +25,13 @@ import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.RiskState
 import ai.vaarta.core.reasoning.Source
 import ai.vaarta.core.reasoning.Speaker
+import ai.vaarta.core.reasoning.SpeakerAttributor
+import ai.vaarta.core.reasoning.SpeakerLabel
 import ai.vaarta.core.reasoning.SuggestionSafetyFilter
 import ai.vaarta.core.reasoning.nextStage
+import ai.vaarta.core.voice.SpeakerEmbedder
+import ai.vaarta.core.voice.VoiceGallery
+import android.content.Context
 import android.os.SystemClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The live conversation copilot pipeline (ADR-0003), extracted from [SessionViewModel] into a plain,
@@ -55,13 +63,70 @@ import kotlinx.coroutines.withContext
  * @param scope the coroutine scope that owns all async work; cancelling it (via the owner's
  *   lifecycle) tears down every in-flight request. Call [close] to stop the mic/socket cleanly.
  */
-class CopilotSession(private val scope: CoroutineScope) {
+class CopilotSession(private val scope: CoroutineScope, private val appContext: Context) {
 
     private val pack = PackLoader.fromResource("/packs/core-scam-v1.json")
     private val langs = listOf("en", "hi_latn", "hi")
     private var engine = RiskEngine(pack, langs)
     private val questionSelector = QuestionSelector(pack)
     private var questionIndex = 0
+
+    // --- Speaker attribution (Part D, redesign spec §6): zero-enrollment, on-device, fail-safe ---
+    private val voiceprintDao = VaartaDatabase.get(appContext).voiceprintDao()
+    private val speakerEmbedder = SpeakerEmbedder(appContext)
+    private var voiceGallery = VoiceGallery(speakerEmbedder.dim().coerceAtLeast(1))
+    private var voiceprintSampleCount = 0
+    private var voiceprintTotalDurationMs = 0L
+    private val ACTIVATION_MIN_SAMPLES = 3
+    private val ACTIVATION_MIN_DURATION_MS = 20_000L
+    private val VERIFY_THRESHOLD = 0.75f
+
+    // Raw PCM coalesced on the SAME flush schedule as `inputBuffer` (below), so each flushed turn's
+    // text and audio cover the same time window. Cleared together with inputBuffer on every flush.
+    private val pcmBuffer = java.io.ByteArrayOutputStream()
+
+    /** True once the activation gate (spec §6.2) is met — before this, attribution is a no-op and
+     *  behavior is byte-identical to before Part D existed. */
+    private val attributionActive: Boolean
+        get() = voiceprintSampleCount >= ACTIVATION_MIN_SAMPLES && voiceprintTotalDurationMs >= ACTIVATION_MIN_DURATION_MS
+
+    // "Not on speaker" nudge (spec §6.4): tracks how much of the first 60s of a live session's audio
+    // matched the voiceprint — a high ratio means the mic is mostly hearing the user, not a caller.
+    private var nudgeWindowStartMs = 0L
+    private var nudgeMatchedMs = 0L
+    private var nudgeTotalMs = 0L
+    private var nudgeShown = false
+    private val _showSpeakerNudge = MutableStateFlow(false)
+    val showSpeakerNudge: StateFlow<Boolean> = _showSpeakerNudge.asStateFlow()
+
+    init {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val samples = voiceprintDao.getAllSamples()
+                voiceprintSampleCount = samples.size
+                voiceprintTotalDurationMs = samples.sumOf { it.durationMs }
+                if (samples.isNotEmpty()) {
+                    voiceGallery.enroll(samples.map { bytesToFloatArray(it.embedding) })
+                }
+            } catch (e: Exception) {
+                // DB corruption fail-safe (spec §7): start this session with no voiceprint rather
+                // than crash — harvesting resumes from zero, same as a fresh install.
+                android.util.Log.w("CopilotSession", "voiceprint load failed, starting fresh: ${e.javaClass.simpleName}")
+                try { voiceprintDao.deleteAll() } catch (_: Exception) { }
+            }
+        }
+    }
+
+    private fun bytesToFloatArray(bytes: ByteArray): FloatArray {
+        val buf = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.nativeOrder())
+        return FloatArray(bytes.size / 4) { buf.float }
+    }
+
+    private fun floatArrayToBytes(floats: FloatArray): ByteArray {
+        val buf = java.nio.ByteBuffer.allocate(floats.size * 4).order(java.nio.ByteOrder.nativeOrder())
+        floats.forEach { buf.putFloat(it) }
+        return buf.array()
+    }
 
     // Real-elapsed-time anchor for every event source (live transcript turns, manual cue taps) so
     // RiskEvent.atMs is always a genuine millisecond offset from session start (ADR-0003 bug fix —
@@ -76,9 +141,6 @@ class CopilotSession(private val scope: CoroutineScope) {
 
     private val _state = MutableStateFlow(idle)
     val state: StateFlow<RiskState> = _state.asStateFlow()
-
-    private val _tapped = MutableStateFlow(emptySet<String>())
-    val tapped: StateFlow<Set<String>> = _tapped.asStateFlow()
 
     private val _complaint = MutableStateFlow<String?>(null)
     val complaint: StateFlow<String?> = _complaint.asStateFlow()
@@ -217,7 +279,10 @@ class CopilotSession(private val scope: CoroutineScope) {
         )
         liveClient = client
         client.start()
-        val capture = AudioCapture { pcm, len -> client.sendAudio(pcm, len) }
+        val capture = AudioCapture { pcm, len ->
+            client.sendAudio(pcm, len)
+            synchronized(pcmBuffer) { pcmBuffer.write(pcm, 0, len) }
+        }
         if (!capture.start()) {
             onLiveStatus(GeminiLiveClient.Status.ERROR)
             return
@@ -269,17 +334,43 @@ class CopilotSession(private val scope: CoroutineScope) {
             delay(TURN_SILENCE_MS)
             val text = inputBuffer.toString().trim()
             inputBuffer.clear()
-            if (text.isNotEmpty()) processCallerTurn(text)
+            val pcm = synchronized(pcmBuffer) {
+                val bytes = pcmBuffer.toByteArray()
+                pcmBuffer.reset()
+                bytes
+            }
+            if (text.isNotEmpty()) processCallerTurn(text, pcm)
         }
     }
 
     /** One coalesced caller turn → engine (score, unchanged owner) → conversation history → coach. */
-    private fun processCallerTurn(text: String) {
+    private suspend fun processCallerTurn(text: String, pcm: ByteArray) {
+        // Segment duration from the PCM byte count itself (16 kHz mono PCM16 = 32,000 bytes/sec) —
+        // independent of ASR timing, matches what SpeakerAttributor's threshold is defined against.
+        val segmentDurationMs = (pcm.size / 32).toLong() // bytes / 32 = ms at 16kHz*2bytes/1000
+
         // Primary defense against the self-echo loop (ADR-0003 problem 1): if this is close enough
         // to something VAARTA itself just displayed, it's almost certainly the USER reading it back
         // on speakerphone, not the caller's independent speech — attribute it to the user (show it as
         // a "you said" bubble for continuity), and do NOT score or coach on it.
         if (ownWordsGate.isLikelyOwnWords(text)) {
+            appendChat(ChatItem.You(text))
+            conversationHistory.addLast(ConversationTurn(Speaker.USER, text, nowOffsetMs()))
+            while (conversationHistory.size > MAX_HISTORY_TURNS) conversationHistory.removeFirst()
+            harvestVoiceSample(pcm, segmentDurationMs) // text-confirmed user speech — safe to harvest
+            trackNudgeWindow(segmentDurationMs, matched = true)
+            return
+        }
+
+        val verified = attributionActive && classifySegment(pcm, segmentDurationMs)
+        trackNudgeWindow(segmentDurationMs, matched = verified)
+        val label = SpeakerAttributor.attribute(segmentDurationMs, verified)
+
+        if (label == SpeakerLabel.USER) {
+            // Fail-safe rule (spec §2 invariant 7): excluded from scoring, appended as USER — never
+            // suppresses or down-weights anything; the alternative (not excluding) is simply today's
+            // existing behavior, which the ELSE branch below still runs unchanged for every
+            // unverified segment.
             appendChat(ChatItem.You(text))
             conversationHistory.addLast(ConversationTurn(Speaker.USER, text, nowOffsetMs()))
             while (conversationHistory.size > MAX_HISTORY_TURNS) conversationHistory.removeFirst()
@@ -297,6 +388,69 @@ class CopilotSession(private val scope: CoroutineScope) {
         while (conversationHistory.size > MAX_HISTORY_TURNS) conversationHistory.removeFirst()
 
         requestIntelligence(callerLine = text, state = newState)
+    }
+
+    /** Embeds [pcm] and checks it against the enrolled voiceprint. Off the caller's dispatcher
+     *  (embedding is native ONNX inference — must never run on Main) and budget-capped per spec §7
+     *  ("embedding over 200ms -> skip verification for that segment"): [kotlinx.coroutines.withTimeoutOrNull]
+     *  returns null on timeout, which this treats identically to any other embedding failure — unverified,
+     *  never a crash or a delayed coach turn. */
+    private suspend fun classifySegment(pcm: ByteArray, durationMs: Long): Boolean {
+        if (!speakerEmbedder.isReady()) return false
+        return withContext(Dispatchers.Default) {
+            withTimeoutOrNull(200L) {
+                val embedding = speakerEmbedder.embed(pcm, pcm.size) ?: return@withTimeoutOrNull false
+                try {
+                    voiceGallery.verify(embedding, VERIFY_THRESHOLD)
+                } catch (e: Exception) {
+                    // Fail closed like every other step in this pipeline: a native verify() failure
+                    // must not propagate out of processCallerTurn and drop the whole turn unscored.
+                    android.util.Log.w("CopilotSession", "voice verify failed, treating as unverified: ${e.javaClass.simpleName}")
+                    false
+                }
+            } ?: false
+        }
+    }
+
+    private fun harvestVoiceSample(pcm: ByteArray, durationMs: Long) {
+        if (!speakerEmbedder.isReady() || durationMs < 500) return
+        scope.launch(Dispatchers.Default) {
+            val embedding = speakerEmbedder.embed(pcm, pcm.size) ?: return@launch
+            // DB corruption fail-safe (spec §7): never let a persistence error crash the call screen —
+            // worst case this sample is silently dropped and harvesting continues from the next one.
+            try {
+                withContext(Dispatchers.IO) {
+                    voiceprintDao.insertSample(
+                        VoiceSampleEntity(embedding = floatArrayToBytes(embedding), durationMs = durationMs, capturedAtMs = System.currentTimeMillis()),
+                    )
+                }
+                voiceprintSampleCount++
+                voiceprintTotalDurationMs += durationMs
+                voiceGallery.enroll(withContext(Dispatchers.IO) { voiceprintDao.getAllSamples() }.map { bytesToFloatArray(it.embedding) })
+            } catch (e: Exception) {
+                android.util.Log.w("CopilotSession", "voice harvest failed, clearing store: ${e.javaClass.simpleName}")
+                try { withContext(Dispatchers.IO) { voiceprintDao.deleteAll() } } catch (_: Exception) { }
+                voiceprintSampleCount = 0
+                voiceprintTotalDurationMs = 0L
+                voiceGallery = VoiceGallery(speakerEmbedder.dim().coerceAtLeast(1))
+            }
+        }
+    }
+
+    /** "Not on speaker" nudge (spec §6.4): if >=95% of the first 60s of live audio matches the
+     *  voiceprint, the mic is mostly hearing the user, not a caller — suggest putting the call on
+     *  speaker. Only evaluated once the activation gate is already met (a fresh voiceprint has
+     *  nothing to compare against yet, so it must never nudge prematurely). */
+    private fun trackNudgeWindow(durationMs: Long, matched: Boolean) {
+        if (!attributionActive || nudgeShown) return
+        if (nudgeTotalMs == 0L) nudgeWindowStartMs = nowOffsetMs()
+        if (nowOffsetMs() - nudgeWindowStartMs > 60_000L) return // window closed, no more evaluation this session
+        nudgeTotalMs += durationMs
+        if (matched) nudgeMatchedMs += durationMs
+        if (nudgeTotalMs >= 10_000L && nudgeMatchedMs.toDouble() / nudgeTotalMs >= 0.95) {
+            nudgeShown = true
+            _showSpeakerNudge.value = true
+        }
     }
 
     /**
@@ -328,8 +482,13 @@ class CopilotSession(private val scope: CoroutineScope) {
             .takeLast(4)
             .joinToString("\n") { it.text }
 
+        // Only forward a scam type that already passed the same source-backed gate the UI banner
+        // uses (HybridAlert.mayShowScamType) — never an uncited claim, mirroring the display rule.
+        val g0 = _grounded.value
+        val groundedScamTypeForCoach = if (g0 != null && HybridAlert.mayShowScamType(g0)) g0.scamType else null
+
         scope.launch {
-            val coachDeferred = async(Dispatchers.IO) { GeminiClient.coach(historySnapshot, stage, next) }
+            val coachDeferred = async(Dispatchers.IO) { GeminiClient.coach(historySnapshot, stage, next, groundedScamTypeForCoach) }
             val groundDeferred =
                 if (shouldGround) async(Dispatchers.IO) { GeminiClient.classify(callerContext) } else null
 
@@ -378,34 +537,18 @@ class CopilotSession(private val scope: CoroutineScope) {
      *  onDestroy). Does NOT cancel [scope] — the owner owns that lifecycle. */
     fun close() {
         stopLiveListening()
+        speakerEmbedder.close()
     }
 
-    /**
-     * Manual Mode cues (id -> label) — MOBILE_UX_SPEC.md §3.3.
-     * Every signal in the pack that carries a `manualCue` must have a matching entry here
-     * (IMPLEMENTATION_GUARDRAILS.md ALWAYS #10 — audio-derived signals need Manual Mode parity).
-     */
-    val cues: List<Pair<String, String>> = listOf(
-        "CUE_CLAIMS_AUTHORITY" to "Says POLICE / CBI / ED",
-        "CUE_THREATENS_ARREST" to "Threatens ARREST / warrant",
-        "CUE_PARCEL" to "Mentions PARCEL / customs",
-        "CUE_BADGE_CASE_ID" to "Gives badge / case number unprompted",
-        "CUE_ASKS_AADHAAR_OTP" to "Asks for AADHAAR / OTP / account",
-        "CUE_DONT_TELL_ANYONE" to "Says DON'T TELL ANYONE",
-        "CUE_STAY_ON_LINE" to "Says STAY ON THE LINE",
-        "CUE_MOVE_TO_WHATSAPP" to "Move to WHATSAPP / video",
-        "CUE_SENT_FAKE_DOCS" to "Sends warrant / freeze 'document'",
-        "CUE_PRESSURE_STAY" to "Urgency / deadline",
-        "CUE_DEMANDS_MONEY" to "Demands MONEY / UPI",
-    )
-
-    fun tapCue(cueId: String) {
-        val atMs = nowOffsetMs()
-        lastEventAtMs = atMs
-        applyState(engine.ingest(RiskEvent.ManualCue(cueId, atMs)))
-        _tapped.value = _tapped.value + cueId
-        _complaint.value = null
-        _complaintDraft.value = null
+    /** "Clear voice data" (spec §6.5) — the one privacy control Part D adds. Deletes every persisted
+     *  sample and resets the in-memory gallery/activation counters; does not affect any other data. */
+    fun clearVoiceData() {
+        scope.launch(Dispatchers.IO) {
+            voiceprintDao.deleteAll()
+            voiceprintSampleCount = 0
+            voiceprintTotalDurationMs = 0L
+            voiceGallery = VoiceGallery(speakerEmbedder.dim().coerceAtLeast(1))
+        }
     }
 
     fun reset() {
@@ -418,7 +561,6 @@ class CopilotSession(private val scope: CoroutineScope) {
         lastEventAtMs = 0
         questionIndex = 0
         applyState(idle)
-        _tapped.value = emptySet()
         _complaint.value = null
         _complaintDraft.value = null
         lastCallerLine = ""
@@ -435,6 +577,12 @@ class CopilotSession(private val scope: CoroutineScope) {
         _reassure.value = false
         lastGroundedStage = null
         groundingCount = 0
+        synchronized(pcmBuffer) { pcmBuffer.reset() }
+        nudgeWindowStartMs = 0L
+        nudgeMatchedMs = 0L
+        nudgeTotalMs = 0L
+        nudgeShown = false
+        _showSpeakerNudge.value = false
     }
 
     /** Opt-in toggle for the cloud AI layer. Turning it off immediately clears any AI suggestion. */
@@ -526,7 +674,7 @@ class CopilotSession(private val scope: CoroutineScope) {
     fun generateComplaint() {
         val fired = engine.sessionSignals()
         if (fired.isEmpty()) {
-            _complaint.value = "No warning signs detected yet — tap cues or run the demo call first."
+            _complaint.value = "No warning signs detected yet — run the demo call or start live protection first."
             _complaintDraft.value = null
             return
         }

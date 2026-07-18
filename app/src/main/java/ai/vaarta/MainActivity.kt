@@ -6,11 +6,28 @@ import ai.vaarta.core.data.db.SessionSource
 import ai.vaarta.core.reasoning.Reply
 import ai.vaarta.core.reasoning.ReplyKind
 import ai.vaarta.core.reasoning.RiskLevel
+import ai.vaarta.core.reasoning.relativeTimeLabel
+import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.reasoning.Source
+import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.export.PdfExporter
 import ai.vaarta.history.HistoryViewModel
-import ai.vaarta.history.SessionDetail
+import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.recording.AudioAnalyzerViewModel
+import ai.vaarta.share.BilingualShare
+import ai.vaarta.ui.FirstRunLanguagePicker
+import ai.vaarta.ui.RiskHero
+import ai.vaarta.ui.VaartaIcon
+import ai.vaarta.ui.VaartaNav
+import ai.vaarta.ui.components.Eyebrow
+import ai.vaarta.ui.components.TextLinkRow
+import ai.vaarta.ui.components.VaartaBackBar
+import ai.vaarta.ui.components.VaartaButton
+import ai.vaarta.ui.components.VaartaSecondaryButton
+import ai.vaarta.ui.components.VaartaSubScreen
+import ai.vaarta.ui.theme.VSpace
+import ai.vaarta.ui.theme.VaartaTheme
+import ai.vaarta.ui.theme.vaartaPressable
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -19,16 +36,16 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,53 +57,80 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+/**
+ * Extends AppCompatActivity (not the plain ComponentActivity) specifically so per-app language
+ * (redesign spec §3B.1) actually works: AppCompatDelegate's locale-resource wrapping is applied via
+ * AppCompatActivity#attachBaseContext — without it, setApplicationLocales() + recreate() silently
+ * relaunches the activity with the OLD locale's resources on API < 33 (caught live on the emulator).
+ */
+class MainActivity : AppCompatActivity() {
     private val vm: SessionViewModel by viewModels()
     private val historyVm: HistoryViewModel by viewModels()
     private val analyzerVm: AudioAnalyzerViewModel by viewModels()
+    private val conversationVm: ConversationViewModel by viewModels()
+    private val awarenessVm: AwarenessViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge() // system-bar icons follow light/dark correctly (spec §8.1)
         setContent {
-            MaterialTheme {
-                VaartaApp(vm, historyVm, analyzerVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+            VaartaTheme {
+                // One-time, not-skippable language choice (redesign spec §3B.1) — gates the rest of
+                // the app on first launch only; permanently reachable afterward from Help.
+                var languageChosen by remember { mutableStateOf(AppLanguage.hasBeenChosen()) }
+                if (!languageChosen) {
+                    FirstRunLanguagePicker(onChosen = { languageChosen = true })
+                } else {
+                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                }
             }
         }
     }
@@ -96,7 +140,7 @@ class MainActivity : ComponentActivity() {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)
         }
-        startActivity(Intent.createChooser(send, "Share via"))
+        startActivity(Intent.createChooser(send, getString(R.string.live_share_via)))
     }
 
     private fun openUrl(url: String) {
@@ -112,99 +156,47 @@ class MainActivity : ComponentActivity() {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        startActivity(Intent.createChooser(send, "Share complaint PDF"))
+        startActivity(Intent.createChooser(send, getString(R.string.live_share_complaint_pdf)))
     }
 }
 
-/** Screen the app is showing. The live copilot is home; history + detail are one tap away (Phase 4B).
- *  A lightweight in-Activity switch, not a nav library — the full hub IA lands with the overlay (4C). */
-private sealed interface Screen {
-    data object Live : Screen
-    data object History : Screen
-    data object Detail : Screen
-    data object Analyze : Screen
-}
-
-/** Top-level host: switches between the live copilot, the saved-history list, a read-only detail, and
- *  the recorded-call analyzer (Phase 4D). */
-@Composable
-fun VaartaApp(
-    vm: SessionViewModel,
-    historyVm: HistoryViewModel,
-    analyzerVm: AudioAnalyzerViewModel,
-    onShare: (String) -> Unit,
-    onExportPdf: (ComplaintDraft) -> Unit,
-    onOpenUrl: (String) -> Unit,
-) {
-    var screen by remember { mutableStateOf<Screen>(Screen.Live) }
-    when (screen) {
-        Screen.Live -> VaartaScreen(
-            vm = vm,
-            historyVm = historyVm,
-            analyzerVm = analyzerVm,
-            onOpenHistory = { screen = Screen.History },
-            onOpenAnalyze = { screen = Screen.Analyze },
-            onShare = onShare,
-            onExportPdf = onExportPdf,
-            onOpenUrl = onOpenUrl,
-        )
-        Screen.History -> HistoryScreen(
-            historyVm = historyVm,
-            onBack = { screen = Screen.Live },
-            onOpen = { id -> historyVm.openDetail(id); screen = Screen.Detail },
-        )
-        Screen.Detail -> DetailScreen(
-            historyVm = historyVm,
-            onBack = { historyVm.closeDetail(); screen = Screen.History },
-            onOpenUrl = onOpenUrl,
-        )
-        Screen.Analyze -> AnalyzeScreen(
-            analyzerVm = analyzerVm,
-            historyVm = historyVm,
-            onBack = { analyzerVm.reset(); screen = Screen.Live },
-            onShare = onShare,
-            onOpenUrl = onOpenUrl,
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VaartaScreen(
     vm: SessionViewModel,
     historyVm: HistoryViewModel,
-    analyzerVm: AudioAnalyzerViewModel,
     onOpenHistory: () -> Unit,
-    onOpenAnalyze: () -> Unit,
     onShare: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
+    onBack: () -> Unit,
 ) {
+    BackHandler(onBack = onBack) // system back == the header back arrow (spec §8.2)
     val state by vm.session.state.collectAsState()
     val displayedLevel by vm.session.displayedLevel.collectAsState()
     val aiRaised by vm.session.aiRaised.collectAsState()
     val reassure by vm.session.reassure.collectAsState()
     val scamType by vm.session.scamType.collectAsState()
     val scamSources by vm.session.scamSources.collectAsState()
-    val tapped by vm.session.tapped.collectAsState()
-    val complaint by vm.session.complaint.collectAsState()
-    val complaintDraft by vm.session.complaintDraft.collectAsState()
     val question by vm.session.currentQuestion.collectAsState()
     val aiEnabled by vm.session.aiEnabled.collectAsState()
     val aiSuggestion by vm.session.aiSuggestion.collectAsState()
+    val aiLoading by vm.session.aiLoading.collectAsState()
     val liveStatus by vm.session.liveStatus.collectAsState()
+    val showSpeakerNudge by vm.session.showSpeakerNudge.collectAsState()
     val chat by vm.session.chat.collectAsState()
     val scroll = rememberScrollState()
+    // Only fires once per session (CopilotSession.nudgeShown), so a simple local dismiss is enough —
+    // nothing needs to signal back into the session.
+    var speakerNudgeDismissed by remember { mutableStateOf(false) }
+
+    // Three explicit states (redesign spec §6.3): idle (nothing has happened yet — no fake
+    // "Listening & checking 0"), active (a real live call), post-session (a demo or a call just
+    // ended — Reset lives here now, not in idle).
+    val isIdle = liveStatus == null && chat.isEmpty() && question == null && aiSuggestion == null
 
     val context = LocalContext.current
     val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) vm.session.startLiveListening()
-    }
-
-    // Recorded-call analyzer (Phase 4D): pick any audio clip → transcribe + classify → verdict screen.
-    // GetContent needs no storage permission (the picker grants a scoped read on the chosen file only).
-    val recordingPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) { analyzerVm.analyze(uri); onOpenAnalyze() }
     }
 
     // --- Floating overlay launch (Phase 4C): grant "draw over other apps" once, then RECORD_AUDIO,
@@ -242,28 +234,59 @@ fun VaartaScreen(
         if (chat.isNotEmpty()) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 
+    // Auto-save a live call to Conversations when it ends with content (v2 — no manual Save tap needed;
+    // starting protection is the consent, and the user can delete any conversation). Demos aren't saved
+    // (they never set liveStatus).
+    var wasLive by remember { mutableStateOf(false) }
+    var savedLive by remember { mutableStateOf(false) }
+    LaunchedEffect(liveStatus) {
+        if (liveStatus != null) {
+            wasLive = true
+            savedLive = false
+        } else if (wasLive && !savedLive && chat.isNotEmpty()) {
+            historyVm.save(SessionSource.LIVE, state.score, displayedLevel.name, scamType, chat) {
+                Toast.makeText(context, context.getString(R.string.live_saved), Toast.LENGTH_SHORT).show()
+            }
+            savedLive = true
+            wasLive = false
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("VAARTA", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.weight(1f))
-                if (liveStatus != null) {
-                    Text("● Live: $liveStatus", color = Color(0xFF4527A0), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                } else {
-                    Text(
-                        "🕘 History",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF4527A0),
-                        modifier = Modifier.clickable(onClick = onOpenHistory),
-                    )
-                }
+                VaartaIcon(
+                    R.drawable.ic_arrow_left, contentDescription = stringResource(R.string.common_back), tint = VaartaTheme.colors.ink, size = 24.dp,
+                    modifier = Modifier.vaartaPressable(onBack).padding(end = VSpace.md),
+                )
+                Text(stringResource(R.string.live_title), style = MaterialTheme.typography.titleLarge, color = VaartaTheme.colors.ink)
             }
 
-            StatusBanner(level = displayedLevel, score = state.score, reassure = reassure, aiRaised = aiRaised)
+            RiskHero(
+                level = displayedLevel,
+                score = state.score,
+                reassure = reassure,
+                aiRaised = aiRaised,
+                detectedStages = state.topSignals.map { it.stage },
+                modifier = Modifier.padding(vertical = 8.dp),
+                idleLabel = if (isIdle) stringResource(R.string.live_idle_title) else null,
+                liveBadge = liveStatus != null,
+            )
+            if (isIdle) {
+                Text(
+                    stringResource(R.string.live_idle_caption),
+                    style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            if (showSpeakerNudge && !speakerNudgeDismissed) {
+                SpeakerNudgeBanner(onDismiss = { speakerNudgeDismissed = true })
+            }
 
             if (scamType != null) {
                 ScamIdCard(scamType = scamType!!, sources = scamSources, onOpenUrl = onOpenUrl)
@@ -274,93 +297,97 @@ fun VaartaScreen(
             // been coached yet, fall back to the single deterministic verification question.
             if (chat.isNotEmpty()) {
                 ChatThread(chat)
+                // Demo/text-mode only: the single-shot AI suggestion arrives after the deterministic
+                // thread is built, so it renders as a trailing coach bubble. Never during a live call —
+                // there the copilot streams its coaching into [chat] itself and this would duplicate.
+                if (liveStatus == null && aiEnabled) {
+                    if (aiLoading) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+                            Text(stringResource(R.string.live_ai_thinking), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                        }
+                    } else {
+                        aiSuggestion?.let { s ->
+                            CoachBubble(ChatItem.Coach(warning = "", replies = listOf(Reply(s, ReplyKind.VERIFY))), onOpenUrl)
+                        }
+                    }
+                }
             } else if (question != null) {
                 QuestionCard(text = question!!, onCycle = { vm.session.cycleQuestion() })
             } else if (aiEnabled && aiSuggestion != null) {
                 CoachBubble(ChatItem.Coach(warning = "", replies = listOf(Reply(aiSuggestion!!, ReplyKind.VERIFY))), onOpenUrl)
             }
 
-            // Live controls.
-            if (liveStatus == null) {
-                Button(
-                    onClick = {
-                        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                            PackageManager.PERMISSION_GRANTED
-                        if (granted) vm.session.startLiveListening() else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4527A0)),
-                ) { Text("🎙  Start live protection", fontSize = 16.sp) }
-                // The real in-call mode: float over the dialer as a bubble (Phase 4C).
-                OutlinedButton(
-                    onClick = { launchFloating() },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("🪟  Use as a floating window (during a call)") }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { vm.session.runDemoCall() }) { Text("▶  Try a demo") }
-                    OutlinedButton(onClick = { vm.session.reset() }) { Text("Reset") }
-                }
-                // Analyze a recorded call after the fact (Phase 4D) — only when the AI layer is present.
-                if (vm.session.aiConfigured) {
-                    OutlinedButton(
-                        onClick = { recordingPicker.launch("audio/*") },
+            // Live controls — bottom-anchored group; three explicit states (redesign spec §6.3).
+            when {
+                liveStatus != null -> {
+                    // Active: the ring + pulsing dot above already say "this is live" — just the exit.
+                    Text(
+                        stringResource(R.string.live_active_caption),
+                        style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
+                    )
+                    VaartaSecondaryButton(
+                        text = stringResource(R.string.live_stop),
+                        onClick = { vm.session.stopLiveListening() },
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("🎧  Analyze a recorded call") }
+                    )
                 }
-                // Explicit opt-in to persist (ADR-0004): only after a call, only on the user's tap.
-                if (chat.isNotEmpty()) {
-                    OutlinedButton(
+                !isIdle -> {
+                    // Post-session: a demo just played, or a real call just ended. Reset lives here.
+                    if (savedLive) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                            VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.safe, size = 18.dp)
+                            Text(stringResource(R.string.live_saved), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.safe)
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
+                        VaartaSecondaryButton(text = stringResource(R.string.live_done), onClick = onBack, modifier = Modifier.weight(1f))
+                        VaartaButton(text = stringResource(R.string.live_start_again), onClick = { vm.session.reset() }, modifier = Modifier.weight(1f))
+                    }
+                }
+                else -> {
+                    // Idle: primary Start, secondary Float, a quiet demo link, compact AI-consent row.
+                    VaartaButton(
+                        text = stringResource(R.string.live_start),
                         onClick = {
-                            historyVm.save(SessionSource.LIVE, state.score, displayedLevel.name, scamType, chat) {
-                                Toast.makeText(context, "Saved to history", Toast.LENGTH_SHORT).show()
-                            }
+                            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                                PackageManager.PERMISSION_GRANTED
+                            if (granted) vm.session.startLiveListening() else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         },
+                        leadingIcon = R.drawable.ic_mic,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("💾  Save this call to history") }
-                }
-                if (vm.session.aiConfigured) {
-                    AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
-                }
-            } else {
-                Text("🔊  Put the call on speaker so VAARTA can hear the caller.", fontSize = 13.sp, color = Color.Gray)
-                OutlinedButton(onClick = { vm.session.stopLiveListening() }, modifier = Modifier.fillMaxWidth()) {
-                    Text("■  Stop protection")
+                    )
+                    // The real in-call mode: float over the dialer as a bubble (Phase 4C).
+                    VaartaSecondaryButton(
+                        text = stringResource(R.string.live_float),
+                        onClick = { launchFloating() },
+                        leadingIcon = R.drawable.ic_pip,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    TextLinkRow(
+                        text = stringResource(R.string.live_watch_demo),
+                        onClick = { vm.session.runDemoCall() },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (vm.session.aiConfigured) {
+                        AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
+                    }
                 }
             }
 
             if (displayedLevel.ordinal >= RiskLevel.HIGH_RISK.ordinal && !reassure) {
-                Button(
-                    onClick = {
-                        onShare("VAARTA alert: I may be on a scam call right now. Please call me back. (${levelText(displayedLevel)})")
-                    },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
-                ) { Text("🔔  Alert my family", fontSize = 16.sp) }
-                Text("No agency arrests anyone over a phone or video call.", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            }
-
-            // Manual Mode — always reachable (P0 peer), demoted into its own section.
-            HorizontalDivider()
-            Text("Manual mode — tap what you hear", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((id, label) in vm.session.cues) {
-                    FilterChip(selected = id in tapped, onClick = { vm.session.tapCue(id) }, label = { Text(label) })
-                }
-            }
-
-            HorizontalDivider()
-            OutlinedButton(onClick = { vm.session.generateComplaint() }) { Text("📝  Generate complaint draft") }
-            complaint?.let { text ->
-                Card {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(text, fontSize = 11.sp)
-                        Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { onShare(text) }) { Text("Share as text") }
-                            complaintDraft?.let { draft -> OutlinedButton(onClick = { onExportPdf(draft) }) { Text("Export PDF") } }
-                        }
-                    }
-                }
+                val alertMessage = stringResource(R.string.live_alert_family_message, levelText(displayedLevel))
+                VaartaButton(
+                    text = stringResource(R.string.live_alert_family),
+                    onClick = { onShare(BilingualShare.compose(alertMessage, AppLanguage.current())) },
+                    leadingIcon = R.drawable.ic_bell,
+                    destructive = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    stringResource(R.string.live_no_agency_arrests),
+                    style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink,
+                )
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -371,31 +398,33 @@ fun VaartaScreen(
 @Composable
 private fun QuestionCard(text: String, onCycle: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onCycle),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF3F8)),
+        modifier = Modifier.fillMaxWidth().vaartaPressable(onCycle),
+        colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint),
     ) {
-        Column(Modifier.padding(14.dp)) {
-            Text("ASK THEM", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
-            Spacer(Modifier.height(4.dp))
-            Text("❝ $text ❞", fontSize = 16.sp, color = Color(0xFF1E293B))
-            Spacer(Modifier.height(4.dp))
-            Text("⟳ tap for another question", fontSize = 11.sp, color = Color.Gray)
+        Column(Modifier.padding(VSpace.md)) {
+            Eyebrow(stringResource(R.string.live_ask_them))
+            Spacer(Modifier.height(VSpace.xs))
+            Text(text, style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+            Spacer(Modifier.height(VSpace.xs))
+            Text(stringResource(R.string.live_tap_another_question), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
         }
     }
 }
 
-/** Opt-in consent for the cloud AI layer (ADR-0002/0003) — OFF by default, honest about what it does. */
+/**
+ * Opt-in consent for the cloud AI layer (ADR-0002/0003) — OFF by default. Compacted to one line +
+ * switch (redesign spec §6.3) — the old 5-line paragraph was a major source of "text text text".
+ */
 @Composable
 private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F0FA))) {
-        Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("🤖  AI live coach", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+    Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(VSpace.md), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
                 Text(
-                    "Opt-in. Sends the caller's words to Google (and searches the web for current scams) " +
-                        "to coach your reply. Off = fully on-device. Never replaces the safe question.",
-                    fontSize = 11.sp,
-                    color = Color.Gray,
+                    stringResource(R.string.live_ai_consent_compact),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VaartaTheme.colors.ink,
                 )
             }
             Switch(checked = enabled, onCheckedChange = onToggle)
@@ -403,125 +432,266 @@ private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
     }
 }
 
-// --- Phase 4B: saved history (encrypted at rest, ADR-0004) ---
+/** Speaker-off nudge (redesign spec §6.4, Part D): the voiceprint match ratio suggests the mic is
+ *  mostly hearing the user, not the caller — dismissible, same Card+icon-row idiom as [AiConsentRow]. */
+@Composable
+private fun SpeakerNudgeBanner(onDismiss: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(VSpace.md), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                VaartaIcon(R.drawable.ic_mic, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
+                Text(
+                    stringResource(R.string.live_active_caption),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VaartaTheme.colors.ink,
+                )
+            }
+            VaartaIcon(
+                R.drawable.ic_close, contentDescription = stringResource(R.string.chat_remove_a11y), tint = VaartaTheme.colors.indigoInk, size = 16.dp,
+                modifier = Modifier.vaartaPressable(onDismiss),
+            )
+        }
+    }
+}
 
-private val historyDateFmt = SimpleDateFormat("d MMM yyyy, h:mm a", Locale.getDefault())
+// --- Phase 4B: saved history (encrypted at rest, ADR-0004) ---
 
 private fun levelFromName(name: String): RiskLevel =
     runCatching { RiskLevel.valueOf(name) }.getOrDefault(RiskLevel.OBSERVING)
 
-/** The saved-history list — newest first. Tap a row to open the read-only thread; retention + a
- *  delete-all control sit at the top so the user stays in charge of what's stored (ADR-0004). */
+/**
+ * Conversations v2 (redesign spec §6.6). A clean header (title + count + kebab), an extended
+ * "New chat" FAB in the thumb zone, the shared row grammar (single-line title + verdict pill +
+ * relative time, chevron only), swipe-to-delete with an Undo snackbar (the actual DB delete is
+ * deferred behind a pending set so Undo needs no re-insert), and the retention/Delete-all controls
+ * moved into a kebab bottom-sheet so they no longer occupy the prime scroll space. Encryption note
+ * shrinks to a lock caption at the list foot.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HistoryScreen(
+internal fun HistoryScreen(
     historyVm: HistoryViewModel,
-    onBack: () -> Unit,
-    onOpen: (Long) -> Unit,
+    onNewChat: () -> Unit,
+    onOpen: (CallSessionEntity) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    val c = VaartaTheme.colors
     val sessions by historyVm.sessions.collectAsState()
     val retentionDays by historyVm.retentionDays.collectAsState()
+    val pending = remember { mutableStateListOf<Long>() }
+    val visible = sessions.filter { it.id !in pending }
+    val now = System.currentTimeMillis()
+    val weekAgo = now - 7L * 24 * 60 * 60 * 1000
+    val thisWeek = visible.filter { it.startedAtMs >= weekAgo }
+    val earlier = visible.filter { it.startedAtMs < weekAgo }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = Color(0xFF4527A0), modifier = Modifier.clickable(onClick = onBack))
-                Spacer(Modifier.weight(1f))
-                Text("Saved calls", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
-            Text("Stored only on this phone, encrypted. Nothing is uploaded.", fontSize = 12.sp, color = Color.Gray)
+    val snackbarHost = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var showMenu by remember { mutableStateOf(false) }
+    val deletedMsg = stringResource(R.string.conv_deleted)
+    val undoLabel = stringResource(R.string.conv_undo)
 
-            RetentionRow(retentionDays = retentionDays, onSet = { historyVm.setRetentionDays(it) })
-
-            if (sessions.isEmpty()) {
-                Spacer(Modifier.height(32.dp))
-                Text("No saved calls yet.", fontSize = 15.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth())
-                Text(
-                    "After a call, tap “Save this call to history” to keep the thread here.",
-                    fontSize = 13.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth(),
-                )
+    fun requestDelete(id: Long) {
+        pending.add(id)
+        scope.launch {
+            val result = snackbarHost.showSnackbar(deletedMsg, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) {
+                pending.remove(id) // undo: the row is still in the DB, just un-hide it
             } else {
-                if (sessions.size > 1) {
-                    OutlinedButton(
-                        onClick = { historyVm.deleteAll() },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFB71C1C)),
-                    ) { Text("Delete all") }
+                pending.remove(id)
+                historyVm.delete(id) // commit the delete only once the window closed without undo
+            }
+        }
+    }
+
+    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            Column(Modifier.fillMaxSize().padding(horizontal = VSpace.xl)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = VSpace.sm)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.conv_title), style = MaterialTheme.typography.headlineMedium, color = c.ink)
+                        if (sessions.isNotEmpty()) {
+                            Eyebrow(stringResource(R.string.conv_count, sessions.size))
+                        }
+                    }
+                    Surface(
+                        color = Color.Transparent, shape = CircleShape,
+                        modifier = Modifier.size(44.dp).vaartaPressable({ showMenu = true }),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            VaartaIcon(R.drawable.ic_more_vert, contentDescription = stringResource(R.string.conv_menu_a11y), tint = c.ink, size = 22.dp)
+                        }
+                    }
                 }
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    items(sessions, key = { it.id }) { session ->
-                        HistoryRow(session = session, onOpen = { onOpen(session.id) }, onDelete = { historyVm.delete(session.id) })
+
+                if (sessions.isEmpty()) {
+                    Column(
+                        Modifier.fillMaxSize().padding(bottom = VSpace.xxxl),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        VaartaIcon(R.drawable.ic_nav_chat, contentDescription = null, tint = c.faint, size = 40.dp)
+                        Spacer(Modifier.height(VSpace.md))
+                        Text(stringResource(R.string.conv_empty_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
+                        Spacer(Modifier.height(VSpace.xs))
+                        Text(
+                            stringResource(R.string.conv_empty_body),
+                            style = MaterialTheme.typography.bodyMedium, color = c.muted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
+                    }
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
+                        if (thisWeek.isNotEmpty()) {
+                            item(key = "h_week") { Eyebrow(stringResource(R.string.conv_section_week)) }
+                            items(thisWeek, key = { it.id }) { s -> SwipeableRow(s, onOpen = { onOpen(s) }, onDelete = { requestDelete(s.id) }) }
+                        }
+                        if (earlier.isNotEmpty()) {
+                            item(key = "h_earlier") { Eyebrow(stringResource(R.string.conv_section_earlier)) }
+                            items(earlier, key = { it.id }) { s -> SwipeableRow(s, onOpen = { onOpen(s) }, onDelete = { requestDelete(s.id) }) }
+                        }
+                        item(key = "foot") {
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = VSpace.lg),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                VaartaIcon(R.drawable.ic_lock, contentDescription = null, tint = c.faint, size = 14.dp)
+                                Spacer(Modifier.width(VSpace.xs))
+                                Text(stringResource(R.string.conv_encrypted), style = MaterialTheme.typography.bodySmall, color = c.faint)
+                            }
+                            Spacer(Modifier.height(72.dp)) // clear the FAB
+                        }
                     }
                 }
             }
+
+            ExtendedFloatingActionButton(
+                onClick = onNewChat,
+                containerColor = c.indigo,
+                contentColor = Color.White,
+                icon = { VaartaIcon(R.drawable.ic_plus, contentDescription = null, tint = Color.White, size = 20.dp) },
+                text = { Text(stringResource(R.string.conv_new_chat), style = MaterialTheme.typography.titleMedium, color = Color.White) },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(VSpace.xl),
+            )
+
+            SnackbarHost(snackbarHost, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 88.dp))
         }
     }
-}
 
-/** One saved-call row: risk dot + level + scam-ID + when. */
-@Composable
-private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
-    val level = levelFromName(session.finalLevel)
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = levelColor(level), shape = RoundedCornerShape(50), modifier = Modifier.size(12.dp)) {}
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(levelText(level), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = levelColor(level))
-                session.scamType?.let { Text(it, fontSize = 12.sp, color = Color(0xFF334155)) }
-                Text(historyDateFmt.format(Date(session.startedAtMs)), fontSize = 11.sp, color = Color.Gray)
-            }
-            Text("✕", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.clickable(onClick = onDelete).padding(8.dp))
-        }
-    }
-}
-
-/** Retention control — keep forever (default) or auto-delete after N days (user-controlled, ADR-0004). */
-@Composable
-private fun RetentionRow(retentionDays: Int, onSet: (Int) -> Unit) {
-    val options = listOf(0 to "Keep", 7 to "7 days", 30 to "30 days")
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Auto-delete:", fontSize = 13.sp, color = Color(0xFF334155))
-        for ((days, label) in options) {
-            FilterChip(selected = retentionDays == days, onClick = { onSet(days) }, label = { Text(label) })
-        }
-    }
-}
-
-/** Read-only replay of a saved call: verdict header + the same WhatsApp-style thread + delete. */
-@Composable
-private fun DetailScreen(
-    historyVm: HistoryViewModel,
-    onBack: () -> Unit,
-    onOpenUrl: (String) -> Unit,
-) {
-    val detail by historyVm.detail.collectAsState()
-    val scroll = rememberScrollState()
-    val d = detail
-
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+    if (showMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showMenu = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = Color(0xFF4527A0), modifier = Modifier.clickable(onClick = onBack))
-                Spacer(Modifier.weight(1f))
-                if (d != null) {
-                    Text("✕ Delete", fontSize = 14.sp, color = Color(0xFFB71C1C), modifier = Modifier.clickable {
-                        historyVm.delete(d.id); onBack()
-                    })
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = VSpace.xxl).padding(bottom = VSpace.xxxl),
+                verticalArrangement = Arrangement.spacedBy(VSpace.md),
+            ) {
+                Text(stringResource(R.string.conv_menu_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
+                Text(stringResource(R.string.conv_autodelete), style = MaterialTheme.typography.bodyMedium, color = c.muted)
+                Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                    val options = listOf(0 to stringResource(R.string.conv_keep), 7 to stringResource(R.string.conv_7d), 30 to stringResource(R.string.conv_30d))
+                    for ((days, label) in options) {
+                        FilterChip(selected = retentionDays == days, onClick = { historyVm.setRetentionDays(days) }, label = { Text(label) })
+                    }
+                }
+                if (sessions.isNotEmpty()) {
+                    Spacer(Modifier.height(VSpace.xs))
+                    VaartaSecondaryButton(
+                        text = stringResource(R.string.conv_delete_all),
+                        onClick = { historyVm.deleteAll(); showMenu = false },
+                        leadingIcon = R.drawable.ic_close,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
-            if (d == null) {
-                Text("Loading…", color = Color.Gray)
-            } else {
-                VerdictHeader(d)
-                if (d.chat.isEmpty()) {
-                    Text("This call has no saved turns.", color = Color.Gray)
-                } else {
-                    ChatThread(d.chat, onOpenUrl)
+        }
+    }
+}
+
+/** A conversation row wrapped in swipe-to-delete; swiping either way triggers [onDelete]. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableRow(session: CallSessionEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
+    val c = VaartaTheme.colors
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { target ->
+            if (target != SwipeToDismissBoxValue.Settled) { onDelete(); true } else false
+        },
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(c.scamTint).padding(horizontal = VSpace.xl),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                VaartaIcon(R.drawable.ic_close, contentDescription = null, tint = c.scam, size = 22.dp)
+            }
+        },
+    ) {
+        HistoryRow(session = session, onOpen = onOpen)
+    }
+}
+
+/** One conversation row: source circle + single-line title + (verdict pill + relative time) + chevron. */
+@Composable
+private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit) {
+    val c = VaartaTheme.colors
+    val level = levelFromName(session.finalLevel)
+    val (glyph, chipTint) = when (session.source) {
+        SessionSource.CHAT -> R.drawable.ic_nav_chat to c.indigo
+        SessionSource.RECORDING -> R.drawable.ic_headphones to c.muted
+        else -> R.drawable.ic_phone to c.verify
+    }
+    val chipBg = when (session.source) {
+        SessionSource.CHAT -> c.indigoTint
+        SessionSource.RECORDING -> c.track
+        else -> c.verifyTint
+    }
+    val title = session.title
+        ?: session.scamType
+        ?: when (session.source) {
+            SessionSource.CHAT -> stringResource(R.string.conv_source_chat)
+            SessionSource.RECORDING -> stringResource(R.string.conv_source_recording)
+            else -> stringResource(R.string.conv_source_live)
+        }
+    val scored = session.source != SessionSource.CHAT && session.finalScore > 0
+    Card(
+        colors = CardDefaults.cardColors(containerColor = c.panel),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (c.isDark) 0.dp else 1.dp),
+        border = if (c.isDark) androidx.compose.foundation.BorderStroke(1.dp, c.line) else null,
+        modifier = Modifier.fillMaxWidth().vaartaPressable(onOpen),
+    ) {
+        Row(Modifier.padding(VSpace.lg), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.md)) {
+            Surface(color = chipBg, shape = CircleShape, modifier = Modifier.size(44.dp)) {
+                Box(contentAlignment = Alignment.Center) {
+                    VaartaIcon(glyph, contentDescription = null, tint = chipTint, size = 20.dp)
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Spacer(Modifier.height(2.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.xs)) {
+                    if (scored) {
+                        Surface(color = levelColor(level), shape = CircleShape, modifier = Modifier.size(8.dp)) {}
+                        Text(
+                            levelText(level), style = MaterialTheme.typography.labelMedium, color = levelColor(level),
+                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        Text("·", style = MaterialTheme.typography.labelMedium, color = c.faint)
+                    }
+                    Text(
+                        relativeTimeLabel(session.startedAtMs, System.currentTimeMillis()),
+                        style = MaterialTheme.typography.labelMedium, color = c.muted,
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            VaartaIcon(R.drawable.ic_chevron_right, contentDescription = null, tint = c.faint, size = 20.dp)
         }
     }
 }
@@ -535,7 +705,7 @@ private fun DetailScreen(
  * Fails closed: a friendly message on any error, never a fabricated verdict.
  */
 @Composable
-private fun AnalyzeScreen(
+internal fun AnalyzeScreen(
     analyzerVm: AudioAnalyzerViewModel,
     historyVm: HistoryViewModel,
     onBack: () -> Unit,
@@ -543,87 +713,86 @@ private fun AnalyzeScreen(
     onOpenUrl: (String) -> Unit,
 ) {
     val state by analyzerVm.state.collectAsState()
-    val scroll = rememberScrollState()
     val context = LocalContext.current
+    // The screen owns its own picker, so every entry point (Home card, Live button, reopening after
+    // an analysis) can start a new analysis right here — no dead-end Idle state.
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) analyzerVm.analyze(uri)
+    }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            Modifier.fillMaxSize().statusBarsPadding().verticalScroll(scroll).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("‹ Back", fontSize = 15.sp, color = Color(0xFF4527A0), modifier = Modifier.clickable(onClick = onBack))
-                Spacer(Modifier.weight(1f))
-                Text("Analyze a recording", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    VaartaSubScreen(title = stringResource(R.string.analyze_title), onBack = onBack) {
+        when (val s = state) {
+            AudioAnalyzerViewModel.UiState.Idle -> {
+                Text(
+                    stringResource(R.string.analyze_intro),
+                    style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
+                )
+                VaartaSecondaryButton(
+                    text = stringResource(R.string.analyze_pick_recording),
+                    onClick = { picker.launch("audio/*") },
+                    leadingIcon = R.drawable.ic_headphones,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
-            when (val s = state) {
-                AudioAnalyzerViewModel.UiState.Idle ->
-                    Text("Pick a recording from the home screen to analyze.", fontSize = 14.sp, color = Color.Gray)
+            AudioAnalyzerViewModel.UiState.Running -> {
+                Spacer(Modifier.height(40.dp))
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
+                    CircularProgressIndicator(color = VaartaTheme.colors.indigo)
+                    Text(stringResource(R.string.analyze_transcribing), style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
+                    Text(stringResource(R.string.analyze_transcribing_sub), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
+                }
+            }
 
-                AudioAnalyzerViewModel.UiState.Running -> {
-                    Spacer(Modifier.height(40.dp))
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        CircularProgressIndicator(color = Color(0xFF4527A0))
-                        Text("Transcribing and checking the recording…", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text("This can take up to a minute for a longer clip.", fontSize = 12.sp, color = Color.Gray)
+            is AudioAnalyzerViewModel.UiState.Error -> {
+                Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.scamTint)) {
+                    Text(s.message, modifier = Modifier.padding(VSpace.lg), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.scam)
+                }
+                VaartaSecondaryButton(text = stringResource(R.string.common_back), onClick = onBack, leadingIcon = R.drawable.ic_arrow_left, modifier = Modifier.fillMaxWidth())
+            }
+
+            is AudioAnalyzerViewModel.UiState.Done -> {
+                val r = s.result
+                val savedToast = stringResource(R.string.live_saved)
+                // Auto-save the analyzed recording to Conversations (v2 — keyed on the result so it
+                // saves once per analysis; the user picked the clip, which is the consent).
+                LaunchedEffect(r) {
+                    historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
+                        Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
                     }
                 }
+                RiskHero(
+                    level = r.level,
+                    score = r.score,
+                    reassure = r.reassure,
+                    aiRaised = r.aiRaised,
+                    detectedStages = r.detectedStages,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+                Text(
+                    stringResource(R.string.analyze_disclaimer),
+                    style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
+                )
+                if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
 
-                is AudioAnalyzerViewModel.UiState.Error -> {
-                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFBE7E7))) {
-                        Text(s.message, modifier = Modifier.padding(16.dp), fontSize = 14.sp, color = Color(0xFFB71C1C))
-                    }
-                    OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("‹ Back") }
-                }
-
-                is AudioAnalyzerViewModel.UiState.Done -> {
-                    val r = s.result
-                    StatusBanner(level = r.level, score = r.score, reassure = r.reassure, aiRaised = r.aiRaised)
-                    Text(
-                        "Analyzed from a recording. The risk score is computed on-device from the transcript; " +
-                            "the AI transcribed and helped classify it.",
-                        fontSize = 11.sp, color = Color.Gray,
-                    )
-                    if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
-
-                    if (r.level.ordinal >= RiskLevel.HIGH_RISK.ordinal && !r.reassure) {
-                        Button(
-                            onClick = { onShare("VAARTA: I analyzed a call recording and it looks like a scam (${levelText(r.level)}).") },
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
-                        ) { Text("🔔  Share this warning", fontSize = 16.sp) }
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
-                                Toast.makeText(context, "Saved to history", Toast.LENGTH_SHORT).show()
-                            }
-                        },
+                if (r.level.ordinal >= RiskLevel.HIGH_RISK.ordinal && !r.reassure) {
+                    val warningMessage = stringResource(R.string.analyze_share_warning_message, levelText(r.level))
+                    VaartaButton(
+                        text = stringResource(R.string.analyze_share_warning),
+                        onClick = { onShare(BilingualShare.compose(warningMessage, AppLanguage.current())) },
+                        leadingIcon = R.drawable.ic_bell,
+                        destructive = true,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("💾  Save to history") }
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
+                    VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.muted, size = 16.dp)
+                    Text(stringResource(R.string.live_saved), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
                 }
             }
-            Spacer(Modifier.height(24.dp))
         }
+        Spacer(Modifier.height(24.dp))
     }
 }
 
-/** The saved call's final verdict — the steady risk banner + scam-ID, replayed from storage. */
-@Composable
-private fun VerdictHeader(d: SessionDetail) {
-    val level = levelFromName(d.finalLevel)
-    Card(colors = CardDefaults.cardColors(containerColor = levelColor(level))) {
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Text(levelText(level), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text("Risk ${d.finalScore} / 100", color = Color.White, fontSize = 15.sp)
-            d.scamType?.let {
-                Spacer(Modifier.height(4.dp))
-                Text("🌐  $it", color = Color.White, fontSize = 13.sp)
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(historyDateFmt.format(Date(d.startedAtMs)), color = Color.White, fontSize = 12.sp)
-        }
-    }
-}

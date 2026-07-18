@@ -39,6 +39,13 @@ fun List<ChatItem>.toTurnEntities(sessionId: Long, baseAtMs: Long): List<TurnEnt
                 sourcesJson = json.encodeToString(item.sources.map { SourceDto(it.title, it.uri) }),
                 atMs = atMs,
             )
+            is ChatItem.Assistant -> TurnEntity(
+                sessionId = sessionId,
+                kind = TurnKind.ASSISTANT,
+                text = item.text,
+                sourcesJson = json.encodeToString(item.sources.map { SourceDto(it.title, it.uri) }),
+                atMs = atMs,
+            )
         }
     }
 
@@ -53,6 +60,13 @@ fun List<TurnEntity>.toChatItems(): List<ChatItem> = map { turn ->
                     .map { Reply(it.text, runCatching { ReplyKind.valueOf(it.kind) }.getOrDefault(ReplyKind.VERIFY)) }
             }.orEmpty(),
             scamType = turn.scamType,
+            sources = turn.sourcesJson?.let { raw ->
+                runCatching { json.decodeFromString<List<SourceDto>>(raw) }.getOrDefault(emptyList())
+                    .map { Source(it.title, it.uri) }
+            }.orEmpty(),
+        )
+        TurnKind.ASSISTANT -> ChatItem.Assistant(
+            text = turn.text,
             sources = turn.sourcesJson?.let { raw ->
                 runCatching { json.decodeFromString<List<SourceDto>>(raw) }.getOrDefault(emptyList())
                     .map { Source(it.title, it.uri) }

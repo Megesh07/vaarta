@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: lottery / prize / festival-offer scam — gift box and coins (spec §5.1). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="0" android:startY="120" android:endX="120" android:endY="0" android:type="linear">
+                <item android:offset="0" android:color="#FF3B35A8"/>
+                <item android:offset="1" android:color="#FF524CCB"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- coins -->
+    <path android:fillColor="#FF8F8AF0" android:pathData="M82,40 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0"/>
+    <path android:fillColor="#59FFFFFF" android:pathData="M70,32 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0"/>
+    <!-- lid -->
+    <path android:fillColor="#59FFFFFF" android:pathData="M36,50 h48 v9 h-48 z"/>
+    <!-- box -->
+    <path android:fillColor="#E6FFFFFF" android:pathData="M40,59 h40 v30 h-40 z"/>
+    <!-- ribbon -->
+    <path android:fillColor="#FF8F8AF0" android:pathData="M57,50 h6 v39 h-6 z"/>
+</vector>

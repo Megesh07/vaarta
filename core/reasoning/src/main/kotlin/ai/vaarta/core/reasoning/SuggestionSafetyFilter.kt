@@ -41,12 +41,23 @@ object SuggestionSafetyFilter {
         // Advising the victim to pay/transfer/comply — the single most dangerous possible output.
         Regex("""\b(just|please|go\s+ahead\s+and|you\s+can|you\s+could|better\s+to)\s+(pay|transfer|send\s+the\s+money|deposit)""", RegexOption.IGNORE_CASE),
         Regex("""it'?s\s+(safe|okay|ok|fine|best)\s+to\s+(pay|transfer|comply|cooperate)""", RegexOption.IGNORE_CASE),
-        Regex("""make\s+the\s+payment""", RegexOption.IGNORE_CASE),
+        Regex("""make\s+the\s+(payment|transfer|deposit)""", RegexOption.IGNORE_CASE),
         Regex("""pay\s+the\s+(fine|fee|amount|money|deposit|penalty)""", RegexOption.IGNORE_CASE),
+        // Compliance framed as obligation (Phase D) — extends "you should" to must / need to / have to /
+        // required to. "Why would they need me to transfer…" never matches this (no "you must"), so the
+        // legitimate verification question stays accepted.
+        Regex("""you\s+(?:must|need\s+to|have\s+to|'?ll\s+have\s+to|are\s+required\s+to)\s+(?:not\s+)?(?:pay|transfer|deposit|send|comply|cooperate|share)""", RegexOption.IGNORE_CASE),
         // Generic "just comply / do what they say" — as dangerous as naming the specific demand.
         Regex("""\bcooperate\b""", RegexOption.IGNORE_CASE),
         Regex("""\bdo\s+what\s+(they|he|she|the\s+officer)\s+says?\b""", RegexOption.IGNORE_CASE),
         Regex("""\bfollow\s+(their|his|her)\s+instructions\b""", RegexOption.IGNORE_CASE),
+        // Imperative (sentence-initial) payment (Phase D) — a bare "Transfer the money…" instruction has
+        // no affirmative lead-in for `paymentCompliance` to catch, but it is not the refusal
+        // "I will not transfer…" (starts with "I") nor the question "why would they need me to transfer
+        // money?" (verb mid-sentence). Only fires when a payment verb OPENS a sentence.
+        Regex("""(?:^|[.!?]\s+)(?:transfer|send|wire|deposit|pay)\b[\s\S]{0,20}?\b(?:money|amount|funds|fine|fee|penalty|deposit|payment|upi|account)\b""", RegexOption.IGNORE_CASE),
+        // Imperative (sentence-initial) app-install / remote-access — the isolation-step equivalent.
+        Regex("""(?:^|[.!?]\s+)(?:install|download|open)\b[\s\S]{0,20}?\b(?:app|anydesk|team\s*viewer|screen|remote|link)\b""", RegexOption.IGNORE_CASE),
         // Isolation compliance — negating "tell" IS the danger (inverted polarity vs. payment/OTP).
         Regex("""\b(won'?t|will\s+not|don'?t|do\s+not|never)\s+tell\s+(my\s+)?(family|anyone|husband|wife|son|daughter|parents|police)\b""", RegexOption.IGNORE_CASE),
         Regex("""kisi\s+ko\s+(mat\s+batao|nahi[n]?\s+bataunga)""", RegexOption.IGNORE_CASE),
@@ -68,9 +79,12 @@ object SuggestionSafetyFilter {
     private val paymentComplianceHindi = Regex("""paisa\s*(transfer|bhej|bhejo|bhejenge|de\s*doonga|de\s*denge)""", RegexOption.IGNORE_CASE)
 
     // OTP/PIN/CVV/Aadhaar/PAN/bank-detail disclosure — the single most damaging real-world gap.
+    // Phase D: verbs extended to read-out/repeat/type-in/enter (how a victim actually "gives" a code),
+    // nouns extended to verification/one-time/security-code synonyms + bare "code" (all still gated on
+    // an affirmative lead-in, so "why would they need my verification code?" stays accepted).
     private val disclosureCompliance = compliance(
-        """share|give|tell|send|provide|reveal""",
-        """otp|pin|cvv|aadhaar|adhaar|aadhar|pan(?:\s*(?:number|card))?|bank\s*details?|account\s*number|card\s*number|password""",
+        """share|give|tell|send|provide|reveal|read(?:\s*out)?|repeat|type(?:\s*in)?|enter""",
+        """otp|pin|cvv|aadhaar|adhaar|aadhar|pan(?:\s*(?:number|card))?|bank\s*details?|account\s*number|card\s*number|password|verification\s*code|otp\s*code|one[-\s]*time\s*(?:password|pin|code)|security\s*code|passcode|code""",
     )
     private val disclosureComplianceHindi = Regex("""(otp|pin|aadhaar|adhaar)\s*(bata|batao|share|de\s*doonga|de\s*denge)""", RegexOption.IGNORE_CASE)
 
@@ -81,6 +95,14 @@ object SuggestionSafetyFilter {
     // Remote-access / app-install / screen-share — the channel-switch step of the scam script.
     private val remoteAccessCompliance =
         compliance("""install|open|download|share""", """(?:the\s+)?(?:app|screen|anydesk|teamviewer|remote\s*access)""")
+
+    // "Do as they say" / "Listen to the officer" (Phase D) — generic surrender to the caller. Polarity-
+    // safe: fires only sentence-initially OR right after an affirmative lead-in, so the refusals
+    // "I will not do as they say" / "I won't listen to them" (an intervening "not" / "won't") pass.
+    private val doAsToldCompliance =
+        Regex("""(?:^|[.!?]\s+|\b$AFFIRMATIVE\s+)do\s+as\s+(?:they|he|she|the\s+officer|the\s+caller)\b""", RegexOption.IGNORE_CASE)
+    private val listenToCompliance =
+        Regex("""(?:^|[.!?]\s+|\b$AFFIRMATIVE\s+)listen\s+to\s+(?:the\s+)?(?:officer|caller|him|her|them)\b""", RegexOption.IGNORE_CASE)
 
     /** Accepts a suggestion only if it is non-blank, matches no unconditional ban, and shows no
      *  affirmative compliance with payment/disclosure/isolation/remote-access demands. */
@@ -101,6 +123,9 @@ object SuggestionSafetyFilter {
         }
         if (remoteAccessCompliance.containsMatchIn(trimmed)) {
             return Result.Rejected("advises installing app / sharing screen")
+        }
+        if (doAsToldCompliance.containsMatchIn(trimmed) || listenToCompliance.containsMatchIn(trimmed)) {
+            return Result.Rejected("advises surrendering to the caller (do as told / listen to them)")
         }
         return Result.Accepted
     }

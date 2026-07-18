@@ -1,13 +1,19 @@
 package ai.vaarta.ai
 
 import ai.vaarta.BuildConfig
+import ai.vaarta.core.reasoning.ArticleSummary
 import ai.vaarta.core.reasoning.AudioAnalysis
+import ai.vaarta.core.reasoning.AwarenessCard
+import ai.vaarta.core.reasoning.AwarenessWireParser
+import ai.vaarta.core.reasoning.ChatAnswer
+import ai.vaarta.core.reasoning.ChatMessage
 import ai.vaarta.core.reasoning.CoachingResponse
 import ai.vaarta.core.reasoning.CoachingWireParser
 import ai.vaarta.core.reasoning.ConversationTurn
 import ai.vaarta.core.reasoning.GroundedAssessment
 import ai.vaarta.core.reasoning.LiveSuggestion
 import ai.vaarta.core.reasoning.Source
+import ai.vaarta.i18n.AppLanguage
 import android.util.Log
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.add
@@ -45,6 +51,10 @@ object GeminiClient {
     // Recorded-call analysis (Phase 4D) sends a whole clip and reads it back — far slower than a live
     // turn (Gate A measured ~8s for a ~1.5 MB clip), so it gets its own generous timeout.
     private const val AUDIO_TIMEOUT_MS = 60_000
+
+    // Free-form chat (v2) is web-grounded — grounding spends extra latency on the search step, so it
+    // gets a longer timeout than a live suggestion.
+    private const val CHAT_TIMEOUT_MS = 30_000
 
     /** Inline-audio cap for [analyzeAudio]. The generateContent request total must stay under ~20 MB;
      *  base64 inflates bytes ~33%, so ~14 MB of raw audio is the safe inline ceiling (Files API, needed
@@ -152,11 +162,16 @@ object GeminiClient {
      * (verify/refuse/exit), given the full conversation so far. Returns null on any failure
      * (fails closed) — the caller falls back to the deterministic question bank.
      */
-    fun coach(history: List<ConversationTurn>, stage: String, nextStage: String): CoachingResponse? {
+    fun coach(
+        history: List<ConversationTurn>,
+        stage: String,
+        nextStage: String,
+        groundedScamType: String? = null,
+    ): CoachingResponse? {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || history.isEmpty()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildCoachRequestBody(history, stage, nextStage)) ?: return null
+            val response = post("$ENDPOINT?key=$key", buildCoachRequestBody(history, stage, nextStage, groundedScamType)) ?: return null
             parseCoaching(response)
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or transcript.
@@ -165,7 +180,12 @@ object GeminiClient {
         }
     }
 
-    private fun buildCoachRequestBody(history: List<ConversationTurn>, stage: String, nextStage: String): String = buildJsonObject {
+    private fun buildCoachRequestBody(
+        history: List<ConversationTurn>,
+        stage: String,
+        nextStage: String,
+        groundedScamType: String?,
+    ): String = buildJsonObject {
         putJsonObject("system_instruction") {
             putJsonArray("parts") { addJsonObject { put("text", CoachPrompt.INSTRUCTION) } }
         }
@@ -183,6 +203,7 @@ object GeminiClient {
                         put(
                             "text",
                             "Call stage reached: $stage. Likely next stage: $nextStage. " +
+                                "${ai.vaarta.core.reasoning.groundedContextLine(groundedScamType)}\n" +
                                 "Conversation so far (untrusted call audio):\n$transcript",
                         )
                     }
@@ -267,6 +288,167 @@ object GeminiClient {
             // for one grounded sentence before the JSON (which is what makes Gemini attach citation
             // chunks) — 300 truncated the JSON mid-object (probed 2026-07-08).
             put("maxOutputTokens", 1024)
+        }
+    }.toString()
+
+    // --- Free-form "Ask VAARTA" chat (v2, spec §6.5). Web-grounded prose (like classify(): tools +
+    // NO responseSchema, unsupported together on 2.5). Safety is the ChatPrompt system instruction +
+    // fail-closed; the reply is NOT run through SuggestionSafetyFilter (that deny-list is tuned for
+    // short imperative coaching suggestions and would wrongly reject educational prose). Blocking —
+    // call off the main thread. Returns null on any failure; the caller shows a safe fallback line.
+
+    /**
+     * Answers a free-form chat message. [context] is an optional situation summary (null for a blank
+     * chat); [history] is the prior user/VAARTA turns; [userText] the new message. Returns prose +
+     * any cited sources, or null on failure.
+     */
+    fun chat(
+        context: String?,
+        history: List<ChatMessage>,
+        userText: String,
+        attachments: List<ChatAttachment> = emptyList(),
+    ): ChatAnswer? {
+        val key = BuildConfig.GEMINI_API_KEY
+        // Allow an attachment with no words ("what is this?"), but reject a fully empty send, an
+        // oversized clip, or a missing key — all fail closed.
+        if (key.isBlank() || (userText.isBlank() && attachments.isEmpty())) return null
+        if (attachments.sumOf { it.bytes.size } > MAX_INLINE_AUDIO_BYTES) return null
+        return try {
+            val response = post("$ENDPOINT?key=$key", buildChatRequestBody(context, history, userText, attachments), CHAT_TIMEOUT_MS) ?: return null
+            val text = extractText(response)?.trim().orEmpty()
+            if (text.isEmpty()) null else ChatAnswer(text, extractSources(response))
+        } catch (e: Exception) {
+            // DIAGNOSTIC (temporary): type + message only — never the key, URL, or the user's words.
+            Log.w("GeminiClient", "chat failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    private fun buildChatRequestBody(
+        context: String?,
+        history: List<ChatMessage>,
+        userText: String,
+        attachments: List<ChatAttachment>,
+    ): String = buildJsonObject {
+        putJsonObject("system_instruction") {
+            val withContext = if (context.isNullOrBlank()) {
+                ChatPrompt.INSTRUCTION
+            } else {
+                // Context (e.g. a saved call's verdict/transcript) is DATA the user is asking about,
+                // never instructions — framed as such, same contract as the other paths here.
+                ChatPrompt.INSTRUCTION + "\n\nThe user is asking about this (untrusted) context:\n" + context
+            }
+            // Language directive goes LAST (after any context) so recency pins the reply language.
+            val instruction = withContext + "\n\n" + ChatPrompt.languageReminder(AppLanguage.current())
+            putJsonArray("parts") { addJsonObject { put("text", instruction) } }
+        }
+        putJsonArray("contents") {
+            for (m in history) {
+                addJsonObject {
+                    put("role", if (m.fromUser) "user" else "model")
+                    putJsonArray("parts") { addJsonObject { put("text", m.text) } }
+                }
+            }
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") {
+                    // Text first; attachments (untrusted media the user wants analyzed) as inline_data.
+                    val prompt = userText.ifBlank { "Please look at what I attached — is it a scam? What should I do?" }
+                    addJsonObject { put("text", prompt) }
+                    for (a in attachments) {
+                        addJsonObject {
+                            putJsonObject("inline_data") {
+                                put("mime_type", a.mimeType)
+                                put("data", Base64.getEncoder().encodeToString(a.bytes))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
+        putJsonObject("generationConfig") {
+            put("temperature", 0.4)
+            put("maxOutputTokens", 1024)
+        }
+    }.toString()
+
+    // --- Home education feed (v2, spec §6.1). Both calls are web-grounded (google_search, NO
+    // responseSchema — unsupported together on 2.5, same as classify()/chat()) and fail closed: the
+    // feed falls back to the bundled seed, the summary falls back to the card's one-line. Grounded web
+    // results are DATA (AwarenessPrompt frames them so), never instructions.
+
+    /**
+     * Fetches current India scam-awareness cards from the web. Returns null on any failure or if
+     * nothing usable parses — the caller then shows the cached feed or the bundled seed (never empty).
+     * Blocking — call off the main thread.
+     */
+    fun awarenessFeed(): List<AwarenessCard>? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank()) return null
+        return try {
+            // Generated content follows the UI language (spec §3B.2) — no user text to mirror here.
+            val instruction = AwarenessPrompt.FEED + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, "List the scams Indians are being targeted with right now."), CHAT_TIMEOUT_MS) ?: return null
+            AwarenessWireParser.parseFeed(extractText(response)).ifEmpty { null }
+        } catch (e: Exception) {
+            Log.w("GeminiClient", "awarenessFeed failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Summarizes one scam topic in plain language, grounded on current web sources. [title]/[scamType]
+     * are OUR trusted labels (from a card), never user/model free text. Returns prose + the real cited
+     * [Source]s, or null on failure — the caller falls back to the card's one-line. Blocking.
+     */
+    fun summarizeArticle(title: String, scamType: String): ArticleSummary? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank() || title.isBlank()) return null
+        return try {
+            // 2048: a grounded three-list JSON with thinking overhead truncates at 1024, and a
+            // truncated object can never parse (observed live 2026-07-17).
+            // Generated content follows the UI language (spec §3B.2) — no user text to mirror here.
+            val instruction = AwarenessPrompt.SUMMARY_SYSTEM + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, AwarenessPrompt.summaryQuery(title, scamType), maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
+            val text = extractText(response)?.trim().orEmpty()
+            if (text.isEmpty()) {
+                Log.w("GeminiClient", "summarizeArticle: empty text in 200 response")
+                return null
+            }
+            // Fail-closed ladder (redesign spec §7): structured sections -> prose -> null (the
+            // screen then shows the card's one-liner). If the reply *tried* to be JSON but didn't
+            // parse, prose would show raw braces — treat that as a failure, not a fallback.
+            val structured = ai.vaarta.core.reasoning.AwarenessWireParser.parseStructuredSummary(text)
+            when {
+                structured != null -> ArticleSummary(structured.whatItIs, extractSources(response), structured)
+                "whatItIs" in text || text.startsWith("{") -> {
+                    Log.w("GeminiClient", "summarizeArticle: JSON-ish reply didn't parse (len=${text.length}, tail=...${text.takeLast(160)})")
+                    null
+                }
+                else -> ArticleSummary(text, extractSources(response))
+            }
+        } catch (e: Exception) {
+            Log.w("GeminiClient", "summarizeArticle failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    /** Shared grounded request: a system instruction + one fixed user line + google_search, no schema. */
+    private fun buildGroundedBody(systemInstruction: String, userLine: String, maxTokens: Int = 1024): String = buildJsonObject {
+        putJsonObject("system_instruction") {
+            putJsonArray("parts") { addJsonObject { put("text", systemInstruction) } }
+        }
+        putJsonArray("contents") {
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") { addJsonObject { put("text", userLine) } }
+            }
+        }
+        putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
+        putJsonObject("generationConfig") {
+            put("temperature", 0.3)
+            put("maxOutputTokens", maxTokens)
         }
     }.toString()
 
@@ -378,5 +560,15 @@ object GeminiClient {
             .jsonObject["candidates"]?.jsonArray?.getOrNull(0)
             ?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray?.getOrNull(0)
             ?.jsonObject?.get("text")?.jsonPrimitive?.content
+    }.getOrNull()
+
+    /** Plain prose from a (grounded) response: joins every text part in candidates[0].content.parts. */
+    private fun extractText(response: String): String? = runCatching {
+        json.parseToJsonElement(response)
+            .jsonObject["candidates"]?.jsonArray?.getOrNull(0)
+            ?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray
+            ?.mapNotNull { it.jsonObject["text"]?.jsonPrimitive?.content }
+            ?.joinToString("")
+            ?.takeIf { it.isNotBlank() }
     }.getOrNull()
 }

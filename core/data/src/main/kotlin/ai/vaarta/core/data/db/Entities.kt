@@ -6,11 +6,13 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/** Where a saved session came from (ADR-0004): a live in-call copilot run, or a recorded-clip analysis. */
-enum class SessionSource { LIVE, RECORDING }
+/** Where a saved conversation came from (ADR-0004): a live in-call copilot run, a recorded-clip
+ *  analysis, or a free-form chat with VAARTA (v2 — the unified Conversations model). */
+enum class SessionSource { LIVE, RECORDING, CHAT }
 
-/** Which voice a saved turn belongs to — mirrors the app's ChatItem so history replays identically. */
-enum class TurnKind { CALLER, USER, COACH }
+/** Which voice a saved turn belongs to — mirrors the app's ChatItem so a thread replays identically.
+ *  ASSISTANT is a free-form chat reply (plain text), distinct from a COACH "say this" turn. */
+enum class TurnKind { CALLER, USER, COACH, ASSISTANT }
 
 /**
  * One saved conversation (Phase 4B, ADR-0004). Persisted only after explicit user consent; encrypted
@@ -27,6 +29,9 @@ data class CallSessionEntity(
     @ColumnInfo(name = "scam_type") val scamType: String? = null,
     @ColumnInfo(name = "language") val language: String? = null,
     @ColumnInfo(name = "source") val source: SessionSource = SessionSource.LIVE,
+    /** Human-facing title for the Conversations list (v2). AI-/first-message-derived; null = derive
+     *  a fallback at render time (scam type or kind label) so old v1 rows still show something. */
+    @ColumnInfo(name = "title") val title: String? = null,
 )
 
 /**
@@ -58,3 +63,36 @@ data class TurnEntity(
     @ColumnInfo(name = "sources_json") val sourcesJson: String? = null,
     @ColumnInfo(name = "at_ms") val atMs: Long,
 )
+
+/**
+ * One harvested voice sample's embedding (Part D, redesign spec §6.5/§6.6). Harvested silently from
+ * `OwnWordsGate`-confirmed live-call echoes only (see the plan's scope note — chat voice input uses
+ * a system dialog with no raw-audio access). [embedding] is the raw sherpa-onnx FloatArray reinterpreted
+ * as bytes (4 bytes per float, native order) — never the original audio, which is discarded after
+ * embedding (privacy rule, spec §6.5). Encrypted at rest by the same SQLCipher database as everything
+ * else here; deleted entirely by "Clear voice data" (`VoiceprintDao.deleteAll`).
+ */
+@Entity(tableName = "voice_sample")
+data class VoiceSampleEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "embedding") val embedding: ByteArray,
+    @ColumnInfo(name = "duration_ms") val durationMs: Long,
+    @ColumnInfo(name = "captured_at_ms") val capturedAtMs: Long,
+) {
+    // Room needs a data class, but ByteArray breaks the generated equals/hashCode contract used by
+    // some Room internals — override explicitly rather than let a silent bug hide here.
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is VoiceSampleEntity) return false
+        return id == other.id && embedding.contentEquals(other.embedding) &&
+            durationMs == other.durationMs && capturedAtMs == other.capturedAtMs
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + embedding.contentHashCode()
+        result = 31 * result + durationMs.hashCode()
+        result = 31 * result + capturedAtMs.hashCode()
+        return result
+    }
+}

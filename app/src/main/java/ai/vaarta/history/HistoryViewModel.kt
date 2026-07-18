@@ -16,18 +16,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** A loaded session for the read-only history detail screen: header fields + the replayed thread. */
-data class SessionDetail(
-    val id: Long,
-    val startedAtMs: Long,
-    val endedAtMs: Long?,
-    val finalScore: Int,
-    val finalLevel: String,
-    val scamType: String?,
-    val source: SessionSource,
-    val chat: List<ChatItem>,
-)
-
 /**
  * Owns the encrypted saved history (Phase 4B, ADR-0004). Separate from [ai.vaarta.SessionViewModel]
  * (which stays RAM-only, Context-free, the deterministic brain) — persistence needs a Context (Keystore
@@ -41,9 +29,6 @@ class HistoryViewModel(app: Application) : AndroidViewModel(app) {
     /** Newest-first saved sessions for the home history list. */
     val sessions: StateFlow<List<CallSessionEntity>> =
         repo.observeSessions().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    private val _detail = MutableStateFlow<SessionDetail?>(null)
-    val detail: StateFlow<SessionDetail?> = _detail.asStateFlow()
 
     /** Retention in days; 0 = keep forever (default). Persisted across launches. */
     private val _retentionDays = MutableStateFlow(prefs.getInt(KEY_RETENTION_DAYS, 0))
@@ -85,35 +70,15 @@ class HistoryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun openDetail(id: Long) {
-        viewModelScope.launch {
-            val swt = repo.getSessionWithTurns(id) ?: return@launch
-            _detail.value = SessionDetail(
-                id = swt.session.id,
-                startedAtMs = swt.session.startedAtMs,
-                endedAtMs = swt.session.endedAtMs,
-                finalScore = swt.session.finalScore,
-                finalLevel = swt.session.finalLevel,
-                scamType = swt.session.scamType,
-                source = swt.session.source,
-                chat = swt.turns.toChatItems(),
-            )
-        }
-    }
-
-    fun closeDetail() { _detail.value = null }
-
     fun delete(id: Long) {
         viewModelScope.launch {
             repo.deleteSession(id)
-            if (_detail.value?.id == id) _detail.value = null
         }
     }
 
     fun deleteAll() {
         viewModelScope.launch {
             repo.deleteAll()
-            _detail.value = null
         }
     }
 

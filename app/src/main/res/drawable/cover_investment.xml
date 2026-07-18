@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: investment/trading fraud — a rising chart that snaps (spec §5.1). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="0" android:startY="0" android:endX="120" android:endY="120" android:type="linear">
+                <item android:offset="0" android:color="#FF3B35A8"/>
+                <item android:offset="1" android:color="#FF4B45C6"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- axis -->
+    <path android:pathData="M30,32 V88 H92" android:strokeColor="#59FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <!-- rising line -->
+    <path android:pathData="M34,82 L50,64 L60,72 L76,46" android:strokeColor="#E6FFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+    <!-- the snap -->
+    <path android:pathData="M76,46 L88,72" android:strokeColor="#FF8F8AF0" android:strokeWidth="5" android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <path android:fillColor="#E6FFFFFF" android:pathData="M76,46 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
+</vector>

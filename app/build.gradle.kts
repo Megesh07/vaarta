@@ -42,6 +42,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.all { it.useJUnitPlatform() }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -57,8 +61,10 @@ dependencies {
     implementation(project(":core:reasoning"))
     implementation(project(":core:complaint"))
     implementation(project(":core:data"))
+    implementation(project(":core:voice"))
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -75,4 +81,7 @@ dependencies {
     // for the text-mode call; OkHttp provides the WebSocket for the Gemini Live streaming path.
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

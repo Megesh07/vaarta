@@ -1,6 +1,6 @@
 {
-  "packId": "core-scam@2026.07.1",
-  "version": "2026.07.1",
+  "packId": "core-scam@2026.07.2",
+  "version": "2026.07.2",
   "signals": [
     {
       "id": "SIG_PARCEL_PRETEXT",
@@ -213,6 +213,125 @@
       "match": "FUZZY1",
       "explain": { "en": "Caller sends a UPI/QR to pay into" },
       "manualCue": "CUE_DEMANDS_MONEY"
+    },
+    {
+      "id": "SIG_HOOK_INVESTMENT",
+      "category": "FINANCIAL_LURE",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["double your money", "guaranteed returns", "guaranteed profit", "trading plan", "investment scheme", "crypto investment"],
+        "hi_latn": ["paisa double", "guaranteed return", "trading plan", "investment scheme"],
+        "hi": ["पैसा डबल", "गारंटीड रिटर्न"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller opens with a guaranteed-return investment pitch",
+        "hi": "कॉलर गारंटीड रिटर्न वाली निवेश स्कीम से शुरू करता है"
+      },
+      "manualCue": "CUE_INVESTMENT_LURE"
+    },
+    {
+      "id": "SIG_HOOK_JOB_TASK",
+      "category": "FINANCIAL_LURE",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["work from home job", "earn money doing simple tasks", "part time job offer", "earn per task", "online task job"],
+        "hi_latn": ["work from home job", "ghar baithe kamao", "task karke kamao", "part time job"],
+        "hi": ["घर बैठे कमाओ", "पार्ट टाइम जॉब"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller opens with a work-from-home/earn-per-task job offer",
+        "hi": "कॉलर वर्क फ्रॉम होम टास्क जॉब ऑफर से शुरू करता है"
+      },
+      "manualCue": "CUE_JOB_TASK_LURE"
+    },
+    {
+      "id": "SIG_HOOK_LOAN_APP",
+      "category": "FINANCIAL_LURE",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["instant loan approved", "loan without documents", "instant personal loan", "loan app approved"],
+        "hi_latn": ["instant loan approved", "bina document loan", "turant loan"],
+        "hi": ["तुरंत लोन", "बिना दस्तावेज़ लोन"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller opens with an instant no-document loan offer",
+        "hi": "कॉलर बिना दस्तावेज़ तुरंत लोन ऑफर से शुरू करता है"
+      },
+      "manualCue": "CUE_LOAN_APP_LURE"
+    },
+    {
+      "id": "SIG_HOOK_LOTTERY",
+      "category": "FINANCIAL_LURE",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["you have won the lottery", "kbc lottery", "won a prize of", "lucky draw winner"],
+        "hi_latn": ["lottery jeeta", "kbc lottery", "lucky draw"],
+        "hi": ["लॉटरी जीता", "इनाम जीता"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller claims the user has won a lottery/prize",
+        "hi": "कॉलर दावा करता है कि आपने लॉटरी/इनाम जीता है"
+      },
+      "manualCue": "CUE_LOTTERY_LURE"
+    },
+    {
+      "id": "SIG_HOOK_ELECTRICITY",
+      "category": "SERVICE_THREAT",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["electricity will be disconnected", "electricity connection will be disconnected", "power will be cut", "bill not paid disconnect"],
+        "hi_latn": ["bijli connection cut", "bijli disconnect", "bill nahi bhara"],
+        "hi": ["बिजली कनेक्शन कट", "बिल जमा नहीं"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller threatens electricity disconnection over an unpaid bill",
+        "hi": "कॉलर बिजली कनेक्शन काटने की धमकी दे रहा है"
+      },
+      "manualCue": "CUE_ELECTRICITY_THREAT"
+    },
+    {
+      "id": "SIG_HOOK_UPI_REFUND",
+      "category": "FINANCIAL_LURE",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["sent money by mistake", "wrong payment please refund", "sent by mistake please return", "wrongly transferred"],
+        "hi_latn": ["galti se paisa bhej diya", "wrong payment refund karo", "galti se transfer"],
+        "hi": ["गलती से पैसे भेज दिए", "वापस कर दो"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller claims a mistaken UPI payment and asks for a refund",
+        "hi": "कॉलर गलती से पैसे भेजने का दावा करके रिफंड मांग रहा है"
+      },
+      "manualCue": "CUE_UPI_REFUND_LURE"
+    },
+    {
+      "id": "SIG_HOOK_COURIER_COD",
+      "category": "PARCEL_PRETEXT",
+      "stage": "HOOK",
+      "weight": 10,
+      "patterns": {
+        "en": ["cash on delivery otp", "delivery otp confirmation", "cod parcel otp", "share otp for delivery"],
+        "hi_latn": ["delivery otp", "cod parcel otp", "otp batao delivery ke liye"],
+        "hi": ["डिलीवरी ओटीपी", "सीओडी पार्सल"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller asks for a delivery OTP to 'confirm' a cash-on-delivery parcel",
+        "hi": "कॉलर सीओडी पार्सल के लिए डिलीवरी ओटीपी मांग रहा है"
+      },
+      "manualCue": "CUE_COURIER_COD_OTP"
     }
   ],
   "questions": [

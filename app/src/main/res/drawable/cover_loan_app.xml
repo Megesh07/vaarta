@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: instant-loan-app harassment — a phone in chains (spec §5.1). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="0" android:startY="0" android:endX="120" android:endY="120" android:type="linear">
+                <item android:offset="0" android:color="#FF322D93"/>
+                <item android:offset="1" android:color="#FF443EBB"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- phone -->
+    <path android:fillColor="#E6FFFFFF" android:pathData="M46,30 h28 v54 h-28 z"/>
+    <path android:fillColor="#59FFFFFF" android:pathData="M50,36 h20 v34 h-20 z"/>
+    <path android:fillColor="#FF8F8AF0" android:pathData="M56,76 h8 v3 h-8 z"/>
+    <!-- chain links across the phone -->
+    <path android:pathData="M42,88 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0" android:strokeColor="#FF8F8AF0" android:strokeWidth="4" android:fillColor="#00000000"/>
+    <path android:pathData="M56,92 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0" android:strokeColor="#E6FFFFFF" android:strokeWidth="4" android:fillColor="#00000000"/>
+    <path android:pathData="M70,88 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0" android:strokeColor="#FF8F8AF0" android:strokeWidth="4" android:fillColor="#00000000"/>
+</vector>

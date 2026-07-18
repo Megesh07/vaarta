@@ -105,4 +105,77 @@ class RiskEngineTest {
         assertEquals(0, s.score, "userSafe signal must be excluded from scoring")
         assertTrue(s.topSignals.isEmpty())
     }
+
+    @Test
+    fun `investment lure with urgency and extraction reaches scam pattern`() {
+        val e = engine()
+        val hookState = e.ingest(t("Double your money in 7 days with our guaranteed trading plan", 5_000))
+        assertTrue(
+            hookState.topSignals.any { it.signalId == "SIG_HOOK_INVESTMENT" },
+            "SIG_HOOK_INVESTMENT should fire on the investment hook line — fired signals were ${hookState.topSignals.map { it.signalId }}",
+        )
+        e.ingest(t("This offer closes within two hours, act immediately", 20_000))
+        val s = e.ingest(t("Transfer the money to this UPI id to start your investment", 40_000))
+        assertTrue(s.score > 0, "investment hook + urgency + extraction should score above zero")
+    }
+
+    @Test
+    fun `job task lure is detected as a hook signal`() {
+        val e = engine()
+        val s = e.ingest(t("Earn money doing simple tasks from home, work from home job available", 5_000))
+        assertTrue(
+            s.topSignals.any { it.signalId == "SIG_HOOK_JOB_TASK" },
+            "SIG_HOOK_JOB_TASK should fire for a work-from-home/task-job hook phrase — fired signals were ${s.topSignals.map { it.signalId }}",
+        )
+    }
+
+    @Test
+    fun `loan app hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Congratulations, your instant loan approved and fifty thousand rupees will be credited without any documents", 5_000))
+        assertTrue(
+            s.topSignals.any { it.signalId == "SIG_HOOK_LOAN_APP" },
+            "SIG_HOOK_LOAN_APP should fire for an instant-loan-approved hook phrase — fired signals were ${s.topSignals.map { it.signalId }}",
+        )
+    }
+
+    @Test
+    fun `lottery hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Congratulations, you have won the KBC lottery prize of 25 lakh rupees", 5_000))
+        assertTrue(
+            s.topSignals.any { it.signalId == "SIG_HOOK_LOTTERY" },
+            "SIG_HOOK_LOTTERY should fire for a lottery-win hook phrase — fired signals were ${s.topSignals.map { it.signalId }}",
+        )
+    }
+
+    @Test
+    fun `electricity disconnection hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Your electricity connection will be disconnected today for non payment of bill", 5_000))
+        assertTrue(
+            s.topSignals.any { it.signalId == "SIG_HOOK_ELECTRICITY" },
+            "SIG_HOOK_ELECTRICITY should fire for an electricity-disconnection hook phrase — fired signals were ${s.topSignals.map { it.signalId }}",
+        )
+    }
+
+    @Test
+    fun `upi wrong payment refund hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Sir I made a wrong payment please refund the money to my other account", 5_000))
+        assertTrue(
+            s.topSignals.any { it.signalId == "SIG_HOOK_UPI_REFUND" },
+            "SIG_HOOK_UPI_REFUND should fire for a wrong-payment-refund hook phrase — fired signals were ${s.topSignals.map { it.signalId }}",
+        )
+    }
+
+    @Test
+    fun `courier cod otp hook is detected`() {
+        val e = engine()
+        val s = e.ingest(t("Please share otp for delivery of your cash on delivery order", 5_000))
+        assertTrue(
+            s.topSignals.any { it.signalId == "SIG_HOOK_COURIER_COD" },
+            "SIG_HOOK_COURIER_COD should fire for a courier-COD-OTP hook phrase — fired signals were ${s.topSignals.map { it.signalId }}",
+        )
+    }
 }

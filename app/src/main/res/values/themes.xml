@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Vaarta" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- parent changed from android:Theme.Material.Light.NoActionBar to Theme.AppCompat (redesign
+         spec §3B.1): AppCompatActivity — needed so per-app language actually applies (see
+         MainActivity.kt) — throws IllegalStateException at runtime without an AppCompat-descendant
+         theme. Compose owns all real styling via VaartaTheme; this only satisfies that requirement. -->
+    <style name="Theme.Vaarta" parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>

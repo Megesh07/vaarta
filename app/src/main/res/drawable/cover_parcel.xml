@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cover: courier/customs parcel scam — box with a flagged tag (spec §5.1, §3A.6). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <path android:pathData="M0,0h120v120h-120z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="0" android:startY="0" android:endX="120" android:endY="120" android:type="linear">
+                <item android:offset="0" android:color="#FF3B35A8"/>
+                <item android:offset="1" android:color="#FF4B45C6"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- box body -->
+    <path android:fillColor="#E6FFFFFF" android:pathData="M36,52 L60,40 L84,52 L84,80 L60,92 L36,80 Z"/>
+    <!-- lid shading -->
+    <path android:fillColor="#59FFFFFF" android:pathData="M36,52 L60,64 L84,52 L60,40 Z"/>
+    <!-- tape seam -->
+    <path android:fillColor="#59FFFFFF" android:pathData="M58,63 L62,65 L62,91 L58,89 Z"/>
+    <!-- warning tag -->
+    <path android:fillColor="#FF8F8AF0" android:pathData="M78,36 m-9,0 a9,9 0 1,1 18,0 a9,9 0 1,1 -18,0"/>
+    <path android:fillColor="#E6FFFFFF" android:pathData="M76.7,30.5 h2.6 v7 h-2.6 z M76.7,39.5 h2.6 v2.6 h-2.6 z"/>
+</vector>

@@ -21,9 +21,13 @@ class HistoryRepository private constructor(
     /** Newest-first stream of saved sessions for the home history list. */
     fun observeSessions(): Flow<List<CallSessionEntity>> = dao.observeSessions()
 
-    /** Opens a new session row and returns its id; caller appends turns and finalizes on stop. */
-    suspend fun startSession(startedAtMs: Long, source: SessionSource): Long =
-        dao.insertSession(CallSessionEntity(startedAtMs = startedAtMs, source = source))
+    /** Opens a new session/conversation row and returns its id; caller appends turns and finalizes
+     *  on stop. [title] is optional (null for live/recording — a title is derived at render). */
+    suspend fun startSession(startedAtMs: Long, source: SessionSource, title: String? = null): Long =
+        dao.insertSession(CallSessionEntity(startedAtMs = startedAtMs, source = source, title = title))
+
+    /** Sets/updates a conversation's human-facing title (v2 — e.g. from the first chat message). */
+    suspend fun setTitle(id: Long, title: String) = dao.setTitle(id, title)
 
     suspend fun appendTurn(turn: TurnEntity): Long = dao.insertTurn(turn)
 
