@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-19 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-19 (portfolio-polish-to-10 plan complete — 9 tasks + hardening pass + final whole-branch review, all reviewed) · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -38,11 +38,16 @@ Full detail: [docs/decisions/0001-mvp-scope-lock.md](docs/decisions/0001-mvp-sco
 
 - **Hard constraint: $0 to build.** No paid APIs, no backend/server, no Play Store fee (sideload only).
 - **Intent:** usable by a few real people, portfolio-worthy — not production-grade.
-- **In scope:** digital-arrest detection engine, Manual Mode, complaint generation, citizen-facing UI.
+- **In scope:** digital-arrest detection engine, ~~Manual Mode~~, complaint generation,
+  citizen-facing UI. **Manual Mode itself was deliberately deleted in the v2 pivot** (2026-07-14 —
+  it gave every user the same canned answer, zero intelligence; see
+  `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`) and superseded by an
+  always-on AI copilot with the same deterministic engine underneath, invisible to the user. This
+  ADR-0001 line is kept verbatim as the historical record of the original lock, not silently edited.
 - **Out of scope (deliberately):** cloud LLM polish, Play publishing, DOCX export, Elder Mode,
   P1/P2 languages, and the challenge's counterfeit-currency / fraud-graph / geospatial pillars.
 - **Stretch, spike-gated (never a blocker):** live on-device ASR, overlay bubble + real call
-  detection, encrypted persistence.
+  detection. Encrypted persistence **shipped** (ADR-0004, SQLCipher) — no longer a stretch goal.
 
 ## 3. Toolchain (exact paths — this machine, Windows)
 
@@ -101,6 +106,15 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 
 ## 4. Status matrix — what's built vs. not (evidence-based, not vibes)
 
+> **⚠️ This section is legacy — dated 2026-07-09, before the entire v2 redesign** (Manual Mode was
+> deliberately deleted, 9 premium-redesign phases shipped, language support landed, and the
+> 2026-07-19 portfolio-polish plan added intel-pack breadth, a scam-link checker, a real guardian
+> picker, and a privacy hardening pass). The per-component rows below are still true statements
+> about those specific historical components, but the table as a whole is **incomplete** for
+> anything built after 2026-07-09. **For current state, trust §8's Change log (dated entries) and
+> the §5 Open follow-ups tracker over this table.** Two corrections applied directly below because
+> they are now flatly wrong, not just incomplete:
+
 ### ✅ Built and verified
 
 | Component | Evidence |
@@ -121,24 +135,27 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Live audio → AI suggestion streaming (`GeminiLiveClient`, ADR-0002 Phase B) | **Closed, PC-verified for this half.** OkHttp WebSocket, the protocol proven in `tools:demo:liveProbe`. Live-verified end-to-end on PC: mic audio streamed to Gemini Live produced real, safe, contextual suggestions rendered in `AiSuggestionCard` (e.g. correctly referenced India's 1930 cybercrime helpline, unprompted, in response to a synthetic scam script). One real bug found live-testing and fixed (per-fragment `.trim()` was jamming streamed words together — see 2026-07-07 PC-test changelog entry). |
 | Recorded-audio scam analyzer (`GeminiClient.analyzeAudio` + `AudioScamAnalyzer`, ADR-0003 Phase 4D) | **Closed, verified end-to-end on the emulator (2026-07-09).** Pick any audio clip → `generateContent` transcribes + classifies it → transcript replayed through the deterministic `RiskEngine` (score ownership unchanged) → `HybridAlert` + reused web-grounding → shared `StatusBanner`/`ChatThread` verdict → optional save as `SessionSource.RECORDING`. Gate A proved the free key does inline-audio understanding (HTTP 200, accurate transcript). Live emulator run: a synthetic digital-arrest clip scored **100/100 SCAM_PATTERN** (deterministic, not AI), web-grounded as "Digital Arrest Scam" with 3 real cited sources, saved + replayed from encrypted history with sources intact. Fails closed on any error. |
 
-**Total: 24 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
-build banner — see §7's evidence rule; re-verified 2026-07-07 after the live-audio fixes). Plus
-manual end-to-end verification on a real Android environment (emulator) for Manual Mode/demo-call,
-question-cycling, PDF export, text-mode AI suggestion, and (2026-07-07) the live-audio pipeline.
+**Total (2026-07-09 snapshot, now stale): 24 automated tests, 0 failures.** **Current true count as
+of 2026-07-19 (fresh JUnit XML, clean rebuild, independently re-verified twice): 167 tests, 0
+failures, 0 lint errors across every module.** Always re-count from fresh XML before quoting a
+number in this file — this table has been wrong about its own test count at least three times in
+this project's history (see the 2026-07-07 correction below); don't let it happen a fourth time.
 
 **Correction (2026-07-07):** earlier notes in this file's history and in conversation said "14"
 then implied "15", then "18" total tests — all were stale counts as tests were added along the way
 (`SuggestionSafetyFilterTest` alone added 6). The true count, verified by parsing
-`build/test-results/test/*.xml` directly after each build, is now 24. Fixed here rather than
-propagated — always re-count from fresh XML, never trust a remembered number.
+`build/test-results/test/*.xml` directly after each build, was 24 at that time. Fixed here rather
+than propagated — always re-count from fresh XML, never trust a remembered number. (Superseded by
+the 167 count above, same discipline applied again.)
 
 ### 🟡 Partially built (real gaps, not hidden)
 
 | Component | What's missing |
 |---|---|
-| Intel pack breadth | Only a ~14-signal seed. Docs call for full per-scam-code (SC-01..SC-05) pattern lists per language. Current pack leans digital-arrest-generic. |
-| Guardian/family alert | Share-intent mechanism works, but the message is **hardcoded/canned** — no real guardian contact picker or per-contact consent flow. |
-| Live audio → deterministic engine (`inputTranscription` path) | Coded and wired (matches the same proven protocol as the working suggestion half), but **unverified**: PC acoustic-loopback testing (speaker→air→laptop mic) couldn't deliver clean enough audio for Gemini's `inputTranscription` to reliably transcribe English scam speech — got Tamil and noise instead of the real content in testing. Needs a real-phone speakerphone test (electrical audio path, no acoustic loopback) to fairly judge whether the risk score updates live from real caller speech. This is the #1 item in §5. |
+| Intel pack breadth | Grown to ~24 signals (pack v3, 2026-07-19) covering digital-arrest, investment/job/loan/lottery/electricity/UPI-refund/courier-COD lures, bank KYC-expiry phishing, and family-emergency impersonation. Still not the full per-scam-code (SC-01..SC-10) breadth `SCAM_INTELLIGENCE.md` calls for — voice-clone detection for SC-09 and regional script variants (Tamil Nadu cyber-police flavor) remain explicitly out of scope, tracked as open research. |
+| Guardian/family alert | **Now real** (2026-07-19): a system contact picker stores one chosen guardian (encrypted, SQLCipher — see §8's Task 9 entry), and "Warn my family" sends directly to them via SMS when one is set, falling back to the original share chooser otherwise. What's still missing: per-contact consent flow beyond the initial pick, and no way to configure more than one guardian. |
+| Scam-link checker | **New (2026-07-19):** chat messages/analyzed text get checked against URLhaus + Google Safe Browsing, fail-closed, raise-only. **Real gap:** URLhaus's current API requires an `Auth-Key` this project doesn't have wired up yet (`task_e2bb31b0`), so only Safe Browsing can actually flag a URL today, and only once a key is configured in `secrets.properties`. |
+| Live audio → deterministic engine (`inputTranscription` path) | Coded and wired (matches the same proven protocol as the working suggestion half), but **still unverified on real hardware as of 2026-07-19** — PC acoustic-loopback testing (speaker→air→laptop mic) couldn't deliver clean enough audio for Gemini's `inputTranscription` to reliably transcribe English scam speech. Needs a real-phone speakerphone test (electrical audio path, no acoustic loopback) to fairly judge whether the risk score updates live from real caller speech. **This is now a call-to-action for any collaborator with a physical Android phone — see [README.md](README.md#testing-on-a-real-phone-wanted) for exact steps.** |
 
 ### ❌ Not built (correctly deferred per ADR-0001, or genuinely not started)
 
