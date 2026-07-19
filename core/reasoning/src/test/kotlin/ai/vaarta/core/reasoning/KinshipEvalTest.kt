@@ -42,6 +42,28 @@ class KinshipEvalTest {
             RiskLevel.SCAM_PATTERN, last!!.level,
             "final ${last.score}/${last.level}, top=${last.topSignals.map { it.signalId }}",
         )
+        // The generic SIG_EXTRACTION_TRANSFER signal alone is enough to floor the score to
+        // SCAM_PATTERN (extractionSeen), so the assertion above is vacuous with respect to the
+        // new pack-v3 kinship signals unless we also confirm they actually fired. Checked via
+        // sessionSignals() (every signal that fired at least once this session), not topSignals
+        // (top-3-by-current-contribution) — by the final ingest SIG_EXTRACTION_TRANSFER (25) and
+        // two decayed AUTHORITY hits outrank the earlier, more-decayed kinship signals for the
+        // top-3 slot, even though both kinship signals genuinely fired earlier in the call.
+        val sessionIds = e.sessionSignals().map { it.signalId }.toSet()
+        assertTrue(
+            sessionIds.containsAll(setOf("SIG_HOOK_FAMILY_EMERGENCY", "SIG_ISOLATION_NEW_NUMBER")),
+            "expected both new kinship signals to have fired this session, got $sessionIds",
+        )
+    }
+
+    @Test
+    fun `SIG_HOOK_KYC_EXPIRY fires on a KYC-expiry threat line`() {
+        val e = engine()
+        val state = e.ingest(line("Your bank account will be blocked, verify KYC to avoid block", 5_000))
+        assertTrue(
+            state.topSignals.any { it.signalId == "SIG_HOOK_KYC_EXPIRY" },
+            "expected SIG_HOOK_KYC_EXPIRY in top signals, got ${state.topSignals.map { it.signalId }}",
+        )
     }
 
     @Test
