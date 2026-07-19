@@ -73,7 +73,7 @@
       "weight": 15,
       "patterns": {
         "en": ["arrest warrant", "non bailable", "digital arrest", "fir registered", "money laundering case"],
-        "hi_latn": ["arrest warrant", "digital arrest", "fir", "giraftari", "money laundering"],
+        "hi_latn": ["arrest warrant", "digital arrest", "fir registered", "fir darj", "giraftari", "money laundering"],
         "hi": ["गिरफ्तारी", "वारंट", "मनी लॉन्ड्रिंग"]
       },
       "match": "FUZZY1",
