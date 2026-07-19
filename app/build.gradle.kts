@@ -7,18 +7,17 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Read the Gemini key from the git-ignored secrets.properties (never hardcoded, never committed).
-// Absent file / absent key -> empty string, and the AI layer fails closed to deterministic mode.
+// Read the app's keys from the git-ignored secrets.properties (never hardcoded, never committed).
+// Absent file / absent key -> empty string, and the relevant feature fails closed.
 val secretsFile = rootProject.file("secrets.properties")
-val geminiApiKey: String = Properties().apply {
+val secretsProps = Properties().apply {
     if (secretsFile.exists()) secretsFile.inputStream().use { load(it) }
-}.getProperty("GEMINI_API_KEY", "")
+}
+val geminiApiKey: String = secretsProps.getProperty("GEMINI_API_KEY", "")
 
 // Safe Browsing v4 (free, non-commercial tier) — same fail-closed contract as the Gemini key:
 // absent file/property -> empty string, and LinkChecker's Safe Browsing lookup is skipped (UNKNOWN).
-val safeBrowsingApiKey: String = Properties().apply {
-    if (secretsFile.exists()) secretsFile.inputStream().use { load(it) }
-}.getProperty("SAFE_BROWSING_API_KEY", "")
+val safeBrowsingApiKey: String = secretsProps.getProperty("SAFE_BROWSING_API_KEY", "")
 
 android {
     namespace = "ai.vaarta"

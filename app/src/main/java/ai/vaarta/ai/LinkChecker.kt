@@ -39,14 +39,20 @@ object LinkChecker {
     }
 
     private fun urlhaus(url: String): Verdict {
+        var conn: HttpURLConnection? = null
         return try {
-            val conn = (URL(URLHAUS).openConnection() as HttpURLConnection).apply {
+            conn = (URL(URLHAUS).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"; doOutput = true
                 connectTimeout = TIMEOUT_MS; readTimeout = TIMEOUT_MS
                 setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
             }
             conn.outputStream.use { it.write("url=${URLEncoder.encode(url, "UTF-8")}".toByteArray()) }
-            if (conn.responseCode != 200) return Verdict.UNKNOWN
+            val code = conn.responseCode
+            if (code != 200) {
+                // DIAGNOSTIC: code only — never the URL or response body (may echo the URL back).
+                Log.w("LinkChecker", "urlhaus HTTP $code (see LinkChecker's KNOWN GAP doc comment)")
+                return Verdict.UNKNOWN
+            }
             val body = conn.inputStream.bufferedReader().use { it.readText() }
             val status = JSONObject(body).optString("query_status")
             when {
@@ -56,14 +62,17 @@ object LinkChecker {
             }
         } catch (e: Exception) {
             Log.w("LinkChecker", "urlhaus failed: ${e.javaClass.simpleName}"); Verdict.UNKNOWN
+        } finally {
+            conn?.disconnect()
         }
     }
 
     private fun safeBrowsing(url: String): Verdict {
         val key = BuildConfig.SAFE_BROWSING_API_KEY
         if (key.isBlank()) return Verdict.UNKNOWN
+        var conn: HttpURLConnection? = null
         return try {
-            val conn = (URL(SAFE_BROWSING + key).openConnection() as HttpURLConnection).apply {
+            conn = (URL(SAFE_BROWSING + key).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"; doOutput = true
                 connectTimeout = TIMEOUT_MS; readTimeout = TIMEOUT_MS
                 setRequestProperty("Content-Type", "application/json")
@@ -75,11 +84,18 @@ object LinkChecker {
                  "threatEntries":[{"url":${JSONObject.quote(url)}}]}}
             """.trimIndent()
             conn.outputStream.use { it.write(payload.toByteArray()) }
-            if (conn.responseCode != 200) return Verdict.UNKNOWN
+            val code = conn.responseCode
+            if (code != 200) {
+                // DIAGNOSTIC: code only — never the key, URL, or response body.
+                Log.w("LinkChecker", "safebrowsing HTTP $code")
+                return Verdict.UNKNOWN
+            }
             val body = conn.inputStream.bufferedReader().use { it.readText() }
             if (JSONObject(body).has("matches")) Verdict.MALICIOUS else Verdict.CLEAN_SO_FAR
         } catch (e: Exception) {
             Log.w("LinkChecker", "safebrowsing failed: ${e.javaClass.simpleName}"); Verdict.UNKNOWN
+        } finally {
+            conn?.disconnect()
         }
     }
 }
