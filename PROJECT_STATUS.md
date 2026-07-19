@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-18 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-19 (portfolio-polish-to-10 plan complete — 9 tasks + hardening pass + final whole-branch review, all reviewed; URLhaus Auth-Key follow-up closed same day, `task_e2bb31b0`) · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -38,11 +38,16 @@ Full detail: [docs/decisions/0001-mvp-scope-lock.md](docs/decisions/0001-mvp-sco
 
 - **Hard constraint: $0 to build.** No paid APIs, no backend/server, no Play Store fee (sideload only).
 - **Intent:** usable by a few real people, portfolio-worthy — not production-grade.
-- **In scope:** digital-arrest detection engine, Manual Mode, complaint generation, citizen-facing UI.
+- **In scope:** digital-arrest detection engine, ~~Manual Mode~~, complaint generation,
+  citizen-facing UI. **Manual Mode itself was deliberately deleted in the v2 pivot** (2026-07-14 —
+  it gave every user the same canned answer, zero intelligence; see
+  `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`) and superseded by an
+  always-on AI copilot with the same deterministic engine underneath, invisible to the user. This
+  ADR-0001 line is kept verbatim as the historical record of the original lock, not silently edited.
 - **Out of scope (deliberately):** cloud LLM polish, Play publishing, DOCX export, Elder Mode,
   P1/P2 languages, and the challenge's counterfeit-currency / fraud-graph / geospatial pillars.
 - **Stretch, spike-gated (never a blocker):** live on-device ASR, overlay bubble + real call
-  detection, encrypted persistence.
+  detection. Encrypted persistence **shipped** (ADR-0004, SQLCipher) — no longer a stretch goal.
 
 ## 3. Toolchain (exact paths — this machine, Windows)
 
@@ -101,6 +106,15 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 
 ## 4. Status matrix — what's built vs. not (evidence-based, not vibes)
 
+> **⚠️ This section is legacy — dated 2026-07-09, before the entire v2 redesign** (Manual Mode was
+> deliberately deleted, 9 premium-redesign phases shipped, language support landed, and the
+> 2026-07-19 portfolio-polish plan added intel-pack breadth, a scam-link checker, a real guardian
+> picker, and a privacy hardening pass). The per-component rows below are still true statements
+> about those specific historical components, but the table as a whole is **incomplete** for
+> anything built after 2026-07-09. **For current state, trust §8's Change log (dated entries) and
+> the §5 Open follow-ups tracker over this table.** Two corrections applied directly below because
+> they are now flatly wrong, not just incomplete:
+
 ### ✅ Built and verified
 
 | Component | Evidence |
@@ -121,24 +135,27 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Live audio → AI suggestion streaming (`GeminiLiveClient`, ADR-0002 Phase B) | **Closed, PC-verified for this half.** OkHttp WebSocket, the protocol proven in `tools:demo:liveProbe`. Live-verified end-to-end on PC: mic audio streamed to Gemini Live produced real, safe, contextual suggestions rendered in `AiSuggestionCard` (e.g. correctly referenced India's 1930 cybercrime helpline, unprompted, in response to a synthetic scam script). One real bug found live-testing and fixed (per-fragment `.trim()` was jamming streamed words together — see 2026-07-07 PC-test changelog entry). |
 | Recorded-audio scam analyzer (`GeminiClient.analyzeAudio` + `AudioScamAnalyzer`, ADR-0003 Phase 4D) | **Closed, verified end-to-end on the emulator (2026-07-09).** Pick any audio clip → `generateContent` transcribes + classifies it → transcript replayed through the deterministic `RiskEngine` (score ownership unchanged) → `HybridAlert` + reused web-grounding → shared `StatusBanner`/`ChatThread` verdict → optional save as `SessionSource.RECORDING`. Gate A proved the free key does inline-audio understanding (HTTP 200, accurate transcript). Live emulator run: a synthetic digital-arrest clip scored **100/100 SCAM_PATTERN** (deterministic, not AI), web-grounded as "Digital Arrest Scam" with 3 real cited sources, saved + replayed from encrypted history with sources intact. Fails closed on any error. |
 
-**Total: 24 automated tests, 0 failures** (counted directly from fresh JUnit XML output, not the
-build banner — see §7's evidence rule; re-verified 2026-07-07 after the live-audio fixes). Plus
-manual end-to-end verification on a real Android environment (emulator) for Manual Mode/demo-call,
-question-cycling, PDF export, text-mode AI suggestion, and (2026-07-07) the live-audio pipeline.
+**Total (2026-07-09 snapshot, now stale): 24 automated tests, 0 failures.** **Current true count as
+of 2026-07-19 (fresh JUnit XML, clean rebuild, independently re-verified twice): 167 tests, 0
+failures, 0 lint errors across every module.** Always re-count from fresh XML before quoting a
+number in this file — this table has been wrong about its own test count at least three times in
+this project's history (see the 2026-07-07 correction below); don't let it happen a fourth time.
 
 **Correction (2026-07-07):** earlier notes in this file's history and in conversation said "14"
 then implied "15", then "18" total tests — all were stale counts as tests were added along the way
 (`SuggestionSafetyFilterTest` alone added 6). The true count, verified by parsing
-`build/test-results/test/*.xml` directly after each build, is now 24. Fixed here rather than
-propagated — always re-count from fresh XML, never trust a remembered number.
+`build/test-results/test/*.xml` directly after each build, was 24 at that time. Fixed here rather
+than propagated — always re-count from fresh XML, never trust a remembered number. (Superseded by
+the 167 count above, same discipline applied again.)
 
 ### 🟡 Partially built (real gaps, not hidden)
 
 | Component | What's missing |
 |---|---|
-| Intel pack breadth | Only a ~14-signal seed. Docs call for full per-scam-code (SC-01..SC-05) pattern lists per language. Current pack leans digital-arrest-generic. |
-| Guardian/family alert | Share-intent mechanism works, but the message is **hardcoded/canned** — no real guardian contact picker or per-contact consent flow. |
-| Live audio → deterministic engine (`inputTranscription` path) | Coded and wired (matches the same proven protocol as the working suggestion half), but **unverified**: PC acoustic-loopback testing (speaker→air→laptop mic) couldn't deliver clean enough audio for Gemini's `inputTranscription` to reliably transcribe English scam speech — got Tamil and noise instead of the real content in testing. Needs a real-phone speakerphone test (electrical audio path, no acoustic loopback) to fairly judge whether the risk score updates live from real caller speech. This is the #1 item in §5. |
+| Intel pack breadth | Grown to ~24 signals (pack v3, 2026-07-19) covering digital-arrest, investment/job/loan/lottery/electricity/UPI-refund/courier-COD lures, bank KYC-expiry phishing, and family-emergency impersonation. Still not the full per-scam-code (SC-01..SC-10) breadth `SCAM_INTELLIGENCE.md` calls for — voice-clone detection for SC-09 and regional script variants (Tamil Nadu cyber-police flavor) remain explicitly out of scope, tracked as open research. |
+| Guardian/family alert | **Now real** (2026-07-19): a system contact picker stores one chosen guardian (encrypted, SQLCipher — see §8's Task 9 entry), and "Warn my family" sends directly to them via SMS when one is set, falling back to the original share chooser otherwise. What's still missing: per-contact consent flow beyond the initial pick, and no way to configure more than one guardian. |
+| Scam-link checker | **New (2026-07-19):** chat messages/analyzed text get checked against URLhaus + Google Safe Browsing, fail-closed, raise-only. Both sources fully wired and Auth-Keyed (`task_e2bb31b0` closed) — either key alone in `secrets.properties` is enough to enable the checker. |
+| Live audio → deterministic engine (`inputTranscription` path) | Coded and wired (matches the same proven protocol as the working suggestion half), but **still unverified on real hardware as of 2026-07-19** — PC acoustic-loopback testing (speaker→air→laptop mic) couldn't deliver clean enough audio for Gemini's `inputTranscription` to reliably transcribe English scam speech. Needs a real-phone speakerphone test (electrical audio path, no acoustic loopback) to fairly judge whether the risk score updates live from real caller speech. **This is now a call-to-action for any collaborator with a physical Android phone — see [README.md](README.md#testing-on-a-real-phone-wanted) for exact steps.** |
 
 ### ❌ Not built (correctly deferred per ADR-0001, or genuinely not started)
 
@@ -208,6 +225,21 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 8. **Intel pack breadth** — grow coverage per `SCAM_INTELLIGENCE.md` §5, EN/HI/Hinglish for MVP.
 9. **Deferred to the very end (do once):** Presentation Deck, Demo Video — describe the final state.
 
+### Open follow-ups tracker
+
+This is the single tracked home for follow-up items raised during review passes — going forward,
+a new follow-up gets a row here, not just changelog prose. Each `task_*` id is an internal tracking
+tag, not a ticket in an external system.
+
+| ID | What | Status |
+|---|---|---|
+| `task_ecd0ce74` | `SIG_LEGAL_THREAT`'s 3-char `hi_latn` fuzzy pattern `"fir"` false-positive-matched "from"/"for"/"Sir" | **Closed — Task 1** of the current plan (fixed + regression-pinned in `TextMatcherTest.kt`) |
+| `task_0682d091` | Floating overlay panel didn't show the speaker-off nudge (in-app Live screen did) | **Closed — Task 6** of the current plan |
+| `task_517a16be` | Both destructive settings rows (Clear conversations, Clear voice data) delete irreversibly with no confirmation step | **Closed — Task 4** of the current plan |
+| `task_6a52885f` | "Manual Mode" cue UI absent from the app | **Not a gap.** Deliberately deleted in the v2 pivot (see the corrected 2026-07-19 changelog entry above and `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`). No code needed. |
+| `task_e2bb31b0` | URLhaus's current API requires an `Auth-Key` HTTP header (a real API change since the scam-link-checker plan was written) — not wired up, so URLhaus currently no-ops to `UNKNOWN` (safe, fails closed); only Google Safe Browsing can flag a URL today, and only once a key is configured | **Closed — 2026-07-19.** `URLHAUS_AUTH_KEY` wired end-to-end: `secrets.properties` → `BuildConfig.URLHAUS_AUTH_KEY` (`app/build.gradle.kts`) → `Auth-Key` header in `LinkChecker.urlhaus()`. Live-verified with a real key against the real API (`https://urlhaus-api.abuse.ch/v1/url/`, HTTP 200, `query_status: no_results` correctly mapping to `CLEAN_SO_FAR`). Both URLhaus and Safe Browsing now independently contribute; either key alone is enough to enable the checker. |
+| `task_9f3a1c22` | Task 5's guardian contact picker regressed against `docs/PRIVACY_SECURITY.md`'s own binding data-inventory ("Guardian contact ... SQLCipher") and permission list ("Never: READ_CONTACTS") — guardian data was stored in plain SharedPreferences and the picker held `READ_CONTACTS` | **Closed — Task 9** of the current plan (hardening pass). Guardian storage moved into the encrypted SQLCipher database (`GuardianEntity`/`GuardianDao`, migration 3→4); the picker now targets `CommonDataKinds.Phone.CONTENT_URI` directly and needs no `READ_CONTACTS` at all. |
+
 ## 6. Process rules to follow (do not skip)
 
 - `docs/IMPLEMENTATION_GUARDRAILS.md` — binding NEVER/ALWAYS rules for every change.
@@ -230,6 +262,48 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
   other way around.
 
 ## 8. Change log
+
+- **2026-07-19 — Task 9 hardening pass caught + fixed a real privacy-doc regression from Task 5
+  (guardian contact picker; `task_9f3a1c22`).** Task 5's per-task review checked the guardian picker
+  against the plan brief and passed clean — but the broader Task 9 hardening pass checks the diff
+  against `docs/PRIVACY_SECURITY.md` too, and that's where the gap surfaced: the doc's data-inventory
+  table (line 31) states guardian contact (name, number) must live in SQLCipher, and its permission
+  list (line 88) states `READ_CONTACTS` is explicitly **never** requested ("system picker instead").
+  Task 5 shipped storing the guardian in plain `SharedPreferences` and requesting `READ_CONTACTS` at
+  pick time — both real regressions against an already-approved design, not new scope. Fixed:
+  - **Storage:** new `GuardianEntity`/`GuardianDao` in `core:data` (`core/data/src/main/kotlin/ai/vaarta/core/data/db/`),
+    following the exact `VoiceSampleEntity`/`VoiceprintDao` precedent (Part D) — a single-row table
+    (`id` fixed at 1, `INSERT OR REPLACE` upsert), `VaartaDatabase` bumped 3→4 with additive-only
+    `MIGRATION_3_4`. `GuardianStore` (`app/src/main/java/ai/vaarta/guardian/GuardianStore.kt`) now
+    wraps `GuardianDao` behind `suspend fun`s instead of raw `SharedPreferences`, mirroring
+    `HistoryRepository`'s DAO-wrapping layering. Both call sites (`HelpScreen.kt`'s guardian row,
+    `MainActivity.kt`'s `warnFamily`) reworked onto `rememberCoroutineScope()`/`LaunchedEffect` and
+    `lifecycleScope.launch` respectively. New instrumented test `GuardianDaoTest.kt`
+    (`core/data/src/androidTest/kotlin/ai/vaarta/core/data/db/`), same style as
+    `VoiceprintDaoTest.kt`, covering empty-get, round-trip, replace-not-duplicate, and clear — ran for
+    real on the `vaarta_test` emulator (`:core:data:connectedDebugAndroidTest`), all 4 cases passed.
+    The old SharedPreferences-only `GuardianStoreTest.kt` (`app/src/test/...`) was deleted — it tested
+    an API surface that no longer exists; the DAO-level instrumented test is its replacement.
+  - **Permission:** `GuardianPickerContract.kt` now picks against
+    `ContactsContract.CommonDataKinds.Phone.CONTENT_URI` directly (not `Contacts.CONTENT_URI`), so the
+    returned URI already points at the phone-number row — no more two-step Contacts→Phone lookup, and
+    critically no `READ_CONTACTS` permission needed at all (verified against the current Android
+    "Common intents" guide and the `CommonDataKinds.Phone` reference at implementation time, not just
+    recalled from training data: `ACTION_PICK` on the Phone data table grants a temporary read on the
+    one returned URI regardless of whether the app holds `READ_CONTACTS`). The manifest's
+    `READ_CONTACTS` line was removed entirely; `HelpScreen.kt`'s permission-request launcher and
+    pre-pick permission check were deleted — `pickGuardian()` is now just `guardianPicker.launch(Unit)`.
+    Also tightened `resolveGuardian`'s error log to class-name-only (dropped `${e.message}`), matching
+    `LinkChecker.kt`'s stricter house style for anything that touches contact/call PII.
+  - **Verification:** full clean `./gradlew clean test assembleDebug lintDebug` green (167 unit tests,
+    0 failures, 0 lint errors); `GuardianDaoTest` (4 cases) run for real on-device, not just written.
+    `docs/PRIVACY_SECURITY.md` line 31 ("SQLCipher") and line 88 ("Never: READ_CONTACTS") are now both
+    true statements about the code — the doc itself was not edited, only the code brought into line
+    with what it already said. **Process note:** this is exactly why Task 9 exists as a separate pass
+    from per-task review — a task-scoped review checks spec compliance against the plan brief; it does
+    not re-check every unrelated foundational doc. A broader hardening pass that explicitly diffs
+    against `docs/PRIVACY_SECURITY.md` is what caught this, and should keep doing so on future guardian/
+    contact/permission-touching changes.
 
 - **2026-07-19 — Live-call core hardening DONE (Parts A-D, 8 tasks, subagent-driven with task
   review + fix loops on every task).** Spec: `docs/superpowers/specs/2026-07-18-live-call-core-hardening-design.md`.
@@ -285,11 +359,19 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
     loopback available to inject distinguishable speech into the emulator without a restart — so that
     exact path remains unit-tested (via `SpeakerAttributor`) but not live-exercised end-to-end; flag
     this to a human tester with a real device before considering Part D fully proven in practice.
-  - **Separately discovered, not part of this plan:** a full verification pass found the
-    "Manual Mode" cue-tapping UI specified in `docs/MOBILE_UX_SPEC.md` §3.3 was never actually built —
-    the engine-side support (`RiskEvent.ManualCue`, `PackParityTest`'s manualCue-per-signal guardrail)
-    is complete and tested, but no screen anywhere in the app exposes it to a real user. Tracked as a
-    follow-up (task_6a52885f), not fixed in this pass.
+  - **Separately discovered, not part of this plan — CORRECTED same day, see below:** a full
+    verification pass initially flagged that the "Manual Mode" cue-tapping UI specified in
+    `docs/MOBILE_UX_SPEC.md` §3.3 was never actually built, describing it as an open gap
+    (task_6a52885f). **That framing was wrong and is corrected here.** The Manual Mode UI's absence
+    is **intentional, not a gap**: it was deliberately deleted in the v2 pivot — see
+    `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md` ("Manual Mode is dead
+    weight... it returns the *same canned answer to everyone*... **DELETED.** Removed from the app:
+    `ui/ManualModeGrid.kt` deleted, all Manual Mode entry points and chip rendering removed from
+    `MainActivity`/`SessionViewModel`... The intel-pack `manualCue` data and `PackParityTest` stay"
+    deliberately, for pack-authoring discipline). The engine-side support
+    (`RiskEvent.ManualCue`, `PackParityTest`'s manualCue-per-signal guardrail) is complete and tested
+    by design, not because a UI on top of it was forgotten — no screen was ever supposed to expose it
+    post-pivot. task_6a52885f is **not an open gap**; see the Open follow-ups tracker in §5.
 
 - **2026-07-18 (later still) — Premium redesign Phase 9 (Sweep) DONE — the 9-phase premium redesign
   is now complete.** Spec §9/§11/§12 item 9. A pre-implementation audit (Explore subagent) mapped
@@ -406,6 +488,10 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
     - [ ] `live_alert_family_message`, `analyze_share_warning_message` (family-facing alerts)
     - [ ] Spot-check the rest of `values-hi/strings.xml` and `values-b+hi+Latn/strings.xml` for
       tone/register (the Hinglish file aims for casual Gen-Z code-mix, not textbook Hindi)
+    - [ ] `SIG_HOOK_KYC_EXPIRY` / `SIG_HOOK_FAMILY_EMERGENCY` / `SIG_ISOLATION_NEW_NUMBER` hi + hi_latn patterns (pack v3)
+    - [ ] `link_warning_malicious` (both `values-hi` and `values-b+hi+Latn`) — the scam-link checker's inline chat warning (Task 3)
+    - [ ] `action_cancel`, `confirm_delete_all_title`, `confirm_delete_all_body`, `confirm_clear_voice_title`, `confirm_clear_voice_body` (both `values-hi` and `values-b+hi+Latn`) — confirmation dialog strings for destructive actions (Task 4)
+    - [ ] `guardian_row_title`, `guardian_not_set`, `guardian_clear` (both `values-hi` and `values-b+hi+Latn`) — the guardian contact picker settings row (Task 5)
   - **Known deferred gaps** (noted, not silently gapped): the bundled seed feed (~8 cards) stays
     English-only until a native speaker translates it; numbers/dates (`relativeTimeLabel` in
     core:reasoning) still format as `en-IN` regardless of UI language (edge case 9 — a pure-JVM

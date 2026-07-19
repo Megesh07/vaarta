@@ -1,85 +1,145 @@
 # VAARTA
 
-Real-time Android protection against **digital-arrest scams** for Indian citizens: it listens live
-on speakerphone, scores the call as it escalates, coaches the user on what to say back — backed by
-a specialized live AI, never just a canned script — and auto-drafts the cyber-crime complaint.
+Real-time Android protection against **digital-arrest and other phone scams** for Indian citizens:
+it listens live on speakerphone, scores the call as it escalates using a deterministic rule engine
+(never an LLM — the score can't be hallucinated), coaches the user on what to say back with an
+opt-in AI copilot, and auto-drafts the cyber-crime complaint.
 
 > 📋 **[PROJECT_STATUS.md](PROJECT_STATUS.md) — read this first.** It's the single source of
 > truth for what's built, what's not, exact toolchain gotchas, and the prioritized next-steps
-> backlog. Anyone (human or AI agent) picking up this project should start there, not here.
+> backlog. Anyone (human or AI agent) picking up this project should start there, not here. If
+> this README and PROJECT_STATUS.md ever disagree, PROJECT_STATUS.md wins.
 
 > **Build intent:** hackathon / portfolio **MVP** (not production-hardened), strictly **$0** to
 > build and run. Scope is locked in [docs/decisions/0001-mvp-scope-lock.md](docs/decisions/0001-mvp-scope-lock.md).
-> The live-AI layer is documented in [docs/decisions/0002-live-ai-voice-assist.md](docs/decisions/0002-live-ai-voice-assist.md).
-> Full design docs live in [`docs/`](docs/README.md).
+> Full design docs live in [`docs/`](docs/README.md). The current work-in-progress plan is
+> [docs/superpowers/plans/2026-07-19-portfolio-polish-to-10.md](docs/superpowers/plans/2026-07-19-portfolio-polish-to-10.md).
 
 ## What works today
 
-| Module | What | Status |
-|---|---|---|
-| `core:common` | Event model, intel-pack model, text normalization | ✅ |
-| `core:reasoning` | **Tier-0 deterministic engine**: signal matching, 5-stage scam grammar, scoring, hysteresis | ✅ |
-| `core:reasoning` | Verification-question selector, live-AI suggestion schema + safety filter | ✅ |
-| `core:complaint` | Slot-based complaint builder + JSON/TXT/PDF export | ✅ |
-| `app` | Compose UI — risk card, Manual Mode, verification questions, demo call, complaint share/PDF | ✅ |
-| `app` | **Live AI voice assist** (ADR-0002): mic capture → Gemini Live streaming → safety-filtered suggested replies | ✅ PC-verified |
-| `tools:demo` | Headless CLI rig + Gemini Live protocol probe | ✅ runs |
+- **Deterministic risk engine** (`core:reasoning`) — a 5-stage scam-progression grammar
+  (HOOK → AUTHORITY → ISOLATION → ESCALATION → EXTRACTION) scores a live transcript 0–100.
+  A real scam call escalates to **SCAM_PATTERN**; a genuine police callback ("your FIR is
+  registered") correctly stays low — that asymmetry is the engine's core discriminator, and it's
+  a zero-tolerance regression gate in the test suite.
+- **~24-signal intel pack** (`core-scam-v1.json`, EN/HI/Hinglish) covering digital-arrest,
+  courier/parcel, SIM-block, bank/RBI laundering accusations, investment/job/loan/lottery/
+  electricity/UPI-refund lures, courier-COD OTP scams, bank KYC-expiry phishing, and
+  family-emergency ("beta, it's me") impersonation.
+- **Opt-in AI copilot** (Gemini) layered on top — live suggested replies, a scam-link checker
+  (URLhaus + Google Safe Browsing), and web-grounded scam-type identification. The AI can only
+  ever **raise** displayed concern, never lower it or set the score itself; every network call
+  fails closed to the deterministic-only behavior on any error.
+- **Floating overlay** — a draggable bubble/panel over the dialer showing live risk + coaching,
+  independent of which app is in the foreground.
+- **Encrypted local history** (SQLCipher/Room) — saved conversations, complaint drafts, and the
+  one guardian contact you can configure, all encrypted at rest, nothing leaves the device unless
+  you explicitly share it.
+- **Real guardian contact picker** — pick one contact via the system picker (no `READ_CONTACTS`
+  permission needed at all — see `docs/decisions/`), and "Warn my family" sends directly to them.
+- **Complaint auto-draft** — JSON/TXT/PDF export, ready to file at cybercrime.gov.in.
+- **हिन्दी + Hinglish** UI, in-app language picker, LLM responses mirror whatever script the user
+  types in.
 
-**24 automated unit tests, 0 failures** (pure JVM, no device needed) plus manual end-to-end
-verification on an Android emulator, including a live mic → Gemini Live → suggestion round trip.
-Exact breakdown and evidence: [PROJECT_STATUS.md §4](PROJECT_STATUS.md).
-
-The stage-grammar thesis is proven in code: a scam call escalates to **SCAM PATTERN**, while a
-genuine police call ("FIR registered") correctly stays at **CAUTION**. On top of that deterministic
-core, an opt-in specialized Gemini Live layer listens to the actual call audio and suggests a safe,
-context-aware reply in real time — it never sets the risk score, only advises (ADR-0002).
+**167 automated tests, 0 failures, 0 lint errors** (fresh count as of 2026-07-19, re-verified from
+a clean rebuild — see [PROJECT_STATUS.md §4](PROJECT_STATUS.md) for the evidence trail and what's
+still genuinely unverified).
 
 ## Getting started
 
-**Prerequisites:** JDK 17+, Android SDK (platform 35, build-tools 35+) with `ANDROID_HOME` /
-`local.properties` pointing at it. No Android Studio required — this was built and tested entirely
-from the CLI.
+**Prerequisites:** JDK 17, Android SDK (platform 35, build-tools 35+) with `local.properties`
+pointing at it. No Android Studio required — this project builds and tests entirely from the CLI.
 
 ```bash
 git clone https://github.com/Megesh07/vaarta.git
 cd vaarta
+git checkout vaarta-v2-ux   # the active development branch — main is behind
 
-# Run the engine + complaint unit tests (pure JVM, no device/SDK needed):
+# Run every unit test (pure JVM + Room-instrumented where noted, no device needed for the JVM ones):
 ./gradlew test
-
-# Run the text-mode demo (live risk trace + generated complaint, CLI):
-./gradlew :tools:demo:run -q
 
 # Build the Android debug APK:
 ./gradlew :app:assembleDebug
 # → app/build/outputs/apk/debug/app-debug.apk (sideload onto an Android 10+ device or emulator)
 ```
 
-### Enabling the live-AI layer (optional)
+### Enabling the AI layer (optional)
 
-The app builds and fully protects with **zero external services** — Manual Mode, the deterministic
-risk engine, and complaint export all work offline with no API key. The live-AI suggestion layer is
-opt-in and needs a free key:
+The app builds and protects with **zero external services** — the deterministic risk engine,
+complaint export, and encrypted history all work fully offline with no API key. The AI copilot and
+scam-link checker are opt-in and need free keys:
 
-1. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
-2. Copy [`secrets.properties.example`](secrets.properties.example) to `secrets.properties` (repo
-   root) and paste your key in. This file is git-ignored — it will never be committed.
-3. Rebuild — `./gradlew :app:assembleDebug`. The AI opt-in toggle appears in-app once a key is
-   compiled in; leave it blank and the app runs exactly as before, just without that toggle.
+1. Copy [`secrets.properties.example`](secrets.properties.example) to `secrets.properties` (repo
+   root, git-ignored — never committed) and fill in what you want to enable:
+   - `GEMINI_API_KEY` — free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+     Enables the AI copilot (live suggestions, chat, scam-type identification).
+   - `SAFE_BROWSING_API_KEY` — free non-commercial-tier key at
+     [developers.google.com/safe-browsing/v4/get-started](https://developers.google.com/safe-browsing/v4/get-started).
+   - `URLHAUS_AUTH_KEY` — free key at [auth.abuse.ch](https://auth.abuse.ch/) (sign in with
+     X/Google/LinkedIn/GitHub, the key is on your account dashboard there).
+   - Either key alone is enough to enable the scam-link checker; both together give it two
+     independent threat-intel sources.
+2. Rebuild — `./gradlew :app:assembleDebug`. Leave a key blank and the corresponding feature is
+   simply absent from the UI; nothing else changes.
 
-### Testing live audio on a PC (no phone needed for a first pass)
+## Testing on an emulator
 
-The Android emulator can route your PC's real microphone into the app via
-`emulator -avd <name> -allow-host-audio`, which is how the live-audio layer was verified during
-development (see [PROJECT_STATUS.md](PROJECT_STATUS.md) for the full method and its one known
-limitation: PC acoustic loopback degrades speech-transcription quality more than a real phone call
-does — a real-device speakerphone test is the next step to fully validate that path).
+```bash
+# Boot the project's AVD (create one named vaarta_test, API 35, google_apis, x86_64, if you don't
+# have it yet — Pixel 6 profile is what this project has been tested against):
+emulator -avd vaarta_test -no-snapshot
+
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb shell am start -n ai.vaarta.debug/ai.vaarta.MainActivity
+```
+
+From there: Home → "Get live help from VAARTA" → "Watch how it works" plays a scripted demo call
+and should escalate to a red **SCAM_PATTERN** shield with an "Alert family" button. That's the
+fastest way to confirm a build is healthy end-to-end.
+
+## Testing on a real phone (wanted!)
+
+**This is the single most valuable thing a collaborator with a physical Android phone can do for
+this project right now.** Everything above has been verified on an emulator — but the app's
+headline capability, *does the risk score actually move from a real caller's live speech through
+your phone's speaker*, has never been proven on real hardware. PC/emulator acoustic testing
+structurally can't answer this (speaker→air→laptop-mic loopback degrades speech quality too much
+to judge fairly) — it needs an actual phone call, on an actual device.
+
+**Steps (wireless `adb`, no cable needed):**
+
+1. On your Android phone: **Settings → Developer options → Wireless debugging** (enable Developer
+   options first if you haven't: Settings → About phone → tap "Build number" 7 times). Tap
+   **"Pair device with pairing code"** — it shows an IP:port and a 6-digit code.
+2. On your dev machine:
+   ```bash
+   adb pair <phone-ip>:<pairing-port>   # enter the 6-digit code when prompted
+   adb connect <phone-ip>:<connect-port>  # the main IP:port shown on the Wireless debugging screen
+   ```
+3. Build and install:
+   ```bash
+   ./gradlew :app:assembleDebug
+   adb devices   # confirm your phone shows up
+   adb -s <device-id> install -r app/build/outputs/apk/debug/app-debug.apk
+   ```
+4. On the phone: open VAARTA, grant microphone + "draw over other apps" permissions, start Live
+   listening (or the floating overlay).
+5. Place a real call on **speakerphone** — either a genuine incoming call, or have a second phone
+   read a scam script aloud near your phone's speaker. Watch whether the risk ring actually moves
+   as the caller talks.
+6. **Report back either outcome** (open an issue, or tell whoever pointed you here) — both are
+   useful: if it works, that's the flagship capability finally proven; if the transcription comes
+   through garbled, that confirms a real, specific limitation worth documenting (tracked in
+   PROJECT_STATUS.md as risk R-01) rather than an open question.
 
 ## Contributing
 
 See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for setup, branch/commit conventions, and the
-hard rules (no raw-audio persistence, no analytics/trackers, no accusatory or legal-advice phrasing
-in scam-facing strings). [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) applies to all participation.
+hard rules (no raw-audio persistence beyond the session, no analytics/trackers, no accusatory or
+legal-advice phrasing in scam-facing strings). [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) applies to
+all participation. Before touching a LOCKED architectural decision, read
+[docs/IMPLEMENTATION_GUARDRAILS.md](docs/IMPLEMENTATION_GUARDRAILS.md) — binding for humans and AI
+agents alike.
 
 ## License
 
@@ -87,16 +147,26 @@ MIT — see [LICENSE](LICENSE).
 
 ## Roadmap
 
-1. ✅ Tier-0 deterministic engine + complaint generator (headless, tested)
-2. ✅ Android app: Manual Mode, demo screen, verification questions, complaint export (JSON/TXT/PDF)
-3. ✅ Live AI voice assist (Gemini Live): mic capture, streaming, safety-filtered suggestions — proven on PC
-4. ⬜ Real-device speakerphone test — validate live transcription quality on an actual call
-5. ⬜ Floating overlay bubble + `CallScreeningService` — real in-call detection, not just manual/demo
-6. ⬜ Hardening pass: prompt-injection red-team, latency budget, fallback drills
+1. ✅ Deterministic risk engine + complaint generator + intel-pack breadth (24 signals, 10 scam
+   families)
+2. ✅ AI copilot: live suggestions, chat, web-grounded scam-ID, safety-filtered, raise-only
+3. ✅ Encrypted local history (SQLCipher), floating overlay, real guardian contact picker
+4. ✅ हिन्दी + Hinglish UI and LLM language mirroring
+5. ✅ Scam-link checker (URLhaus + Safe Browsing), both sources live and Auth-Keyed
+6. ⬜ **Real-device speakerphone test — validate live transcription quality on an actual call.**
+   See [Testing on a real phone](#testing-on-a-real-phone-wanted) above — this is the top
+   community-testable item.
+7. ⬜ Native-speaker review of the Hindi/Hinglish strings (machine-drafted, checklist in
+   PROJECT_STATUS.md §8)
+8. ⬜ `CallScreeningService` real in-call auto-detection — deliberately deferred (Android 15
+   foreground-service-start restrictions + Play policy; the app currently starts via a manual tap,
+   not automatically on an incoming call)
+9. ⬜ Voice-anomaly (deepfake) detection — spike-gated, not yet attempted; see the spec's
+   Increment J for why this is measured before it's promised
 
 Deliberately **out of MVP scope**: on-device LLM, Play Store publishing, DOCX export, Elder Mode,
 languages beyond EN/HI/Hinglish, and the challenge's counterfeit-currency / fraud-graph /
 geospatial pillars — VAARTA is one deep module of that broader "AI for Digital Public Safety" space.
 
-Contributions of all kinds are welcome — see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) to get started.
-
+Contributions of all kinds are welcome — see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) to get
+started, or just [test on a real phone](#testing-on-a-real-phone-wanted) and report back.

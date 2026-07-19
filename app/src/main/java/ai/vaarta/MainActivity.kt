@@ -11,6 +11,7 @@ import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.reasoning.Source
 import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.export.PdfExporter
+import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.recording.AudioAnalyzerViewModel
@@ -19,6 +20,7 @@ import ai.vaarta.ui.FirstRunLanguagePicker
 import ai.vaarta.ui.RiskHero
 import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.VaartaNav
+import ai.vaarta.ui.components.ConfirmDialog
 import ai.vaarta.ui.components.Eyebrow
 import ai.vaarta.ui.components.TextLinkRow
 import ai.vaarta.ui.components.VaartaBackBar
@@ -103,6 +105,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 /**
@@ -129,9 +132,33 @@ class MainActivity : AppCompatActivity() {
                 if (!languageChosen) {
                     FirstRunLanguagePicker(onChosen = { languageChosen = true })
                 } else {
-                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::warnFamily, onShareGeneric = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
                 }
             }
+        }
+    }
+
+    /**
+     * The single entry point behind every "Warn your family" action (Live's alert-family, Analyze's
+     * share-warning, the Article and Help screen rows — all wired to `onShare`). Task 5, spec §7: if
+     * a guardian contact has been chosen, skip the "who do I send this to" friction entirely and open
+     * a direct SMS pre-filled with the message; otherwise this is exactly today's behavior, unchanged.
+     * Task 9 hardening fix: guardian lookup now reads the encrypted SQLCipher-backed [GuardianStore]
+     * (suspend), so this launches on [lifecycleScope] instead of reading synchronously.
+     */
+    private fun warnFamily(text: String) {
+        lifecycleScope.launch {
+            val guardian = GuardianStore.create(this@MainActivity).get()
+            if (guardian != null) {
+                val sms = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${guardian.number}")).apply {
+                    putExtra("sms_body", text)
+                }
+                val opened = runCatching { startActivity(sms) }.isSuccess
+                if (opened) return@launch
+                // No SMS app can handle smsto: (rare) — fall back to the chooser rather than silently
+                // dropping the alert.
+            }
+            shareText(text)
         }
     }
 
@@ -488,6 +515,7 @@ internal fun HistoryScreen(
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
+    var showDeleteAll by remember { mutableStateOf(false) }
     val deletedMsg = stringResource(R.string.conv_deleted)
     val undoLabel = stringResource(R.string.conv_undo)
 
@@ -600,7 +628,7 @@ internal fun HistoryScreen(
                     Spacer(Modifier.height(VSpace.xs))
                     VaartaSecondaryButton(
                         text = stringResource(R.string.conv_delete_all),
-                        onClick = { historyVm.deleteAll(); showMenu = false },
+                        onClick = { showDeleteAll = true },
                         leadingIcon = R.drawable.ic_close,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -608,6 +636,15 @@ internal fun HistoryScreen(
             }
         }
     }
+
+    ConfirmDialog(
+        visible = showDeleteAll,
+        title = stringResource(R.string.confirm_delete_all_title),
+        body = stringResource(R.string.confirm_delete_all_body),
+        confirmLabel = stringResource(R.string.conv_delete_all),
+        onConfirm = { historyVm.deleteAll(); showMenu = false },
+        onDismiss = { showDeleteAll = false },
+    )
 }
 
 /** A conversation row wrapped in swipe-to-delete; swiping either way triggers [onDelete]. */

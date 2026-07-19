@@ -154,6 +154,7 @@
     <string name="chat_say_this">Yeh kaho</string>
     <string name="chat_vaarta_label">VAARTA</string>
     <string name="chat_sources_label">Sources</string>
+    <string name="link_warning_malicious">⚠️ Yeh link ek known scam/malware list mein hai. Ise mat kholo.</string>
 
     <!-- Signal tokens -->
     <string name="signal_hook">Hook</string>
@@ -204,6 +205,18 @@
     <string name="help_language_current">Abhi: %1$s</string>
     <string name="settings_clear_voice_data">Voice data clear karo</string>
     <string name="settings_clear_voice_data_desc">VAARTA ne aapki calls se jo voice recognition seekha hai, use clear karta hai</string>
+
+    <!-- Guardian contact picker (Task 5). -->
+    <string name="guardian_row_title">Guardian contact</string>
+    <string name="guardian_not_set">Set nahi hai — choose karne ke liye tap karo</string>
+    <string name="guardian_clear">Guardian hatao</string>
+
+    <!-- Confirmation dialogs for destructive actions (Task 4). -->
+    <string name="action_cancel">Cancel karo</string>
+    <string name="confirm_delete_all_title">Saari conversations delete karo?</string>
+    <string name="confirm_delete_all_body">Yeh sab saved conversations ko hamesha ke liye delete kar dega. Yeh wapas nahi kiya ja sakta.</string>
+    <string name="confirm_clear_voice_title">Voice data clear karo?</string>
+    <string name="confirm_clear_voice_body">VAARTA aapki calls se seekha gaya voice bhool jayega. Yeh wapas nahi kiya ja sakta.</string>
 
     <!-- Floating overlay -->
     <string name="overlay_notif_channel_name">Live call protection</string>

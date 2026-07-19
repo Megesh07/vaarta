@@ -148,6 +148,7 @@
     <string name="chat_say_this">Say this</string>
     <string name="chat_vaarta_label">VAARTA</string>
     <string name="chat_sources_label">Sources</string>
+    <string name="link_warning_malicious">⚠️ This link is on a known scam/malware list. Do not open it.</string>
 
     <!-- Signal tokens (design system, Signals.kt). -->
     <string name="signal_hook">Hook</string>
@@ -202,6 +203,19 @@
     <string name="help_language_current">Current: %1$s</string>
     <string name="settings_clear_voice_data">Clear voice data</string>
     <string name="settings_clear_voice_data_desc">Deletes the voice recognition VAARTA has learned from your calls</string>
+
+    <!-- Guardian contact picker (Task 5, spec §7): a one-time, changeable choice so "Warn your
+         family" can send straight to this contact instead of opening the share chooser every time. -->
+    <string name="guardian_row_title">Guardian contact</string>
+    <string name="guardian_not_set">Not set — tap to choose</string>
+    <string name="guardian_clear">Remove guardian</string>
+
+    <!-- Confirmation dialogs for destructive actions (Task 4). -->
+    <string name="action_cancel">Cancel</string>
+    <string name="confirm_delete_all_title">Delete all conversations?</string>
+    <string name="confirm_delete_all_body">This permanently deletes every saved conversation. This cannot be undone.</string>
+    <string name="confirm_clear_voice_title">Clear voice data?</string>
+    <string name="confirm_clear_voice_body">VAARTA will forget the voice it learned from your calls. This cannot be undone.</string>
 
     <!-- Floating overlay (Phase 4C) — foreground-service notification + the draggable panel. -->
     <string name="overlay_notif_channel_name">Live call protection</string>

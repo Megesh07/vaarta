@@ -3,8 +3,12 @@ package ai.vaarta.ui
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.guardian.Guardian
+import ai.vaarta.guardian.GuardianPickerContract
+import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.share.BilingualShare
+import ai.vaarta.ui.components.ConfirmDialog
 import ai.vaarta.ui.components.LinkRow
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.components.TextLinkRow
@@ -12,6 +16,7 @@ import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSecondaryButton
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,15 +41,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 /**
  * Plain, calm steps for someone who has already been defrauded (spec §4.3). Ordered by urgency —
@@ -70,6 +79,7 @@ private val SCAMMED_STEP_IDS = listOf(
 fun HelpScreen(
     vm: SessionViewModel,
     onShare: (String) -> Unit,
+    onShareGeneric: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
@@ -82,7 +92,30 @@ fun HelpScreen(
     var showPanic by remember { mutableStateOf(false) }
     var showAllSteps by remember { mutableStateOf(false) }
     var showLanguagePicker by remember { mutableStateOf(false) }
+    var showClearVoice by remember { mutableStateOf(false) }
     var currentLanguage by remember { mutableStateOf(AppLanguage.current()) }
+
+    // Guardian contact picker (Task 5, spec §7; Task 9 hardening fix) — a one-time, changeable
+    // choice so "Warn your family" can skip the share chooser next time. GuardianStore wraps the
+    // encrypted SQLCipher database (core:data), so every read/write is a suspend call; the picker
+    // itself needs no READ_CONTACTS — the system grants a temporary read on the picked Phone-data
+    // URI (GuardianPickerContract).
+    val context = LocalContext.current
+    val guardianStore = remember { GuardianStore.create(context) }
+    val scope = rememberCoroutineScope()
+    var guardian by remember { mutableStateOf<Guardian?>(null) }
+    LaunchedEffect(Unit) { guardian = guardianStore.get() }
+    val guardianPicker = rememberLauncherForActivityResult(GuardianPickerContract()) { picked ->
+        if (picked != null) {
+            scope.launch {
+                guardianStore.set(picked.name, picked.number)
+                guardian = picked
+            }
+        }
+    }
+    fun pickGuardian() {
+        guardianPicker.launch(Unit)
+    }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -184,7 +217,7 @@ fun HelpScreen(
                             Text(text, style = MaterialTheme.typography.bodySmall, color = c.ink)
                             Spacer(Modifier.height(VSpace.md))
                             Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
-                                VaartaButton(text = stringResource(R.string.help_share_as_text), onClick = { onShare(text) })
+                                VaartaButton(text = stringResource(R.string.help_share_as_text), onClick = { onShareGeneric(text) })
                                 complaintDraft?.let { draft ->
                                     VaartaSecondaryButton(text = stringResource(R.string.help_export_pdf), onClick = { onExportPdf(draft) })
                                 }
@@ -200,6 +233,24 @@ fun HelpScreen(
                     subtitle = stringResource(R.string.help_tools_warn_family_sub),
                     onClick = { onShare(BilingualShare.compose(warnFamilyMessage, currentLanguage)) },
                 )
+                Spacer(Modifier.height(VSpace.xs))
+                LinkRow(
+                    icon = R.drawable.ic_phone,
+                    title = stringResource(R.string.guardian_row_title),
+                    subtitle = guardian?.name ?: stringResource(R.string.guardian_not_set),
+                    onClick = { pickGuardian() },
+                )
+                if (guardian != null) {
+                    TextLinkRow(
+                        text = stringResource(R.string.guardian_clear),
+                        onClick = {
+                            scope.launch {
+                                guardianStore.clear()
+                                guardian = null
+                            }
+                        },
+                    )
+                }
             }
             HelpSection(title = "") {
                 HelpLanguageRow(current = currentLanguage, onClick = { showLanguagePicker = true })
@@ -207,7 +258,7 @@ fun HelpScreen(
 
             // Voice-attribution privacy control (Part D). Same destructive-action idiom as the
             // Conversations screen's "Delete all" row (MainActivity.kt HistoryScreen kebab sheet):
-            // a short explanatory caption above an outlined button, no confirmation dialog.
+            // now gated behind a confirmation dialog.
             HelpSection(title = "") {
                 Text(
                     stringResource(R.string.settings_clear_voice_data_desc),
@@ -216,7 +267,7 @@ fun HelpScreen(
                 Spacer(Modifier.height(VSpace.sm))
                 VaartaSecondaryButton(
                     text = stringResource(R.string.settings_clear_voice_data),
-                    onClick = { vm.session.clearVoiceData() },
+                    onClick = { showClearVoice = true },
                     leadingIcon = R.drawable.ic_close,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -249,6 +300,15 @@ fun HelpScreen(
             }
         }
     }
+
+    ConfirmDialog(
+        visible = showClearVoice,
+        title = stringResource(R.string.confirm_clear_voice_title),
+        body = stringResource(R.string.confirm_clear_voice_body),
+        confirmLabel = stringResource(R.string.settings_clear_voice_data),
+        onConfirm = { vm.session.clearVoiceData() },
+        onDismiss = { showClearVoice = false },
+    )
 }
 
 /** A single numbered step: a calm circular badge + the instruction, aligned as a row. */

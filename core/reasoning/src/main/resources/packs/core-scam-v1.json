@@ -1,6 +1,6 @@
 {
-  "packId": "core-scam@2026.07.2",
-  "version": "2026.07.2",
+  "packId": "core-scam@2026.07.3",
+  "version": "2026.07.3",
   "signals": [
     {
       "id": "SIG_PARCEL_PRETEXT",
@@ -73,7 +73,7 @@
       "weight": 15,
       "patterns": {
         "en": ["arrest warrant", "non bailable", "digital arrest", "fir registered", "money laundering case"],
-        "hi_latn": ["arrest warrant", "digital arrest", "fir", "giraftari", "money laundering"],
+        "hi_latn": ["arrest warrant", "digital arrest", "fir registered", "fir darj", "giraftari", "money laundering"],
         "hi": ["गिरफ्तारी", "वारंट", "मनी लॉन्ड्रिंग"]
       },
       "match": "FUZZY1",
@@ -332,6 +332,57 @@
         "hi": "कॉलर सीओडी पार्सल के लिए डिलीवरी ओटीपी मांग रहा है"
       },
       "manualCue": "CUE_COURIER_COD_OTP"
+    },
+    {
+      "id": "SIG_HOOK_KYC_EXPIRY",
+      "category": "SERVICE_THREAT",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["kyc will expire", "kyc expired update now", "account will be blocked", "verify kyc to avoid block", "pan card kyc update"],
+        "hi_latn": ["kyc expire ho jayega", "account block ho jayega", "kyc update karo", "kyc band ho jayega"],
+        "hi": ["केवाईसी एक्सपायर", "खाता ब्लॉक हो जाएगा", "केवाईसी अपडेट करें"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller threatens the account will be blocked unless KYC is updated now",
+        "hi": "कॉलर केवाईसी अपडेट न करने पर खाता ब्लॉक होने की धमकी दे रहा है"
+      },
+      "manualCue": "CUE_KYC_EXPIRY_THREAT"
+    },
+    {
+      "id": "SIG_HOOK_FAMILY_EMERGENCY",
+      "category": "KINSHIP_IMPERSONATION",
+      "stage": "HOOK",
+      "weight": 12,
+      "patterns": {
+        "en": ["it's me your son", "it is me beta", "beta it's me", "mom it's me i'm in trouble", "i had an accident please help", "i am in police custody"],
+        "hi_latn": ["beta main bol raha hoon", "mera accident ho gaya", "main musibat mein hoon", "police ne pakad liya"],
+        "hi": ["बेटा मैं बोल रहा हूँ", "मेरा एक्सीडेंट हो गया", "मैं मुसीबत में हूँ"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller claims to be a family member in sudden trouble",
+        "hi": "कॉलर अचानक मुसीबत में फंसे परिवार के सदस्य होने का दावा कर रहा है"
+      },
+      "manualCue": "CUE_FAMILY_EMERGENCY_CLAIM"
+    },
+    {
+      "id": "SIG_ISOLATION_NEW_NUMBER",
+      "category": "KINSHIP_IMPERSONATION",
+      "stage": "ISOLATION",
+      "weight": 14,
+      "patterns": {
+        "en": ["this is my new number", "my old phone is broken", "do not call my old number", "save this new number"],
+        "hi_latn": ["ye mera naya number hai", "purana phone kharab", "purane number pe mat call karna"],
+        "hi": ["यह मेरा नया नंबर है", "पुराना फोन खराब", "पुराने नंबर पर मत करना"]
+      },
+      "match": "FUZZY1",
+      "explain": {
+        "en": "Caller redirects to a new number and discourages calling the known one back",
+        "hi": "कॉलर नए नंबर पर भेजता है और पुराने नंबर पर वापस कॉल करने से रोकता है"
+      },
+      "manualCue": "CUE_NEW_NUMBER_MISDIRECTION"
     }
   ],
   "questions": [

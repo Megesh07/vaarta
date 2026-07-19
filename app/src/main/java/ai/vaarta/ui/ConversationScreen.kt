@@ -77,6 +77,7 @@ fun ConversationScreen(
     onBack: () -> Unit,
     onOpenUrl: (String) -> Unit,
     onShare: (String) -> Unit,
+    onShareGeneric: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     androidx.activity.compose.BackHandler(onBack = onBack) // system back == the back bar (spec §8.2)
@@ -155,7 +156,7 @@ fun ConversationScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
-                        modifier = Modifier.vaartaPressable({ onShare(vm.transcriptText()) }).padding(vertical = VSpace.xs),
+                        modifier = Modifier.vaartaPressable({ onShareGeneric(vm.transcriptText()) }).padding(vertical = VSpace.xs),
                     ) {
                         VaartaIcon(R.drawable.ic_download, contentDescription = null, tint = c.indigo, size = 16.dp)
                         Text(stringResource(R.string.chat_download_transcript), style = MaterialTheme.typography.bodySmall, color = c.indigo)

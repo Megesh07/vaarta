@@ -15,14 +15,15 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
  * and wrapped by [DatabaseKeyManager] (Keystore-backed) — it is never in source or shipped assets.
  */
 @Database(
-    entities = [CallSessionEntity::class, TurnEntity::class, VoiceSampleEntity::class],
-    version = 3,
+    entities = [CallSessionEntity::class, TurnEntity::class, VoiceSampleEntity::class, GuardianEntity::class],
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
 abstract class VaartaDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
     abstract fun voiceprintDao(): VoiceprintDao
+    abstract fun guardianDao(): GuardianDao
 
     companion object {
         private const val DB_NAME = "vaarta-history.db"
@@ -54,6 +55,23 @@ abstract class VaartaDatabase : RoomDatabase() {
             }
         }
 
+        /** v3 -> v4 (Task 9 hardening fix, 2026-07-19): the guardian table, replacing the plain
+         *  SharedPreferences store that regressed against docs/PRIVACY_SECURITY.md's "SQLCipher"
+         *  data-inventory line for guardian contacts. New table only — no existing data touched. */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `guardian` (
+                        `id` INTEGER PRIMARY KEY NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `number` TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile private var instance: VaartaDatabase? = null
 
         fun get(context: Context): VaartaDatabase = instance ?: synchronized(this) {
@@ -66,7 +84,7 @@ abstract class VaartaDatabase : RoomDatabase() {
             val factory = SupportOpenHelperFactory(passphrase)
             return Room.databaseBuilder(appContext, VaartaDatabase::class.java, DB_NAME)
                 .openHelperFactory(factory)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
         }
     }

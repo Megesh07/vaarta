@@ -1,9 +1,11 @@
 package ai.vaarta
 
+import ai.vaarta.ai.LinkChecker
 import ai.vaarta.core.reasoning.Reply
 import ai.vaarta.core.reasoning.ReplyKind
 import ai.vaarta.core.reasoning.RiskLevel
 import ai.vaarta.core.reasoning.Source
+import ai.vaarta.core.reasoning.UrlExtractor
 import ai.vaarta.ui.MarkdownText
 import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.components.Eyebrow
@@ -26,12 +28,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 // --- The shared WhatsApp-style chat view (design system §6). Every surface — the in-app live screen,
 // the read-only history detail, and the floating overlay panel — renders the exact same thread through
@@ -143,6 +152,20 @@ private fun CallerBubble(text: String) {
             Column(Modifier.padding(11.dp)) {
                 Text(stringResource(R.string.chat_caller_label), style = MaterialTheme.typography.labelMedium, color = c.muted)
                 Text(text, style = MaterialTheme.typography.bodyMedium, color = c.ink)
+                val urls = remember(text) { UrlExtractor.extract(text) }
+                var malicious by remember(text) { mutableStateOf(false) }
+                LaunchedEffect(text) {
+                    if (urls.isNotEmpty()) {
+                        malicious = withContext(Dispatchers.IO) { urls.any { LinkChecker.check(it) == LinkChecker.Verdict.MALICIOUS } }
+                    }
+                }
+                if (malicious) {
+                    Text(
+                        stringResource(R.string.link_warning_malicious),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         }
     }
@@ -161,6 +184,20 @@ private fun YouBubble(text: String) {
             Column(Modifier.padding(11.dp)) {
                 Text(stringResource(R.string.chat_you_said), style = MaterialTheme.typography.labelMedium, color = c.indigoInk)
                 Text(text, style = MaterialTheme.typography.bodyMedium, color = c.ink)
+                val urls = remember(text) { UrlExtractor.extract(text) }
+                var malicious by remember(text) { mutableStateOf(false) }
+                LaunchedEffect(text) {
+                    if (urls.isNotEmpty()) {
+                        malicious = withContext(Dispatchers.IO) { urls.any { LinkChecker.check(it) == LinkChecker.Verdict.MALICIOUS } }
+                    }
+                }
+                if (malicious) {
+                    Text(
+                        stringResource(R.string.link_warning_malicious),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         }
     }
