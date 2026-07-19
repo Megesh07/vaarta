@@ -479,6 +479,28 @@ private fun PanelContent(
 
                 StatusBanner(level = displayedLevel, score = state.score, reassure = reassure, aiRaised = aiRaised)
 
+                val showSpeakerNudge by session.showSpeakerNudge.collectAsState()
+                var speakerNudgeDismissed by remember { mutableStateOf(false) }
+                if (showSpeakerNudge && !speakerNudgeDismissed) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(c.indigoTint, RoundedCornerShape(10.dp))
+                            .padding(10.dp),
+                    ) {
+                        ai.vaarta.ui.VaartaIcon(R.drawable.ic_mic, contentDescription = null, tint = c.indigo, size = 16.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.live_active_caption),
+                            style = MaterialTheme.typography.bodySmall, color = c.ink, modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { speakerNudgeDismissed = true }) {
+                            Text(stringResource(R.string.overlay_hide), style = MaterialTheme.typography.labelMedium, color = c.muted)
+                        }
+                    }
+                }
+
                 if (scamType != null) {
                     ScamIdCard(scamType = scamType!!, sources = scamSources, onOpenUrl = {})
                 }
