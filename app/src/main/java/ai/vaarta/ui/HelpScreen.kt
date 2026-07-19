@@ -79,6 +79,7 @@ private val SCAMMED_STEP_IDS = listOf(
 fun HelpScreen(
     vm: SessionViewModel,
     onShare: (String) -> Unit,
+    onShareGeneric: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
@@ -216,7 +217,7 @@ fun HelpScreen(
                             Text(text, style = MaterialTheme.typography.bodySmall, color = c.ink)
                             Spacer(Modifier.height(VSpace.md))
                             Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
-                                VaartaButton(text = stringResource(R.string.help_share_as_text), onClick = { onShare(text) })
+                                VaartaButton(text = stringResource(R.string.help_share_as_text), onClick = { onShareGeneric(text) })
                                 complaintDraft?.let { draft ->
                                     VaartaSecondaryButton(text = stringResource(R.string.help_export_pdf), onClick = { onExportPdf(draft) })
                                 }

@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
                 if (!languageChosen) {
                     FirstRunLanguagePicker(onChosen = { languageChosen = true })
                 } else {
-                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::warnFamily, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::warnFamily, onShareGeneric = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
                 }
             }
         }

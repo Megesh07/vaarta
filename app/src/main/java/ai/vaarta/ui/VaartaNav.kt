@@ -78,6 +78,7 @@ fun VaartaNav(
     conversationVm: ConversationViewModel,
     awarenessVm: AwarenessViewModel,
     onShare: (String) -> Unit,
+    onShareGeneric: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
 ) {
@@ -117,6 +118,7 @@ fun VaartaNav(
                     onBack = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
                     onOpenUrl = onOpenUrl,
                     onShare = onShare,
+                    onShareGeneric = onShareGeneric,
                 )
                 is SubScreen.Article -> ArticleScreen(
                     card = currentSub.card,
@@ -156,6 +158,7 @@ fun VaartaNav(
             VaartaTab.HELP -> HelpScreen(
                 vm = vm,
                 onShare = onShare,
+                onShareGeneric = onShareGeneric,
                 onExportPdf = onExportPdf,
                 onOpenUrl = onOpenUrl,
                 onStartLive = { sub = SubScreen.Live },
