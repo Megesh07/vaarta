@@ -19,6 +19,10 @@ val geminiApiKey: String = secretsProps.getProperty("GEMINI_API_KEY", "")
 // absent file/property -> empty string, and LinkChecker's Safe Browsing lookup is skipped (UNKNOWN).
 val safeBrowsingApiKey: String = secretsProps.getProperty("SAFE_BROWSING_API_KEY", "")
 
+// URLhaus (abuse.ch) Auth-Key — same fail-closed contract: absent file/property -> empty string,
+// and LinkChecker's URLhaus lookup is skipped (UNKNOWN).
+val urlhausAuthKey: String = secretsProps.getProperty("URLHAUS_AUTH_KEY", "")
+
 android {
     namespace = "ai.vaarta"
     compileSdk = 35
@@ -32,6 +36,7 @@ android {
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "SAFE_BROWSING_API_KEY", "\"$safeBrowsingApiKey\"")
+        buildConfigField("String", "URLHAUS_AUTH_KEY", "\"$urlhausAuthKey\"")
     }
 
     buildTypes {

@@ -11,13 +11,6 @@ import java.net.URLEncoder
  * Checks a URL against free threat intelligence. Fails closed: any network/parse error → UNKNOWN
  * (the UI says nothing). Never reassures — a not-listed URL is CLEAN_SO_FAR, phrased as "not on
  * known threat lists", never "safe". Never touches the risk score (spec §13 safety invariants).
- *
- * KNOWN GAP (flagged during Task 3 implementation, not fixed — see PROJECT_STATUS.md): abuse.ch's
- * current URLhaus docs require an `Auth-Key` header on every request, including this single-URL
- * lookup, which this object does not send (the plan called for URLhaus "no key" — that's no longer
- * accurate). Unauthenticated calls will most likely get rejected (non-200) and fall through to
- * Verdict.UNKNOWN — safe (fail-closed, never crashes, never falsely reassures) but means URLhaus
- * currently contributes nothing in practice until a free Auth-Key is obtained and wired in.
  */
 object LinkChecker {
     enum class Verdict { MALICIOUS, CLEAN_SO_FAR, UNKNOWN }
@@ -39,18 +32,21 @@ object LinkChecker {
     }
 
     private fun urlhaus(url: String): Verdict {
+        val authKey = BuildConfig.URLHAUS_AUTH_KEY
+        if (authKey.isBlank()) return Verdict.UNKNOWN
         var conn: HttpURLConnection? = null
         return try {
             conn = (URL(URLHAUS).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"; doOutput = true
                 connectTimeout = TIMEOUT_MS; readTimeout = TIMEOUT_MS
                 setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+                setRequestProperty("Auth-Key", authKey)
             }
             conn.outputStream.use { it.write("url=${URLEncoder.encode(url, "UTF-8")}".toByteArray()) }
             val code = conn.responseCode
             if (code != 200) {
-                // DIAGNOSTIC: code only — never the URL or response body (may echo the URL back).
-                Log.w("LinkChecker", "urlhaus HTTP $code (see LinkChecker's KNOWN GAP doc comment)")
+                // DIAGNOSTIC: code only — never the URL, key, or response body.
+                Log.w("LinkChecker", "urlhaus HTTP $code")
                 return Verdict.UNKNOWN
             }
             val body = conn.inputStream.bufferedReader().use { it.readText() }

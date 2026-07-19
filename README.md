@@ -75,9 +75,10 @@ scam-link checker are opt-in and need free keys:
      Enables the AI copilot (live suggestions, chat, scam-type identification).
    - `SAFE_BROWSING_API_KEY` — free non-commercial-tier key at
      [developers.google.com/safe-browsing/v4/get-started](https://developers.google.com/safe-browsing/v4/get-started).
-     Enables the scam-link checker's malicious-URL flagging. (URLhaus, the checker's other lookup,
-     currently needs an Auth-Key this project hasn't wired up yet — tracked as `task_e2bb31b0` in
-     PROJECT_STATUS.md — so Safe Browsing is the only one that can flag anything right now.)
+   - `URLHAUS_AUTH_KEY` — free key at [auth.abuse.ch](https://auth.abuse.ch/) (sign in with
+     X/Google/LinkedIn/GitHub, the key is on your account dashboard there).
+   - Either key alone is enough to enable the scam-link checker; both together give it two
+     independent threat-intel sources.
 2. Rebuild — `./gradlew :app:assembleDebug`. Leave a key blank and the corresponding feature is
    simply absent from the UI; nothing else changes.
 
@@ -151,7 +152,7 @@ MIT — see [LICENSE](LICENSE).
 2. ✅ AI copilot: live suggestions, chat, web-grounded scam-ID, safety-filtered, raise-only
 3. ✅ Encrypted local history (SQLCipher), floating overlay, real guardian contact picker
 4. ✅ हिन्दी + Hinglish UI and LLM language mirroring
-5. ✅ Scam-link checker (URLhaus + Safe Browsing) — URLhaus needs an Auth-Key still (open item)
+5. ✅ Scam-link checker (URLhaus + Safe Browsing), both sources live and Auth-Keyed
 6. ⬜ **Real-device speakerphone test — validate live transcription quality on an actual call.**
    See [Testing on a real phone](#testing-on-a-real-phone-wanted) above — this is the top
    community-testable item.
