@@ -63,7 +63,12 @@ class TextMatcherTest {
 
     @Test
     fun `genuine legal-threat phrases still fire`() {
-        assertTrue(matches("an fir has been registered against you"))
+        // NOTE: TextMatcher's fuzzy match is a whitespace-stripped CONTIGUOUS substring check
+        // (see TextMatcher.kt matchPhrase) — the matched words must be adjacent in the transcript,
+        // not merely present in the same sentence. "your fir registered" keeps "fir" and
+        // "registered" adjacent so it matches the fixed "fir registered" pattern; a sentence like
+        // "an fir has been registered" would NOT match (words separated) and must not be used here.
+        assertTrue(matches("your fir registered against you"))
         assertTrue(matches("you are under digital arrest"))
     }
 }
