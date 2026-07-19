@@ -24,11 +24,21 @@ language review and the demo video/deck.
   addendum stays correct).
 - Play Store publishing, DOCX export, Elder Mode, Tier-2 cloud LLM polish — all correctly out per
   ADR-0001.
-- Voice-clone audio detection for SC-09 (family-emergency impersonation) — different modality,
-  genuinely unsolved, stays a tracked open-research item (`SCAM_INTELLIGENCE.md` R1).
 - Regional script variants (Tamil Nadu cyber-police flavor, R3) — separate future research.
+- **Caller-ID card in the overlay ("Truecaller-lite") — considered and REJECTED by the owner
+  (2026-07-19):** for saved contacts the native dialer already shows the name (zero intelligence
+  added), and Truecaller-style names for *unknown* numbers require a crowdsourced contact-harvesting
+  directory that is closed/paid (Truecaller API) or ToS-violating (scraper APIs) — and is the exact
+  privacy posture VAARTA stands against. Owner's filter, applied project-wide: **intelligence must
+  actually benefit the user, never exist for name's sake.**
+- Truecaller-style name lookup for unknown numbers — see above; permanently out.
+- Real call-audio recording — researched and confirmed impossible for third-party apps
+  (OS-level block since Android 10, not just Play policy — sideloading does not help); the
+  accessibility-service hack is fragile/OEM-dependent and Shizuku needs ADB re-arming every reboot,
+  unusable for VAARTA's audience. Speakerphone stays, now as a **proven** dead-end. Recorded as
+  ADR-0005 (§15) so it is never re-litigated from scratch.
 - Performing the native-speaker Hindi/Hinglish review, or producing the demo video/deck — both are
-  real, necessary steps toward "10," but neither is a code task; they're called out in §10 as the
+  real, necessary steps toward "10," but neither is a code task; they're called out in §16 as the
   work that remains after this plan, not silently dropped.
 
 ## 3. Safety invariants (unchanged, carried over from prior specs — verbatim requirements)
@@ -217,7 +227,94 @@ present them as reviewed.
 - `PackParityTest` and existing `EvalTest` cases must stay green (regression, unchanged pack ID for
   prior signals means prior tests keep passing).
 
-## 13. What's still needed after this plan (not part of it, tracked honestly)
+## 13. Increment K — Scam-link checker (approved 2026-07-19)
+
+**Why:** scam calls and messages constantly push links ("click to update KYC", loan-app APKs,
+fake bank portals). Checking a URL against real threat intelligence is genuine, $0,
+trust-building intelligence — it benefits the user directly, passing the owner's
+"intelligence must actually benefit" filter.
+
+**Sources (all verified free as of 2026-07-19; re-verify exact API shapes against official docs at
+implementation time, never from memory):**
+- **URLhaus (abuse.ch)** — free REST API, no auth required.
+- **Google Safe Browsing v4** — free API key for **non-commercial** use; VAARTA is non-commercial
+  by its own scope lock (no monetization, sideload-only), so this qualifies. If VAARTA ever
+  commercializes, this must move to the paid Web Risk API — noted so the constraint is visible.
+- PhishTank (free key) — optional third source, only if the first two prove insufficient.
+
+**Design:**
+- New `core:reasoning` pure function: extract URLs from a text (unit-testable, no Android deps).
+- New app-side `LinkChecker` (OkHttp, same client pattern as `GeminiClient`): query URLhaus first
+  (no key needed), Safe Browsing second. Aggregate verdict: `MALICIOUS` (either source flags) /
+  `CLEAN_SO_FAR` (both checked, neither flags — never displayed as "safe", phrased as "not on known
+  threat lists") / `UNKNOWN` (network failure → fail closed, say nothing).
+- Surfaces: chat messages (both directions) and analyzed-recording transcripts. A flagged link
+  renders a red inline warning row; the warning can only **add** concern (consistent with the
+  ratchet — a clean lookup never reassures).
+- API key (Safe Browsing) rides the same local-properties/BuildConfig mechanism as the existing
+  Gemini key; URLhaus needs none.
+
+**Safety invariants:** a link verdict never touches the risk score (`RiskEngine` untouched);
+lookup failure = silent, deterministic-only behavior — identical failure posture to every other
+network call in the app.
+
+**Files:**
+- Create: `core/reasoning/src/main/kotlin/ai/vaarta/core/reasoning/UrlExtractor.kt` (+ TDD test)
+- Create: `app/src/main/java/ai/vaarta/ai/LinkChecker.kt`
+- Modify: `app/src/main/java/ai/vaarta/ui/ConversationScreen.kt` (inline warning row)
+- Modify: `strings.xml` (+ hi / hi+Latn) — warning strings
+- Live verification: Google's own Safe Browsing test URLs (`testsafebrowsing.appspot.com`) give a
+  deterministic known-bad target without touching a real malicious site.
+
+## 14. Increment J — Voice-anomaly detection SPIKE (spike-gated, runs last)
+
+**Owner's question this answers:** "the other side's voice is deepfake/AI or real — since we record
+through the speaker, can we distinguish it?"
+
+**Honest position (research verdict, 2026-07-19):** unknown — and unknowable without measuring.
+Anti-spoofing models (AASIST-class, ~340K params, ONNX-portable — and the app already ships
+`libonnxruntime.so` via the sherpa-onnx AAR, so zero new native dependencies) rely on high-frequency
+synthesis artifacts that the telephony codec largely destroys, and the speakerphone→air→mic second
+hop is untested in published research. ASVspoof 2021's codec-transmission task showed detection
+survives telephony channels *degraded but above chance*; in-the-wild data often collapses models to
+near-chance. Identical epistemic shape to R-01 — so it gets the same treatment: **a spike, never a
+promise.**
+
+**Spike protocol (pass/fail gate, before ANY product integration):**
+1. Acquire an open AASIST-class ONNX anti-spoofing model; run it via the already-bundled
+   onnxruntime.
+2. Build a tiny eval corpus on the REAL path: (a) genuine human speech and (b) TTS/voice-clone
+   speech, each played through an actual phone speaker into the actual device mic (matching the
+   live-call audio path exactly).
+3. Score both sets. **Gate:** clear score separation between real and synthetic on this path →
+   proceed. Overlapping distributions → record the negative result in the ADR and stop; the
+   behavioral layer below is the defense.
+4. Either outcome is a WIN for the portfolio: "we measured it" beats "we assumed it."
+
+**If the spike passes, integration design (and only then):**
+- Raise-only advisory through the existing `HybridAlert` ratchet — phrased "voice characteristics
+  unusual — verify who this is," NEVER "this is a deepfake" (an accusation the model cannot
+  support; also ethical red line §9 of SCAM_INTELLIGENCE.md).
+- Wired to H2: kinship-claim signal + voice-anomaly advisory → coach prompts a verification
+  question ("ask something only your real son would know").
+- **The channel-immune defense is H2's behavioral signals, always.** A flawless voice clone still
+  has to say scam things; behavior survives any audio path. The audio detector is a second
+  opinion, never load-bearing.
+
+**Ordering:** runs LAST (after A–H, K, F, G) — it is research-grade and must not delay the
+known-value increments.
+
+## 15. ADR-0005 — call-audio access is closed (write it, one page)
+
+Record the researched dead-end as a decision doc in `docs/decisions/0005-call-audio-access.md`:
+Android has blocked the `VOICE_CALL` stream for non-system apps since Android 10 at the **OS
+level** (not merely Play policy — sideloading does not bypass it); the accessibility-service hack
+is fragile, OEM-dependent, and was the specific technique Play banned in 2022; Shizuku-based
+recording requires ADB re-arming after every reboot — unusable for VAARTA's elderly-inclusive
+audience. **Speakerphone + mic remains the only sanctioned path, now as a verified conclusion with
+citations, so no future session burns time re-investigating it.**
+
+## 16. What's still needed after this plan (not part of it, tracked honestly)
 
 - **Native-speaker review** of all machine-drafted Hindi/Hinglish strings, now including H's two new
   signals' patterns — a human task, gates calling those languages "shipped" per the existing
@@ -227,7 +324,7 @@ present them as reviewed.
 - Whatever Increment F's physical-phone test reveals about the live-call flagship's real-world
   reliability — an outcome, not a task, that this plan produces evidence for but cannot predetermine.
 
-## 14. Testing strategy summary
+## 17. Testing strategy summary
 
 - **A, H:** TDD — failing test first (`TextMatcherTest`, new eval fixtures), then the pack/code
   change, then green. `PackParityTest` and existing `EvalTest` cases are regression gates.
@@ -235,6 +332,18 @@ present them as reviewed.
   method already established throughout this project; no meaningful pure-logic unit to TDD beyond
   `GuardianStore`'s read/write (which does get a JVM unit test).
 - **E:** Documentation-only, no test — verified by re-reading the corrected file.
+- **K:** TDD for `UrlExtractor` (pure JVM); `LinkChecker` verified live against Google's own
+  Safe Browsing test URLs (deterministic known-bad, no real malicious site touched); network-failure
+  path verified with airplane-mode emulator run (must stay silent).
 - **F:** Manual verification, emulator then physical device — not automatable, exact commands
   provided at execution time.
 - **G:** Review pass, not a test — verified by a clean diff and green full-suite re-run afterward.
+- **J:** the spike IS the test — measured score separation on the real audio path is the gate;
+  no product code ships without it.
+
+## 18. Execution order
+
+**A → H → K → B → C → D → E → F → G → J** — correctness bugs and detection intelligence first
+(A/H/K are the "actually benefits the user" core), then UX-trust items (B/C/D), then docs (E),
+then the verification pass (F: emulator, then physical phone over wireless adb), the hardening
+review (G), and the research spike (J) last so it can never delay known value.
