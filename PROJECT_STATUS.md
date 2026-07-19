@@ -208,6 +208,20 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
 8. **Intel pack breadth** — grow coverage per `SCAM_INTELLIGENCE.md` §5, EN/HI/Hinglish for MVP.
 9. **Deferred to the very end (do once):** Presentation Deck, Demo Video — describe the final state.
 
+### Open follow-ups tracker
+
+This is the single tracked home for follow-up items raised during review passes — going forward,
+a new follow-up gets a row here, not just changelog prose. Each `task_*` id is an internal tracking
+tag, not a ticket in an external system.
+
+| ID | What | Status |
+|---|---|---|
+| `task_ecd0ce74` | `SIG_LEGAL_THREAT`'s 3-char `hi_latn` fuzzy pattern `"fir"` false-positive-matched "from"/"for"/"Sir" | **Closed — Task 1** of the current plan (fixed + regression-pinned in `TextMatcherTest.kt`) |
+| `task_0682d091` | Floating overlay panel didn't show the speaker-off nudge (in-app Live screen did) | **Closed — Task 6** of the current plan |
+| `task_517a16be` | Both destructive settings rows (Clear conversations, Clear voice data) delete irreversibly with no confirmation step | **Closed — Task 4** of the current plan |
+| `task_6a52885f` | "Manual Mode" cue UI absent from the app | **Not a gap.** Deliberately deleted in the v2 pivot (see the corrected 2026-07-19 changelog entry above and `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`). No code needed. |
+| `task_e2bb31b0` | URLhaus's current API requires an `Auth-Key` HTTP header (a real API change since the scam-link-checker plan was written) — not wired up, so URLhaus currently no-ops to `UNKNOWN` (safe, fails closed); only Google Safe Browsing can flag a URL today, and only once a key is configured | **OPEN.** Discovered during Task 3 (scam-link checker) of the current plan. Needs an `Auth-Key` credential wired into the URLhaus client. |
+
 ## 6. Process rules to follow (do not skip)
 
 - `docs/IMPLEMENTATION_GUARDRAILS.md` — binding NEVER/ALWAYS rules for every change.
@@ -285,11 +299,19 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
     loopback available to inject distinguishable speech into the emulator without a restart — so that
     exact path remains unit-tested (via `SpeakerAttributor`) but not live-exercised end-to-end; flag
     this to a human tester with a real device before considering Part D fully proven in practice.
-  - **Separately discovered, not part of this plan:** a full verification pass found the
-    "Manual Mode" cue-tapping UI specified in `docs/MOBILE_UX_SPEC.md` §3.3 was never actually built —
-    the engine-side support (`RiskEvent.ManualCue`, `PackParityTest`'s manualCue-per-signal guardrail)
-    is complete and tested, but no screen anywhere in the app exposes it to a real user. Tracked as a
-    follow-up (task_6a52885f), not fixed in this pass.
+  - **Separately discovered, not part of this plan — CORRECTED same day, see below:** a full
+    verification pass initially flagged that the "Manual Mode" cue-tapping UI specified in
+    `docs/MOBILE_UX_SPEC.md` §3.3 was never actually built, describing it as an open gap
+    (task_6a52885f). **That framing was wrong and is corrected here.** The Manual Mode UI's absence
+    is **intentional, not a gap**: it was deliberately deleted in the v2 pivot — see
+    `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md` ("Manual Mode is dead
+    weight... it returns the *same canned answer to everyone*... **DELETED.** Removed from the app:
+    `ui/ManualModeGrid.kt` deleted, all Manual Mode entry points and chip rendering removed from
+    `MainActivity`/`SessionViewModel`... The intel-pack `manualCue` data and `PackParityTest` stay"
+    deliberately, for pack-authoring discipline). The engine-side support
+    (`RiskEvent.ManualCue`, `PackParityTest`'s manualCue-per-signal guardrail) is complete and tested
+    by design, not because a UI on top of it was forgotten — no screen was ever supposed to expose it
+    post-pivot. task_6a52885f is **not an open gap**; see the Open follow-ups tracker in §5.
 
 - **2026-07-18 (later still) — Premium redesign Phase 9 (Sweep) DONE — the 9-phase premium redesign
   is now complete.** Spec §9/§11/§12 item 9. A pre-implementation audit (Explore subagent) mapped
