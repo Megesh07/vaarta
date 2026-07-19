@@ -52,8 +52,7 @@ pointing at it. No Android Studio required — this project builds and tests ent
 
 ```bash
 git clone https://github.com/Megesh07/vaarta.git
-cd vaarta
-git checkout vaarta-v2-ux   # the active development branch — main is behind
+cd vaarta   # main is current — no branch switch needed
 
 # Run every unit test (pure JVM + Room-instrumented where noted, no device needed for the JVM ones):
 ./gradlew test
