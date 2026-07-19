@@ -287,7 +287,7 @@ git commit -m "core:reasoning — pack v3: KYC-expiry + family-emergency imperso
 - Create: `core/reasoning/src/main/kotlin/ai/vaarta/core/reasoning/UrlExtractor.kt`
 - Test: `core/reasoning/src/test/kotlin/ai/vaarta/core/reasoning/UrlExtractorTest.kt`
 - Create: `app/src/main/java/ai/vaarta/ai/LinkChecker.kt`
-- Modify: `app/src/main/java/ai/vaarta/ui/ConversationScreen.kt` (inline warning row)
+- Modify: `app/src/main/java/ai/vaarta/ChatView.kt` (inline warning row — NOTE: verified against the real source; the shared message-bubble composables `CallerBubble`/`YouBubble`/`ChatThread` live in `app/src/main/java/ai/vaarta/ChatView.kt`, package `ai.vaarta`, NOT `ai.vaarta.ui.ConversationScreen.kt`. `ChatThread` is the single composable reused by the in-app Conversations screen, the Live screen, and the overlay panel — wiring here covers all three surfaces at once.)
 - Modify: `app/src/main/res/values/strings.xml` (+ `values-hi`, `values-b+hi+Latn`)
 
 **Interfaces:**
@@ -364,7 +364,7 @@ Expected: PASS.
 
 - [ ] **Step 5: Add the Safe Browsing BuildConfig key (mirrors GEMINI_API_KEY)**
 
-In `app/build.gradle.kts`, wherever `GEMINI_API_KEY` is injected into `buildConfigField`, add a sibling `SAFE_BROWSING_API_KEY` read from the same `local.properties`/env source (empty-string default so absence = fail-closed, exactly like the Gemini key). Match the existing pattern verbatim; do not invent a new mechanism.
+In `app/build.gradle.kts`, `GEMINI_API_KEY` is read from `secrets.properties` (NOT `local.properties`) via a `Properties()`-based `geminiApiKey` val near the top of the file (`rootProject.file("secrets.properties")`, `.getProperty("GEMINI_API_KEY", "")`), then injected with `buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")` inside `defaultConfig`. Add a sibling `safeBrowsingApiKey` val reading `"SAFE_BROWSING_API_KEY"` from the same `secrets.properties` `Properties()` object, and a sibling `buildConfigField("String", "SAFE_BROWSING_API_KEY", "\"$safeBrowsingApiKey\"")` line right after the Gemini one. Empty-string default (property absent) = fail-closed, exactly like the Gemini key. Match the existing pattern verbatim; do not invent a new mechanism (no `local.properties`, no separate env-var path).
 
 - [ ] **Step 6: Implement `LinkChecker` (fail-closed, URLhaus first, Safe Browsing second)**
 
@@ -467,7 +467,26 @@ object LinkChecker {
 
 - [ ] **Step 8: Wire the inline warning into chat**
 
-In `ConversationScreen.kt`, where a chat message's text is rendered, extract URLs via `UrlExtractor.extract(message.text)`; for each, launch a `Dispatchers.IO` check (in the screen's `ViewModel` / a `LaunchedEffect` keyed by message id — do NOT block Compose), and when any returns `MALICIOUS`, render a red warning row (`stringResource(R.string.link_warning_malicious)`) below the message. `CLEAN_SO_FAR`/`UNKNOWN` render nothing. Follow the existing per-message composable structure; keep the check off the main thread and memoized per message id so it runs once.
+`ChatItem` (defined in `app/src/main/java/ai/vaarta/ChatItem.kt`) is a sealed interface with `Caller(text: String)`, `You(text: String)`, `Coach(...)`, `Assistant(...)` — no `id` field, just plain text. In `ChatView.kt`'s `CallerBubble(text: String)` (~line 135) and `YouBubble(text: String)` (~line 153) — the two plain-text bubbles, covering both directions per spec §13 ("chat messages, both directions") — after the existing `Text(text, ...)` line, add:
+
+```kotlin
+val urls = remember(text) { UrlExtractor.extract(text) }
+var malicious by remember(text) { mutableStateOf(false) }
+LaunchedEffect(text) {
+    if (urls.isNotEmpty()) {
+        malicious = withContext(Dispatchers.IO) { urls.any { LinkChecker.check(it) == LinkChecker.Verdict.MALICIOUS } }
+    }
+}
+if (malicious) {
+    Text(
+        stringResource(R.string.link_warning_malicious),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.error,
+    )
+}
+```
+
+Keying `remember`/`LaunchedEffect` on `text` itself (there is no message id) means the check re-runs only if the text content changes — correct memoization for this data model. `CLEAN_SO_FAR`/`UNKNOWN` render nothing (the `malicious` flag stays false). Add the necessary imports (`androidx.compose.runtime.remember`, `mutableStateOf`, `LaunchedEffect`, `kotlinx.coroutines.Dispatchers`, `kotlinx.coroutines.withContext`, and `ai.vaarta.ai.LinkChecker`, `ai.vaarta.core.reasoning.UrlExtractor`) to `ChatView.kt`.
 
 - [ ] **Step 9: Verify build + live check**
 
@@ -477,7 +496,7 @@ Then live on the emulator: send a chat message containing `http://testsafebrowsi
 - [ ] **Step 10: Commit**
 
 ```bash
-git add core/reasoning/src/main/kotlin/ai/vaarta/core/reasoning/UrlExtractor.kt core/reasoning/src/test/kotlin/ai/vaarta/core/reasoning/UrlExtractorTest.kt app/src/main/java/ai/vaarta/ai/LinkChecker.kt app/src/main/java/ai/vaarta/ui/ConversationScreen.kt app/build.gradle.kts app/src/main/res/values/strings.xml app/src/main/res/values-hi/strings.xml "app/src/main/res/values-b+hi+Latn/strings.xml" PROJECT_STATUS.md
+git add core/reasoning/src/main/kotlin/ai/vaarta/core/reasoning/UrlExtractor.kt core/reasoning/src/test/kotlin/ai/vaarta/core/reasoning/UrlExtractorTest.kt app/src/main/java/ai/vaarta/ai/LinkChecker.kt app/src/main/java/ai/vaarta/ChatView.kt app/build.gradle.kts app/src/main/res/values/strings.xml app/src/main/res/values-hi/strings.xml "app/src/main/res/values-b+hi+Latn/strings.xml" PROJECT_STATUS.md
 git commit -m "app+core — scam-link checker: URL extraction (TDD) + URLhaus/SafeBrowsing lookup (fail-closed, raise-only, never scores)"
 ```
 
