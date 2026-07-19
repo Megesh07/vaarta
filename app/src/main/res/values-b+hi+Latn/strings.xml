@@ -206,6 +206,13 @@
     <string name="settings_clear_voice_data">Voice data clear karo</string>
     <string name="settings_clear_voice_data_desc">VAARTA ne aapki calls se jo voice recognition seekha hai, use clear karta hai</string>
 
+    <!-- Confirmation dialogs for destructive actions (Task 4). -->
+    <string name="action_cancel">Cancel karo</string>
+    <string name="confirm_delete_all_title">Saari conversations delete karo?</string>
+    <string name="confirm_delete_all_body">Yeh sab saved conversations ko hamesha ke liye delete kar dega. Yeh wapas nahi kiya ja sakta.</string>
+    <string name="confirm_clear_voice_title">Voice data clear karo?</string>
+    <string name="confirm_clear_voice_body">VAARTA aapki calls se seekha gaya voice bhool jayega. Yeh wapas nahi kiya ja sakta.</string>
+
     <!-- Floating overlay -->
     <string name="overlay_notif_channel_name">Live call protection</string>
     <string name="overlay_notif_channel_desc">Jab VAARTA call sunkar aapke replies mein help kar raha ho, tab dikhta hai.</string>

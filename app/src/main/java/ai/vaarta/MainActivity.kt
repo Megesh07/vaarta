@@ -19,6 +19,7 @@ import ai.vaarta.ui.FirstRunLanguagePicker
 import ai.vaarta.ui.RiskHero
 import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.VaartaNav
+import ai.vaarta.ui.components.ConfirmDialog
 import ai.vaarta.ui.components.Eyebrow
 import ai.vaarta.ui.components.TextLinkRow
 import ai.vaarta.ui.components.VaartaBackBar
@@ -488,6 +489,7 @@ internal fun HistoryScreen(
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
+    var showDeleteAll by remember { mutableStateOf(false) }
     val deletedMsg = stringResource(R.string.conv_deleted)
     val undoLabel = stringResource(R.string.conv_undo)
 
@@ -600,7 +602,7 @@ internal fun HistoryScreen(
                     Spacer(Modifier.height(VSpace.xs))
                     VaartaSecondaryButton(
                         text = stringResource(R.string.conv_delete_all),
-                        onClick = { historyVm.deleteAll(); showMenu = false },
+                        onClick = { showDeleteAll = true },
                         leadingIcon = R.drawable.ic_close,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -608,6 +610,15 @@ internal fun HistoryScreen(
             }
         }
     }
+
+    ConfirmDialog(
+        visible = showDeleteAll,
+        title = stringResource(R.string.confirm_delete_all_title),
+        body = stringResource(R.string.confirm_delete_all_body),
+        confirmLabel = stringResource(R.string.conv_delete_all),
+        onConfirm = { historyVm.deleteAll(); showMenu = false },
+        onDismiss = { showDeleteAll = false },
+    )
 }
 
 /** A conversation row wrapped in swipe-to-delete; swiping either way triggers [onDelete]. */

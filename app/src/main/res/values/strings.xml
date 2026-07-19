@@ -204,6 +204,13 @@
     <string name="settings_clear_voice_data">Clear voice data</string>
     <string name="settings_clear_voice_data_desc">Deletes the voice recognition VAARTA has learned from your calls</string>
 
+    <!-- Confirmation dialogs for destructive actions (Task 4). -->
+    <string name="action_cancel">Cancel</string>
+    <string name="confirm_delete_all_title">Delete all conversations?</string>
+    <string name="confirm_delete_all_body">This permanently deletes every saved conversation. This cannot be undone.</string>
+    <string name="confirm_clear_voice_title">Clear voice data?</string>
+    <string name="confirm_clear_voice_body">VAARTA will forget the voice it learned from your calls. This cannot be undone.</string>
+
     <!-- Floating overlay (Phase 4C) — foreground-service notification + the draggable panel. -->
     <string name="overlay_notif_channel_name">Live call protection</string>
     <string name="overlay_notif_channel_desc">Shown while VAARTA is listening to a call to coach your replies.</string>

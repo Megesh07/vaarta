@@ -5,6 +5,7 @@ import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.share.BilingualShare
+import ai.vaarta.ui.components.ConfirmDialog
 import ai.vaarta.ui.components.LinkRow
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.components.TextLinkRow
@@ -82,6 +83,7 @@ fun HelpScreen(
     var showPanic by remember { mutableStateOf(false) }
     var showAllSteps by remember { mutableStateOf(false) }
     var showLanguagePicker by remember { mutableStateOf(false) }
+    var showClearVoice by remember { mutableStateOf(false) }
     var currentLanguage by remember { mutableStateOf(AppLanguage.current()) }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -207,7 +209,7 @@ fun HelpScreen(
 
             // Voice-attribution privacy control (Part D). Same destructive-action idiom as the
             // Conversations screen's "Delete all" row (MainActivity.kt HistoryScreen kebab sheet):
-            // a short explanatory caption above an outlined button, no confirmation dialog.
+            // now gated behind a confirmation dialog.
             HelpSection(title = "") {
                 Text(
                     stringResource(R.string.settings_clear_voice_data_desc),
@@ -216,7 +218,7 @@ fun HelpScreen(
                 Spacer(Modifier.height(VSpace.sm))
                 VaartaSecondaryButton(
                     text = stringResource(R.string.settings_clear_voice_data),
-                    onClick = { vm.session.clearVoiceData() },
+                    onClick = { showClearVoice = true },
                     leadingIcon = R.drawable.ic_close,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -249,6 +251,15 @@ fun HelpScreen(
             }
         }
     }
+
+    ConfirmDialog(
+        visible = showClearVoice,
+        title = stringResource(R.string.confirm_clear_voice_title),
+        body = stringResource(R.string.confirm_clear_voice_body),
+        confirmLabel = stringResource(R.string.settings_clear_voice_data),
+        onConfirm = { vm.session.clearVoiceData() },
+        onDismiss = { showClearVoice = false },
+    )
 }
 
 /** A single numbered step: a calm circular badge + the instruction, aligned as a row. */

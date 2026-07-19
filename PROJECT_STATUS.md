@@ -408,6 +408,7 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
       tone/register (the Hinglish file aims for casual Gen-Z code-mix, not textbook Hindi)
     - [ ] `SIG_HOOK_KYC_EXPIRY` / `SIG_HOOK_FAMILY_EMERGENCY` / `SIG_ISOLATION_NEW_NUMBER` hi + hi_latn patterns (pack v3)
     - [ ] `link_warning_malicious` (both `values-hi` and `values-b+hi+Latn`) — the scam-link checker's inline chat warning (Task 3)
+    - [ ] `action_cancel`, `confirm_delete_all_title`, `confirm_delete_all_body`, `confirm_clear_voice_title`, `confirm_clear_voice_body` (both `values-hi` and `values-b+hi+Latn`) — confirmation dialog strings for destructive actions (Task 4)
   - **Known deferred gaps** (noted, not silently gapped): the bundled seed feed (~8 cards) stays
     English-only until a native speaker translates it; numbers/dates (`relativeTimeLabel` in
     core:reasoning) still format as `en-IN` regardless of UI language (edge case 9 — a pure-JVM

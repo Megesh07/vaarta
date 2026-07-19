@@ -205,6 +205,13 @@
     <string name="settings_clear_voice_data">वॉइस डेटा मिटाएं</string>
     <string name="settings_clear_voice_data_desc">VAARTA ने आपकी कॉल्स से जो वॉइस पहचान सीखी है, उसे मिटाता है</string>
 
+    <!-- Confirmation dialogs for destructive actions (Task 4). -->
+    <string name="action_cancel">रद्द करें</string>
+    <string name="confirm_delete_all_title">सभी बातचीत डिलीट करें?</string>
+    <string name="confirm_delete_all_body">यह सभी सेव की गई बातचीत को हमेशा के लिए मिटा देता है। यह वापस नहीं किया जा सकता।</string>
+    <string name="confirm_clear_voice_title">वॉइस डेटा मिटाएं?</string>
+    <string name="confirm_clear_voice_body">VAARTA आपकी कॉल्स से सीखी गई आवाज को भूल जाएगा। यह वापस नहीं किया जा सकता।</string>
+
     <!-- Floating overlay -->
     <string name="overlay_notif_channel_name">लाइव कॉल सुरक्षा</string>
     <string name="overlay_notif_channel_desc">जब VAARTA कॉल सुनकर आपके जवाबों में मदद कर रहा हो, तब दिखता है।</string>
