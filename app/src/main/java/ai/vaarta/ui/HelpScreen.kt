@@ -3,6 +3,7 @@ package ai.vaarta.ui
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.guardian.Guardian
 import ai.vaarta.guardian.GuardianPickerContract
 import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.i18n.AppLanguage
@@ -15,11 +16,7 @@ import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSecondaryButton
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,17 +41,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 
 /**
  * Plain, calm steps for someone who has already been defrauded (spec §4.3). Ordered by urgency —
@@ -95,25 +94,26 @@ fun HelpScreen(
     var showClearVoice by remember { mutableStateOf(false) }
     var currentLanguage by remember { mutableStateOf(AppLanguage.current()) }
 
-    // Guardian contact picker (Task 5, spec §7) — a one-time, changeable choice so "Warn your
-    // family" can skip the share chooser next time. GuardianStore is a plain instance over the
-    // Android SharedPreferences file, same convention AwarenessStore uses.
+    // Guardian contact picker (Task 5, spec §7; Task 9 hardening fix) — a one-time, changeable
+    // choice so "Warn your family" can skip the share chooser next time. GuardianStore wraps the
+    // encrypted SQLCipher database (core:data), so every read/write is a suspend call; the picker
+    // itself needs no READ_CONTACTS — the system grants a temporary read on the picked Phone-data
+    // URI (GuardianPickerContract).
     val context = LocalContext.current
-    val guardianStore = remember { GuardianStore(context.getSharedPreferences(GuardianStore.PREFS_NAME, Context.MODE_PRIVATE)) }
-    var guardian by remember { mutableStateOf(guardianStore.get()) }
+    val guardianStore = remember { GuardianStore.create(context) }
+    val scope = rememberCoroutineScope()
+    var guardian by remember { mutableStateOf<Guardian?>(null) }
+    LaunchedEffect(Unit) { guardian = guardianStore.get() }
     val guardianPicker = rememberLauncherForActivityResult(GuardianPickerContract()) { picked ->
         if (picked != null) {
-            guardianStore.set(picked.name, picked.number)
-            guardian = picked
+            scope.launch {
+                guardianStore.set(picked.name, picked.number)
+                guardian = picked
+            }
         }
     }
-    val contactsPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) guardianPicker.launch(Unit)
-    }
     fun pickGuardian() {
-        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
-            PackageManager.PERMISSION_GRANTED
-        if (granted) guardianPicker.launch(Unit) else contactsPermission.launch(Manifest.permission.READ_CONTACTS)
+        guardianPicker.launch(Unit)
     }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -243,8 +243,10 @@ fun HelpScreen(
                     TextLinkRow(
                         text = stringResource(R.string.guardian_clear),
                         onClick = {
-                            guardianStore.clear()
-                            guardian = null
+                            scope.launch {
+                                guardianStore.clear()
+                                guardian = null
+                            }
                         },
                     )
                 }

@@ -96,3 +96,18 @@ data class VoiceSampleEntity(
         return result
     }
 }
+
+/**
+ * The one chosen guardian contact (Task 5, spec §7; Task 9 hardening fix). Single-row table — [id]
+ * is fixed at 1 so `INSERT OR REPLACE` always updates the same row rather than accumulating history.
+ * Matches `docs/PRIVACY_SECURITY.md`'s data-inventory line ("Guardian contact (name, number) | family
+ * alert | SQLCipher | until user removes") — this used to live in plain SharedPreferences, a real
+ * regression against that doc caught by the Task 9 hardening pass, not the original Task 5 review.
+ * Encrypted at rest by the same SQLCipher database as everything else here; deleted by [GuardianDao.clear].
+ */
+@Entity(tableName = "guardian")
+data class GuardianEntity(
+    @PrimaryKey val id: Int = 1,
+    @ColumnInfo(name = "name") val name: String,
+    @ColumnInfo(name = "number") val number: String,
+)

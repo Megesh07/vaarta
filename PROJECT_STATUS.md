@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-18 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-19 · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -221,6 +221,7 @@ tag, not a ticket in an external system.
 | `task_517a16be` | Both destructive settings rows (Clear conversations, Clear voice data) delete irreversibly with no confirmation step | **Closed — Task 4** of the current plan |
 | `task_6a52885f` | "Manual Mode" cue UI absent from the app | **Not a gap.** Deliberately deleted in the v2 pivot (see the corrected 2026-07-19 changelog entry above and `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`). No code needed. |
 | `task_e2bb31b0` | URLhaus's current API requires an `Auth-Key` HTTP header (a real API change since the scam-link-checker plan was written) — not wired up, so URLhaus currently no-ops to `UNKNOWN` (safe, fails closed); only Google Safe Browsing can flag a URL today, and only once a key is configured | **OPEN.** Discovered during Task 3 (scam-link checker) of the current plan. Needs an `Auth-Key` credential wired into the URLhaus client. |
+| `task_9f3a1c22` | Task 5's guardian contact picker regressed against `docs/PRIVACY_SECURITY.md`'s own binding data-inventory ("Guardian contact ... SQLCipher") and permission list ("Never: READ_CONTACTS") — guardian data was stored in plain SharedPreferences and the picker held `READ_CONTACTS` | **Closed — Task 9** of the current plan (hardening pass). Guardian storage moved into the encrypted SQLCipher database (`GuardianEntity`/`GuardianDao`, migration 3→4); the picker now targets `CommonDataKinds.Phone.CONTENT_URI` directly and needs no `READ_CONTACTS` at all. |
 
 ## 6. Process rules to follow (do not skip)
 
@@ -244,6 +245,48 @@ tag, not a ticket in an external system.
   other way around.
 
 ## 8. Change log
+
+- **2026-07-19 — Task 9 hardening pass caught + fixed a real privacy-doc regression from Task 5
+  (guardian contact picker; `task_9f3a1c22`).** Task 5's per-task review checked the guardian picker
+  against the plan brief and passed clean — but the broader Task 9 hardening pass checks the diff
+  against `docs/PRIVACY_SECURITY.md` too, and that's where the gap surfaced: the doc's data-inventory
+  table (line 31) states guardian contact (name, number) must live in SQLCipher, and its permission
+  list (line 88) states `READ_CONTACTS` is explicitly **never** requested ("system picker instead").
+  Task 5 shipped storing the guardian in plain `SharedPreferences` and requesting `READ_CONTACTS` at
+  pick time — both real regressions against an already-approved design, not new scope. Fixed:
+  - **Storage:** new `GuardianEntity`/`GuardianDao` in `core:data` (`core/data/src/main/kotlin/ai/vaarta/core/data/db/`),
+    following the exact `VoiceSampleEntity`/`VoiceprintDao` precedent (Part D) — a single-row table
+    (`id` fixed at 1, `INSERT OR REPLACE` upsert), `VaartaDatabase` bumped 3→4 with additive-only
+    `MIGRATION_3_4`. `GuardianStore` (`app/src/main/java/ai/vaarta/guardian/GuardianStore.kt`) now
+    wraps `GuardianDao` behind `suspend fun`s instead of raw `SharedPreferences`, mirroring
+    `HistoryRepository`'s DAO-wrapping layering. Both call sites (`HelpScreen.kt`'s guardian row,
+    `MainActivity.kt`'s `warnFamily`) reworked onto `rememberCoroutineScope()`/`LaunchedEffect` and
+    `lifecycleScope.launch` respectively. New instrumented test `GuardianDaoTest.kt`
+    (`core/data/src/androidTest/kotlin/ai/vaarta/core/data/db/`), same style as
+    `VoiceprintDaoTest.kt`, covering empty-get, round-trip, replace-not-duplicate, and clear — ran for
+    real on the `vaarta_test` emulator (`:core:data:connectedDebugAndroidTest`), all 4 cases passed.
+    The old SharedPreferences-only `GuardianStoreTest.kt` (`app/src/test/...`) was deleted — it tested
+    an API surface that no longer exists; the DAO-level instrumented test is its replacement.
+  - **Permission:** `GuardianPickerContract.kt` now picks against
+    `ContactsContract.CommonDataKinds.Phone.CONTENT_URI` directly (not `Contacts.CONTENT_URI`), so the
+    returned URI already points at the phone-number row — no more two-step Contacts→Phone lookup, and
+    critically no `READ_CONTACTS` permission needed at all (verified against the current Android
+    "Common intents" guide and the `CommonDataKinds.Phone` reference at implementation time, not just
+    recalled from training data: `ACTION_PICK` on the Phone data table grants a temporary read on the
+    one returned URI regardless of whether the app holds `READ_CONTACTS`). The manifest's
+    `READ_CONTACTS` line was removed entirely; `HelpScreen.kt`'s permission-request launcher and
+    pre-pick permission check were deleted — `pickGuardian()` is now just `guardianPicker.launch(Unit)`.
+    Also tightened `resolveGuardian`'s error log to class-name-only (dropped `${e.message}`), matching
+    `LinkChecker.kt`'s stricter house style for anything that touches contact/call PII.
+  - **Verification:** full clean `./gradlew clean test assembleDebug lintDebug` green (167 unit tests,
+    0 failures, 0 lint errors); `GuardianDaoTest` (4 cases) run for real on-device, not just written.
+    `docs/PRIVACY_SECURITY.md` line 31 ("SQLCipher") and line 88 ("Never: READ_CONTACTS") are now both
+    true statements about the code — the doc itself was not edited, only the code brought into line
+    with what it already said. **Process note:** this is exactly why Task 9 exists as a separate pass
+    from per-task review — a task-scoped review checks spec compliance against the plan brief; it does
+    not re-check every unrelated foundational doc. A broader hardening pass that explicitly diffs
+    against `docs/PRIVACY_SECURITY.md` is what caught this, and should keep doing so on future guardian/
+    contact/permission-touching changes.
 
 - **2026-07-19 — Live-call core hardening DONE (Parts A-D, 8 tasks, subagent-driven with task
   review + fix loops on every task).** Spec: `docs/superpowers/specs/2026-07-18-live-call-core-hardening-design.md`.

@@ -105,6 +105,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 /**
@@ -142,19 +143,23 @@ class MainActivity : AppCompatActivity() {
      * share-warning, the Article and Help screen rows — all wired to `onShare`). Task 5, spec §7: if
      * a guardian contact has been chosen, skip the "who do I send this to" friction entirely and open
      * a direct SMS pre-filled with the message; otherwise this is exactly today's behavior, unchanged.
+     * Task 9 hardening fix: guardian lookup now reads the encrypted SQLCipher-backed [GuardianStore]
+     * (suspend), so this launches on [lifecycleScope] instead of reading synchronously.
      */
     private fun warnFamily(text: String) {
-        val guardian = GuardianStore(getSharedPreferences(GuardianStore.PREFS_NAME, MODE_PRIVATE)).get()
-        if (guardian != null) {
-            val sms = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${guardian.number}")).apply {
-                putExtra("sms_body", text)
+        lifecycleScope.launch {
+            val guardian = GuardianStore.create(this@MainActivity).get()
+            if (guardian != null) {
+                val sms = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${guardian.number}")).apply {
+                    putExtra("sms_body", text)
+                }
+                val opened = runCatching { startActivity(sms) }.isSuccess
+                if (opened) return@launch
+                // No SMS app can handle smsto: (rare) — fall back to the chooser rather than silently
+                // dropping the alert.
             }
-            val opened = runCatching { startActivity(sms) }.isSuccess
-            if (opened) return
-            // No SMS app can handle smsto: (rare) — fall back to the chooser rather than silently
-            // dropping the alert.
+            shareText(text)
         }
-        shareText(text)
     }
 
     private fun shareText(text: String) {

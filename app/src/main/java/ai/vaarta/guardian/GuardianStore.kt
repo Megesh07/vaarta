@@ -1,26 +1,27 @@
 package ai.vaarta.guardian
 
-import android.content.SharedPreferences
+import ai.vaarta.core.data.db.GuardianDao
+import ai.vaarta.core.data.db.GuardianEntity
+import ai.vaarta.core.data.db.VaartaDatabase
+import android.content.Context
 
 data class Guardian(val name: String, val number: String)
 
-/** Stores the one chosen guardian contact locally (spec §7). Mirrors AwarenessStore's
- *  SharedPreferences use — no new persistence layer, nothing leaves the device. */
-class GuardianStore(private val prefs: SharedPreferences) {
-    fun get(): Guardian? {
-        val name = prefs.getString(KEY_NAME, null) ?: return null
-        val number = prefs.getString(KEY_NUMBER, null) ?: return null
-        return Guardian(name, number)
-    }
-    fun set(name: String, number: String) =
-        prefs.edit().putString(KEY_NAME, name).putString(KEY_NUMBER, number).apply()
-    fun clear() = prefs.edit().remove(KEY_NAME).remove(KEY_NUMBER).apply()
+/**
+ * Stores the one chosen guardian contact in the encrypted history database (Task 9 hardening fix —
+ * this used to be a plain SharedPreferences store, which regressed against
+ * `docs/PRIVACY_SECURITY.md`'s data-inventory line requiring SQLCipher for guardian contacts).
+ * Mirrors `HistoryRepository`'s DAO-wrapping layering: a thin `suspend`-fun facade over [GuardianDao]
+ * so callers never touch Room types directly.
+ */
+class GuardianStore private constructor(private val dao: GuardianDao) {
+    suspend fun get(): Guardian? = dao.get()?.let { Guardian(it.name, it.number) }
+
+    suspend fun set(name: String, number: String) = dao.set(GuardianEntity(name = name, number = number))
+
+    suspend fun clear() = dao.clear()
 
     companion object {
-        /** Shared preferences file name — the same instance both HelpScreen and MainActivity
-         *  read/write through, matching AwarenessStore's single-file convention. */
-        const val PREFS_NAME = "vaarta_guardian_prefs"
-        private const val KEY_NAME = "guardian_name"
-        private const val KEY_NUMBER = "guardian_number"
+        fun create(context: Context): GuardianStore = GuardianStore(VaartaDatabase.get(context).guardianDao())
     }
 }
