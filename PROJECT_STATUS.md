@@ -406,6 +406,7 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
     - [ ] `live_alert_family_message`, `analyze_share_warning_message` (family-facing alerts)
     - [ ] Spot-check the rest of `values-hi/strings.xml` and `values-b+hi+Latn/strings.xml` for
       tone/register (the Hinglish file aims for casual Gen-Z code-mix, not textbook Hindi)
+    - [ ] `SIG_HOOK_KYC_EXPIRY` / `SIG_HOOK_FAMILY_EMERGENCY` / `SIG_ISOLATION_NEW_NUMBER` hi + hi_latn patterns (pack v3)
   - **Known deferred gaps** (noted, not silently gapped): the bundled seed feed (~8 cards) stays
     English-only until a native speaker translates it; numbers/dates (`relativeTimeLabel` in
     core:reasoning) still format as `en-IN` regardless of UI language (edge case 9 — a pure-JVM
