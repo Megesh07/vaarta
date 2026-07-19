@@ -153,6 +153,7 @@
     <string name="chat_say_this">यह कहें</string>
     <string name="chat_vaarta_label">VAARTA</string>
     <string name="chat_sources_label">स्रोत</string>
+    <string name="link_warning_malicious">⚠️ यह लिंक ज्ञात स्कैम/मैलवेयर सूची में है। इसे न खोलें।</string>
 
     <!-- Signal tokens -->
     <string name="signal_hook">हुक</string>

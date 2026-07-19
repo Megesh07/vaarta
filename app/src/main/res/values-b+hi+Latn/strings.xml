@@ -154,6 +154,7 @@
     <string name="chat_say_this">Yeh kaho</string>
     <string name="chat_vaarta_label">VAARTA</string>
     <string name="chat_sources_label">Sources</string>
+    <string name="link_warning_malicious">⚠️ Yeh link ek known scam/malware list mein hai. Ise mat kholo.</string>
 
     <!-- Signal tokens -->
     <string name="signal_hook">Hook</string>

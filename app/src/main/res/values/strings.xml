@@ -148,6 +148,7 @@
     <string name="chat_say_this">Say this</string>
     <string name="chat_vaarta_label">VAARTA</string>
     <string name="chat_sources_label">Sources</string>
+    <string name="link_warning_malicious">⚠️ This link is on a known scam/malware list. Do not open it.</string>
 
     <!-- Signal tokens (design system, Signals.kt). -->
     <string name="signal_hook">Hook</string>

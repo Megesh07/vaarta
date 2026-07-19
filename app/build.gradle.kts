@@ -14,6 +14,12 @@ val geminiApiKey: String = Properties().apply {
     if (secretsFile.exists()) secretsFile.inputStream().use { load(it) }
 }.getProperty("GEMINI_API_KEY", "")
 
+// Safe Browsing v4 (free, non-commercial tier) — same fail-closed contract as the Gemini key:
+// absent file/property -> empty string, and LinkChecker's Safe Browsing lookup is skipped (UNKNOWN).
+val safeBrowsingApiKey: String = Properties().apply {
+    if (secretsFile.exists()) secretsFile.inputStream().use { load(it) }
+}.getProperty("SAFE_BROWSING_API_KEY", "")
+
 android {
     namespace = "ai.vaarta"
     compileSdk = 35
@@ -26,6 +32,7 @@ android {
         versionName = "0.1.0-mvp"
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "SAFE_BROWSING_API_KEY", "\"$safeBrowsingApiKey\"")
     }
 
     buildTypes {
