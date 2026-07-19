@@ -206,6 +206,11 @@
     <string name="settings_clear_voice_data">Voice data clear karo</string>
     <string name="settings_clear_voice_data_desc">VAARTA ne aapki calls se jo voice recognition seekha hai, use clear karta hai</string>
 
+    <!-- Guardian contact picker (Task 5). -->
+    <string name="guardian_row_title">Guardian contact</string>
+    <string name="guardian_not_set">Set nahi hai — choose karne ke liye tap karo</string>
+    <string name="guardian_clear">Guardian hatao</string>
+
     <!-- Confirmation dialogs for destructive actions (Task 4). -->
     <string name="action_cancel">Cancel karo</string>
     <string name="confirm_delete_all_title">Saari conversations delete karo?</string>

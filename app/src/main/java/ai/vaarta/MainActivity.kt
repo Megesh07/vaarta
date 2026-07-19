@@ -11,6 +11,7 @@ import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.reasoning.Source
 import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.export.PdfExporter
+import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.recording.AudioAnalyzerViewModel
@@ -130,10 +131,30 @@ class MainActivity : AppCompatActivity() {
                 if (!languageChosen) {
                     FirstRunLanguagePicker(onChosen = { languageChosen = true })
                 } else {
-                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::warnFamily, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
                 }
             }
         }
+    }
+
+    /**
+     * The single entry point behind every "Warn your family" action (Live's alert-family, Analyze's
+     * share-warning, the Article and Help screen rows — all wired to `onShare`). Task 5, spec §7: if
+     * a guardian contact has been chosen, skip the "who do I send this to" friction entirely and open
+     * a direct SMS pre-filled with the message; otherwise this is exactly today's behavior, unchanged.
+     */
+    private fun warnFamily(text: String) {
+        val guardian = GuardianStore(getSharedPreferences(GuardianStore.PREFS_NAME, MODE_PRIVATE)).get()
+        if (guardian != null) {
+            val sms = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${guardian.number}")).apply {
+                putExtra("sms_body", text)
+            }
+            val opened = runCatching { startActivity(sms) }.isSuccess
+            if (opened) return
+            // No SMS app can handle smsto: (rare) — fall back to the chooser rather than silently
+            // dropping the alert.
+        }
+        shareText(text)
     }
 
     private fun shareText(text: String) {

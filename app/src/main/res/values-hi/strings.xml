@@ -205,6 +205,11 @@
     <string name="settings_clear_voice_data">वॉइस डेटा मिटाएं</string>
     <string name="settings_clear_voice_data_desc">VAARTA ने आपकी कॉल्स से जो वॉइस पहचान सीखी है, उसे मिटाता है</string>
 
+    <!-- Guardian contact picker (Task 5). -->
+    <string name="guardian_row_title">अभिभावक संपर्क</string>
+    <string name="guardian_not_set">सेट नहीं है — चुनने के लिए टैप करें</string>
+    <string name="guardian_clear">अभिभावक हटाएं</string>
+
     <!-- Confirmation dialogs for destructive actions (Task 4). -->
     <string name="action_cancel">रद्द करें</string>
     <string name="confirm_delete_all_title">सभी बातचीत डिलीट करें?</string>

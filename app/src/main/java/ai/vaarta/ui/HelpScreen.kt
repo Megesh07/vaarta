@@ -3,6 +3,8 @@ package ai.vaarta.ui
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
+import ai.vaarta.guardian.GuardianPickerContract
+import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.share.BilingualShare
 import ai.vaarta.ui.components.ConfirmDialog
@@ -13,6 +15,11 @@ import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSecondaryButton
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,8 +51,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 
 /**
  * Plain, calm steps for someone who has already been defrauded (spec §4.3). Ordered by urgency —
@@ -85,6 +94,27 @@ fun HelpScreen(
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showClearVoice by remember { mutableStateOf(false) }
     var currentLanguage by remember { mutableStateOf(AppLanguage.current()) }
+
+    // Guardian contact picker (Task 5, spec §7) — a one-time, changeable choice so "Warn your
+    // family" can skip the share chooser next time. GuardianStore is a plain instance over the
+    // Android SharedPreferences file, same convention AwarenessStore uses.
+    val context = LocalContext.current
+    val guardianStore = remember { GuardianStore(context.getSharedPreferences(GuardianStore.PREFS_NAME, Context.MODE_PRIVATE)) }
+    var guardian by remember { mutableStateOf(guardianStore.get()) }
+    val guardianPicker = rememberLauncherForActivityResult(GuardianPickerContract()) { picked ->
+        if (picked != null) {
+            guardianStore.set(picked.name, picked.number)
+            guardian = picked
+        }
+    }
+    val contactsPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) guardianPicker.launch(Unit)
+    }
+    fun pickGuardian() {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (granted) guardianPicker.launch(Unit) else contactsPermission.launch(Manifest.permission.READ_CONTACTS)
+    }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -202,6 +232,22 @@ fun HelpScreen(
                     subtitle = stringResource(R.string.help_tools_warn_family_sub),
                     onClick = { onShare(BilingualShare.compose(warnFamilyMessage, currentLanguage)) },
                 )
+                Spacer(Modifier.height(VSpace.xs))
+                LinkRow(
+                    icon = R.drawable.ic_phone,
+                    title = stringResource(R.string.guardian_row_title),
+                    subtitle = guardian?.name ?: stringResource(R.string.guardian_not_set),
+                    onClick = { pickGuardian() },
+                )
+                if (guardian != null) {
+                    TextLinkRow(
+                        text = stringResource(R.string.guardian_clear),
+                        onClick = {
+                            guardianStore.clear()
+                            guardian = null
+                        },
+                    )
+                }
             }
             HelpSection(title = "") {
                 HelpLanguageRow(current = currentLanguage, onClick = { showLanguagePicker = true })

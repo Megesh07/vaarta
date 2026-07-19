@@ -18,6 +18,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Guardian contact picker (Task 5, spec §7). Requested at runtime only at the moment the user
+         taps "Guardian contact" — needed to read back the picked contact's phone number, since the
+         system contact picker's result Uri only grants access to that one Contacts row, not the
+         Phone data table. Never held passively; the app has no other use for contacts. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
