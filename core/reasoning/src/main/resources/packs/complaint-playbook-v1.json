@@ -19,7 +19,10 @@
         { "key": "complainant.name", "label": "Your name", "slot": "identity.name", "selector": "input#complainantName" },
         { "key": "complainant.mobile", "label": "Your mobile", "slot": "identity.mobile", "selector": "input#complainantMobile" },
         { "key": "complainant.email", "label": "Your email", "slot": "identity.email", "selector": "input#complainantEmail" },
-        { "key": "complainant.address", "label": "Your address", "slot": "identity.address", "selector": "textarea#complainantAddress" }
+        { "key": "complainant.address", "label": "Your address", "slot": "identity.address", "selector": "textarea#complainantAddress" },
+        { "key": "loss.amount", "label": "Fraud amount (INR)", "slot": "loss.amount", "selector": null },
+        { "key": "loss.txnId", "label": "Transaction ID / UTR (12-digit)", "slot": "loss.txnId", "selector": null },
+        { "key": "loss.txnDate", "label": "Transaction date", "slot": "loss.txnDate", "selector": null }
       ],
       "documents": [
         { "key": "transcript", "label": "Call transcript", "providedByVaarta": true, "note": "VAARTA has this from the call." },
