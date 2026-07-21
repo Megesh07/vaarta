@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val CHAT_STARTERS = listOf(R.string.chat_starter_1, R.string.chat_starter_2, R.string.chat_starter_3)
+private val ARTICLE_STARTERS = listOf(R.string.chat_article_starter_1, R.string.chat_article_starter_2, R.string.chat_article_starter_3)
 
 /**
  * A free-form "Ask VAARTA" conversation (v2, spec §6.7) — a ChatGPT-style chat with a multimodal
@@ -87,6 +88,7 @@ fun ConversationScreen(
     val turns by vm.turns.collectAsState()
     val sending by vm.sending.collectAsState()
     val header by vm.header.collectAsState()
+    val topic by vm.topic.collectAsState()
     var input by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<List<ChatAttachment>>(emptyList()) }
     var showAttachSheet by remember { mutableStateOf(false) }
@@ -138,12 +140,40 @@ fun ConversationScreen(
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            VaartaBackBar(title = if (header != null) stringResource(R.string.chat_about_call_title) else stringResource(R.string.chat_title), onBack = onBack)
+            VaartaBackBar(
+                title = when {
+                    topic != null -> stringResource(R.string.chat_about_article_title)
+                    header != null -> stringResource(R.string.chat_about_call_title)
+                    else -> stringResource(R.string.chat_title)
+                },
+                onBack = onBack,
+            )
 
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = VSpace.lg),
                 verticalArrangement = Arrangement.spacedBy(VSpace.md),
             ) {
+                // Article context: a visible banner so it's unmistakable the chat is about THIS article
+                // (and the model already has it as context — see ConversationViewModel.newChat topic).
+                topic?.let { t ->
+                    Spacer(Modifier.height(VSpace.xs))
+                    Surface(color = c.indigoTint, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.padding(VSpace.md),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+                        ) {
+                            VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = c.indigoInk, size = 18.dp)
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.chat_topic_eyebrow), style = MaterialTheme.typography.labelSmall, color = c.indigoInk)
+                                Text(
+                                    t, style = MaterialTheme.typography.bodyMedium, color = c.ink,
+                                    maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                }
                 header?.let { h ->
                     Spacer(Modifier.height(VSpace.xs))
                     StatusBanner(h.level, h.score, reassure = false, aiRaised = false)
@@ -163,19 +193,23 @@ fun ConversationScreen(
                     }
                 }
                 if (turns.isEmpty() && header == null) {
-                    Spacer(Modifier.height(VSpace.xxl))
+                    Spacer(Modifier.height(if (topic != null) VSpace.lg else VSpace.xxl))
                     Column(
                         Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(VSpace.md),
                     ) {
-                        VaartaIcon(R.drawable.ic_nav_shield, contentDescription = null, tint = c.faint, size = 40.dp)
+                        // For an article chat the banner above already carries the context, so skip the
+                        // generic shield and lead straight into article-specific starters.
+                        if (topic == null) {
+                            VaartaIcon(R.drawable.ic_nav_shield, contentDescription = null, tint = c.faint, size = 40.dp)
+                        }
                         Text(
-                            stringResource(R.string.chat_empty_title),
+                            stringResource(if (topic != null) R.string.chat_empty_article_title else R.string.chat_empty_title),
                             style = MaterialTheme.typography.titleLarge, color = c.ink, textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(VSpace.xs))
-                        for (starter in CHAT_STARTERS) {
+                        for (starter in if (topic != null) ARTICLE_STARTERS else CHAT_STARTERS) {
                             StarterChip(stringResource(starter), onClick = { vm.send(ctx.getString(starter), emptyList()) })
                         }
                     }
