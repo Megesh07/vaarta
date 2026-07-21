@@ -9,6 +9,7 @@ import ai.vaarta.core.complaint.ComplaintRenderers
 import ai.vaarta.core.complaint.DetectedSignal
 import ai.vaarta.ai.GeminiClient
 import ai.vaarta.ai.GeminiLiveClient
+import ai.vaarta.ai.TranscriptPlausibility
 import ai.vaarta.audio.AudioCapture
 import ai.vaarta.core.data.db.VaartaDatabase
 import ai.vaarta.core.data.db.VoiceSampleEntity
@@ -159,9 +160,20 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
 
     // --- Live AI layer (ADR-0002/0003) — opt-in, fails closed, never replaces the deterministic path ---
 
-    /** Opt-in consent for cloud AI suggestions. OFF by default; app works fully without it. */
-    private val _aiEnabled = MutableStateFlow(false)
+    /** Cloud AI layer. ON by default (live-session redesign 2026-07-21 — no toggle): live protection
+     *  is always intelligent when online, gated only by [isOnline]; the deterministic engine always
+     *  runs, so offline simply means on-device-only, never broken. */
+    private val _aiEnabled = MutableStateFlow(true)
     val aiEnabled: StateFlow<Boolean> = _aiEnabled.asStateFlow()
+
+    /** True when the device has an internet-capable network. AI turns are skipped when offline (the
+     *  deterministic score/question still render) so we never burn retries on a dead network. */
+    private fun isOnline(): Boolean {
+        val cm = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager ?: return true
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
 
     private val _aiLoading = MutableStateFlow(false)
     val aiLoading: StateFlow<Boolean> = _aiLoading.asStateFlow()
@@ -339,7 +351,15 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
                 pcmBuffer.reset()
                 bytes
             }
-            if (text.isNotEmpty()) processCallerTurn(text, pcm)
+            if (text.isEmpty()) return@launch
+            // task_b91d4a05: Gemini Live's inputTranscription was observed hallucinating fluent
+            // Tamil/Telugu text (VAARTA supports only EN/HI/Hinglish) from near-silence on a real
+            // device — treat script-implausible turns as ASR noise, never real caller speech.
+            if (!TranscriptPlausibility.isPlausible(text)) {
+                android.util.Log.w("CopilotSession", "dropped implausible-script transcript turn (len=${text.length})")
+                return@launch
+            }
+            processCallerTurn(text, pcm)
         }
     }
 
@@ -464,7 +484,7 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
      * floor by max(), and any scam-variant/benign claim needs a cited source.
      */
     private fun requestIntelligence(callerLine: String, state: RiskState) {
-        if (!_aiEnabled.value || !aiConfigured) return
+        if (!_aiEnabled.value || !aiConfigured || !isOnline()) return
         val now = SystemClock.elapsedRealtime()
         if (now - lastCoachRequestRealtimeMs < MIN_COACH_INTERVAL_MS) return
         lastCoachRequestRealtimeMs = now
@@ -487,8 +507,13 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
         val g0 = _grounded.value
         val groundedScamTypeForCoach = if (g0 != null && HybridAlert.mayShowScamType(g0)) g0.scamType else null
 
+        // Severity signal for the coach: the hybrid displayed level (deterministic floor, already
+        // raised by any grounded concern from a prior turn) — this is what tells the model to stay
+        // light on a merely-suspicious call vs. reassure-then-firm on a confirmed scam.
+        val severity = _displayedLevel.value.name
+
         scope.launch {
-            val coachDeferred = async(Dispatchers.IO) { GeminiClient.coach(historySnapshot, stage, next, groundedScamTypeForCoach) }
+            val coachDeferred = async(Dispatchers.IO) { GeminiClient.coach(historySnapshot, stage, next, severity, groundedScamTypeForCoach) }
             val groundDeferred =
                 if (shouldGround) async(Dispatchers.IO) { GeminiClient.classify(callerContext) } else null
 
@@ -603,7 +628,7 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
      * [aiSuggestion] null so the UI shows only the deterministic question.
      */
     private fun requestAiSuggestion() {
-        if (!_aiEnabled.value || !aiConfigured || lastCallerLine.isBlank()) {
+        if (!_aiEnabled.value || !aiConfigured || !isOnline() || lastCallerLine.isBlank()) {
             _aiSuggestion.value = null
             return
         }

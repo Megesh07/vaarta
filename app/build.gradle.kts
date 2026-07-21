@@ -54,7 +54,15 @@ android {
     }
 
     testOptions {
-        unitTests.all { it.useJUnitPlatform() }
+        unitTests.all {
+            it.useJUnitPlatform()
+            // Forward "vaarta.*" -D flags (e.g. -Dvaarta.latency=1) to the forked test JVM — Gradle
+            // does NOT do this by default, and the opt-in real-network harnesses (GeminiCoachLatency
+            // Harness, PanicPersonalizationHarness) gate themselves on exactly this property.
+            System.getProperties().forEach { (k, v) ->
+                if (k.toString().startsWith("vaarta.")) it.systemProperty(k.toString(), v.toString())
+            }
+        }
     }
 
     compileOptions {
@@ -92,6 +100,10 @@ dependencies {
     // for the text-mode call; OkHttp provides the WebSocket for the Gemini Live streaming path.
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+
+    // Loads real article preview images (og:image) in the Trending-scams feed. Small, standard,
+    // Compose-native; degrades to the category illustration when a card has no image.
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

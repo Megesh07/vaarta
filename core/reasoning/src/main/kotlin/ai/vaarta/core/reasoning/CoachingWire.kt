@@ -20,6 +20,10 @@ data class GroundedWire(val scamType: String = "", val concern: String = "", val
 @Serializable
 data class AudioTurnWire(val speaker: String = "", val text: String = "")
 
+/** Raw wire shape of the panic-sheet personalization (redesign spec §A2), before validation. */
+@Serializable
+data class PanicWireResponse(val heading: String = "", val steps: List<String> = emptyList())
+
 /** Raw wire shape of the recorded-call analysis, before validation (ADR-0003 Phase 4D). */
 @Serializable
 data class AudioAnalysisWire(
@@ -110,6 +114,21 @@ object CoachingWireParser {
             benign = wire.benign,
             language = wire.language.trim().ifBlank { null },
         )
+    }
+
+    /**
+     * Parses the panic-personalization model's structured JSON (redesign spec §A2). Fails closed
+     * (null) if the heading is blank or no step survives — the panic sheet then shows only the
+     * always-present base steps. Caps at 4 steps (matches the base [RightNowSteps] count) and drops
+     * any blank step.
+     */
+    fun parsePanicPersonalization(rawJson: String?): PanicPersonalization? {
+        if (rawJson.isNullOrBlank()) return null
+        val wire = runCatching { json.decodeFromString(PanicWireResponse.serializer(), rawJson) }.getOrNull() ?: return null
+        if (wire.heading.isBlank()) return null
+        val steps = wire.steps.map { it.trim() }.filter { it.isNotBlank() }.take(4)
+        if (steps.isEmpty()) return null
+        return PanicPersonalization(wire.heading.trim(), steps)
     }
 
     /** Leniently pulls the first `{ … }` object out of a text blob (grounded output isn't strict JSON). */

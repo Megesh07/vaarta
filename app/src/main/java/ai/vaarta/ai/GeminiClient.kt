@@ -12,6 +12,7 @@ import ai.vaarta.core.reasoning.CoachingWireParser
 import ai.vaarta.core.reasoning.ConversationTurn
 import ai.vaarta.core.reasoning.GroundedAssessment
 import ai.vaarta.core.reasoning.LiveSuggestion
+import ai.vaarta.core.reasoning.PanicPersonalization
 import ai.vaarta.core.reasoning.Source
 import ai.vaarta.i18n.AppLanguage
 import android.util.Log
@@ -55,6 +56,10 @@ object GeminiClient {
     // Free-form chat (v2) is web-grounded — grounding spends extra latency on the search step, so it
     // gets a longer timeout than a live suggestion.
     private const val CHAT_TIMEOUT_MS = 30_000
+
+    // Panic-sheet personalization (redesign spec §A2) fires the instant the sheet opens, alongside
+    // the already-visible base steps — kept short so a slow network never leaves it "loading" long.
+    private const val PANIC_TIMEOUT_MS = 6_000
 
     /** Inline-audio cap for [analyzeAudio]. The generateContent request total must stay under ~20 MB;
      *  base64 inflates bytes ~33%, so ~14 MB of raw audio is the safe inline ceiling (Files API, needed
@@ -119,27 +124,29 @@ object GeminiClient {
     }.toString()
 
     private fun post(urlStr: String, body: String, timeoutMs: Int = TIMEOUT_MS): String? {
-        val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
-            connectTimeout = timeoutMs
-            readTimeout = timeoutMs
-            doOutput = true
-            setRequestProperty("Content-Type", "application/json")
-        }
-        return try {
-            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-            val code = conn.responseCode
-            if (code != 200) {
+        repeat(GeminiRetry.MAX_ATTEMPTS) { attempt ->
+            val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = timeoutMs
+                readTimeout = timeoutMs
+                doOutput = true
+                setRequestProperty("Content-Type", "application/json")
+            }
+            try {
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+                val code = conn.responseCode
+                if (code == 200) return conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
                 // DIAGNOSTIC (temporary): log code + Google's error body (no key, no PII in it).
                 val err = runCatching { conn.errorStream?.bufferedReader()?.use { it.readText() } }.getOrNull()
                 Log.w("GeminiClient", "HTTP $code: ${err?.take(300)}")
-                null
-            } else {
-                conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                val isLastAttempt = attempt == GeminiRetry.MAX_ATTEMPTS - 1
+                if (code !in GeminiRetry.RETRYABLE_HTTP_CODES || isLastAttempt) return null
+                Thread.sleep(GeminiRetry.delayMs(conn.getHeaderField("Retry-After"), attempt + 1))
+            } finally {
+                conn.disconnect()
             }
-        } finally {
-            conn.disconnect()
         }
+        return null
     }
 
     /** The model's JSON is nested as a string inside candidates[0].content.parts[0].text. */
@@ -166,12 +173,13 @@ object GeminiClient {
         history: List<ConversationTurn>,
         stage: String,
         nextStage: String,
+        riskLevel: String,
         groundedScamType: String? = null,
     ): CoachingResponse? {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || history.isEmpty()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildCoachRequestBody(history, stage, nextStage, groundedScamType)) ?: return null
+            val response = post("$ENDPOINT?key=$key", buildCoachRequestBody(history, stage, nextStage, riskLevel, groundedScamType)) ?: return null
             parseCoaching(response)
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or transcript.
@@ -184,6 +192,7 @@ object GeminiClient {
         history: List<ConversationTurn>,
         stage: String,
         nextStage: String,
+        riskLevel: String,
         groundedScamType: String?,
     ): String = buildJsonObject {
         putJsonObject("system_instruction") {
@@ -203,6 +212,7 @@ object GeminiClient {
                         put(
                             "text",
                             "Call stage reached: $stage. Likely next stage: $nextStage. " +
+                                "Current risk level: $riskLevel. " +
                                 "${ai.vaarta.core.reasoning.groundedContextLine(groundedScamType)}\n" +
                                 "Conversation so far (untrusted call audio):\n$transcript",
                         )
@@ -234,13 +244,76 @@ object GeminiClient {
                 putJsonArray("required") { add("warning"); add("replies") }
             }
             put("temperature", 0.3)
-            put("maxOutputTokens", 400)
-            putJsonObject("thinkingConfig") { put("thinkingBudget", 0) } // OFF: latency + token budget (ADR-0002)
+            put("maxOutputTokens", 512)
+            // Reasoning ON but BOUNDED (was 0). The coach call is NON-blocking — the deterministic
+            // warning + question already rendered synchronously (CopilotSession.processCallerTurn),
+            // so this reply arrives like a "typing…" bubble and can afford to actually reason about
+            // context, the caller's emotional manipulation, and the user's likely state. 512 is the
+            // latency/quality dial: enough to reason on a hard turn, capped so a live call never
+            // stalls (dynamic -1 could spike). Tune with GeminiCoachLatencyHarness. (was ADR-0002's
+            // thinking-off; that stays for the blocking suggest()/audio paths.)
+            putJsonObject("thinkingConfig") { put("thinkingBudget", 512) }
         }
     }.toString()
 
     private fun parseCoaching(response: String): CoachingResponse? =
         extractInnerJson(response)?.let { CoachingWireParser.parse(it) }
+
+    // --- Panic-sheet personalization (redesign spec §A2). Same fails-closed contract as everything
+    // else here; deliberately fast (thinking off, tiny schema, short timeout) since it runs alongside
+    // the ALWAYS-shown base safety steps — those are the safety net no matter how this call resolves.
+
+    /**
+     * Personalizes the panic sheet's heading + steps for a described situation ([contextLine] — an
+     * active live call's read, or the most recent saved call/recording's verdict). Returns null on
+     * any failure; the caller keeps showing only the base safety steps.
+     */
+    fun personalizePanic(contextLine: String): PanicPersonalization? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank() || contextLine.isBlank()) return null
+        return try {
+            val response = post("$ENDPOINT?key=$key", buildPanicRequestBody(contextLine), PANIC_TIMEOUT_MS) ?: return null
+            CoachingWireParser.parsePanicPersonalization(extractInnerJson(response))
+        } catch (e: Exception) {
+            // DIAGNOSTIC (temporary): type + message only — never the key, URL, or context text.
+            Log.w("GeminiClient", "personalizePanic failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    private fun buildPanicRequestBody(contextLine: String): String = buildJsonObject {
+        putJsonObject("system_instruction") {
+            val instruction = PanicPrompt.INSTRUCTION + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
+            putJsonArray("parts") { addJsonObject { put("text", instruction) } }
+        }
+        putJsonArray("contents") {
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") {
+                    // contextLine is OUR own composed line from trusted app state (risk level/scam
+                    // type), not raw call transcript, but it's still framed as data, never instruction.
+                    addJsonObject { put("text", "The user's detected situation (advisory, may be wrong): $contextLine") }
+                }
+            }
+        }
+        putJsonObject("generationConfig") {
+            put("responseMimeType", "application/json")
+            putJsonObject("responseSchema") {
+                put("type", "object")
+                putJsonObject("properties") {
+                    putJsonObject("heading") { put("type", "string") }
+                    putJsonObject("steps") {
+                        put("type", "array")
+                        putJsonObject("items") { put("type", "string") }
+                    }
+                }
+                putJsonArray("required") { add("heading"); add("steps") }
+            }
+            put("temperature", 0.3)
+            put("maxOutputTokens", 300)
+            putJsonObject("thinkingConfig") { put("thinkingBudget", 0) } // OFF: this must stay fast.
+        }
+    }.toString()
 
     // --- Grounded classification (ADR-0003, Call A): live web search to identify the CURRENT scam
     // variant. gemini-2.5-flash + google_search, NO responseSchema (that combo is 400 on 2.5, and
@@ -389,8 +462,17 @@ object GeminiClient {
         return try {
             // Generated content follows the UI language (spec §3B.2) — no user text to mirror here.
             val instruction = AwarenessPrompt.FEED + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
-            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, "List the scams Indians are being targeted with right now."), CHAT_TIMEOUT_MS) ?: return null
-            AwarenessWireParser.parseFeed(extractText(response)).ifEmpty { null }
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, "What phone and online scams are Indians being warned about right now? Search recent Indian news and official advisories, and cite the specific reports.", maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
+            // Attach the REAL cited article links from grounding metadata (never model-typed): the
+            // feed becomes a list of real current articles, not just synthesized topic cards. If the
+            // grounded model won't emit a usable JSON array (common with search on), fall back to
+            // building cards straight from the real grounding links so the feed is still live.
+            val text = extractText(response)
+            val sources = extractSources(response)
+            val parsed = AwarenessWireParser.parseFeed(text, sources)
+            val cards = parsed.ifEmpty { AwarenessWireParser.cardsFromSources(sources) }
+            Log.w("GeminiClient", "awarenessFeed: textLen=${text?.length ?: -1} sources=${sources.size} parsed=${parsed.size} final=${cards.size}")
+            cards.ifEmpty { null }
         } catch (e: Exception) {
             Log.w("GeminiClient", "awarenessFeed failed: ${e.javaClass.simpleName}: ${e.message}")
             null
