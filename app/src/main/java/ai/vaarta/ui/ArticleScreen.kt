@@ -41,6 +41,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import android.annotation.SuppressLint
+import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -57,9 +66,19 @@ fun ArticleScreen(
     onBack: () -> Unit,
     onOpenUrl: (String) -> Unit,
     onShare: (String) -> Unit,
-    onAskAbout: (String) -> Unit,
+    onAskAbout: (seed: String, topic: String) -> Unit,
     modifier: Modifier = Modifier,
+    relatedPool: List<AwarenessCard> = emptyList(),
+    onOpenArticle: (AwarenessCard) -> Unit = {},
 ) {
+    // Live-news redesign (2026-07-21): a card backed by a REAL article URL opens the real article
+    // in-app, with an AI "ask/summarize about this article" action and a Related row. A seed/offline
+    // card (no URL) keeps the AI-summary page below.
+    if (!card.url.isNullOrBlank()) {
+        LiveArticleView(card, relatedPool, onBack, onOpenUrl, onShare, onAskAbout, onOpenArticle, modifier)
+        return
+    }
+    val onAskAboutThis: (String) -> Unit = { seed -> onAskAbout(seed, card.title) }
     val c = VaartaTheme.colors
     var summary by remember(card.title) { mutableStateOf<ArticleSummary?>(null) }
     var loading by remember(card.title) { mutableStateOf(true) }
@@ -108,7 +127,7 @@ fun ArticleScreen(
         bottomContent = {
             VaartaButton(
                 text = stringResource(R.string.article_ask),
-                onClick = { onAskAbout(seedContext) },
+                onClick = { onAskAboutThis(seedContext) },
                 leadingIcon = R.drawable.ic_sparkle,
                 enabled = !loading,
                 modifier = Modifier.fillMaxWidth(),
@@ -221,4 +240,141 @@ private fun warnFamilyText(card: AwarenessCard, summaryText: String, prefix: Str
     append(prefix)
     append(summaryText)
     append(suffix)
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Live article (2026-07-21): the REAL article rendered in-app, with an AI "ask/summarize about this
+// article" action and a Related row. Only reached when the card has a real grounding-cited URL.
+// ---------------------------------------------------------------------------------------------------
+
+@Composable
+private fun LiveArticleView(
+    card: AwarenessCard,
+    relatedPool: List<AwarenessCard>,
+    onBack: () -> Unit,
+    onOpenUrl: (String) -> Unit,
+    onShare: (String) -> Unit,
+    onAskAbout: (seed: String, topic: String) -> Unit,
+    onOpenArticle: (AwarenessCard) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = VaartaTheme.colors
+    val url = card.url!!
+    val related = remember(card, relatedPool) { relatedArticles(relatedPool, card) }
+
+    // The AI seed: the chat is grounded, so this one context covers BOTH "summarize it" and any
+    // follow-up question the user asks about this specific article.
+    val seedContext = buildString {
+        append("The user is reading this scam-news article: \"${card.title}\"")
+        if (card.scamType.isNotBlank()) append(" (category: ${card.scamType})")
+        append(" — ").append(url)
+        append(". Summarize it in plain language and answer their questions about it.")
+    }
+
+    val openBrowserA11y = stringResource(R.string.article_open_browser)
+    VaartaSubScreen(
+        title = null,
+        onBack = onBack,
+        modifier = modifier,
+        scrollable = false, // the WebView owns scrolling — never nest it in a scroll container
+        trailing = {
+            Surface(
+                color = Color.Transparent,
+                shape = CircleShape,
+                modifier = Modifier.size(44.dp).vaartaPressable(onClick = { onOpenUrl(url) }),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    VaartaIcon(R.drawable.ic_globe, contentDescription = openBrowserA11y, tint = c.ink, size = 22.dp)
+                }
+            }
+        },
+        bottomContent = {
+            if (related.isNotEmpty()) {
+                Eyebrow(stringResource(R.string.article_related))
+                RelatedRow(related, onOpenArticle)
+            }
+            VaartaButton(
+                text = stringResource(R.string.article_ask),
+                onClick = { onAskAbout(seedContext, card.title) },
+                leadingIcon = R.drawable.ic_sparkle,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+    ) {
+        // Headline + source above the reader so the real article is identified even before it paints.
+        Column(Modifier.padding(horizontal = VSpace.xl, vertical = VSpace.sm)) {
+            Text(card.title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (card.sourceName.isNotBlank()) {
+                Text(
+                    stringResource(R.string.home_feed_seen_in, card.sourceName),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.muted,
+                )
+            }
+        }
+        WebViewArticle(url, modifier = Modifier.fillMaxWidth().weight(1f))
+    }
+}
+
+/** The real article page, rendered by the system WebView. JS + DOM storage on so modern news sites
+ *  render; the returned view owns its own scrolling. Load failure is recoverable via "Open in
+ *  browser" (the top-bar action) — we never trap the user on a blank page. */
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun WebViewArticle(url: String, modifier: Modifier = Modifier) {
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx ->
+            WebView(ctx).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                )
+                webViewClient = WebViewClient()
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                settings.loadWithOverviewMode = true
+                settings.useWideViewPort = true
+                loadUrl(url)
+            }
+        },
+    )
+}
+
+/** Horizontal strip of other current articles, same scam category first. Illustration thumbs keep it
+ *  light (no extra image fetches on the article screen). */
+@Composable
+private fun RelatedRow(related: List<AwarenessCard>, onOpenArticle: (AwarenessCard) -> Unit) {
+    val c = VaartaTheme.colors
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+    ) {
+        for (item in related) {
+            Column(
+                Modifier.width(120.dp).vaartaPressable(onClick = { onOpenArticle(item) }),
+                verticalArrangement = Arrangement.spacedBy(VSpace.xs),
+            ) {
+                ScamCover(
+                    "${item.scamType} ${item.title}",
+                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 10f),
+                    corner = 12.dp,
+                )
+                Text(
+                    item.title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = c.ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+/** Related selection: other articles, same [AwarenessCard.scamType] first, current one excluded. */
+private fun relatedArticles(pool: List<AwarenessCard>, current: AwarenessCard, max: Int = 6): List<AwarenessCard> {
+    val others = pool.filter { it.url != current.url || it.title != current.title }
+    val sameType = others.filter { current.scamType.isNotBlank() && it.scamType.equals(current.scamType, ignoreCase = true) }
+    return (sameType + (others - sameType.toSet())).take(max)
 }
