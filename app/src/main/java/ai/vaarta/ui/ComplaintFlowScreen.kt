@@ -1,10 +1,12 @@
 package ai.vaarta.ui
 
 import ai.vaarta.R
+import ai.vaarta.complaint.AutofillBridge
 import ai.vaarta.complaint.ChecklistItem
 import ai.vaarta.complaint.ComplaintFlowState
 import ai.vaarta.complaint.ComplaintFlowViewModel
 import ai.vaarta.complaint.ComplaintStep
+import ai.vaarta.complaint.FilledField
 import ai.vaarta.complaint.IdentityDetails
 import ai.vaarta.complaint.LossInput
 import ai.vaarta.core.complaint.SlotSource
@@ -16,7 +18,15 @@ import ai.vaarta.ui.components.VaartaSubScreen
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import ai.vaarta.ui.theme.vaartaPressable
+import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +36,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,16 +59,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 
 /**
- * Task 7: the complaint co-pilot's three-step flow host. Task 8 fills in REVIEW; FILE (Task 9)
- * still renders an empty stub for now so this compiles and is driveable end to end.
+ * Task 7: the complaint co-pilot's three-step flow host. Task 8 filled in REVIEW; Task 9 fills in
+ * FILE. The outer frame only scrolls for PREPARE/REVIEW (plain text/cards) — FILE embeds a WebView
+ * that must own its own scrolling, so it opts out here exactly like [ArticleScreen]'s live-article
+ * view does, to avoid nesting a WebView inside an unbounded-height scrollable Column.
  */
 @Composable
 fun ComplaintFlowScreen(vm: ComplaintFlowViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val state by vm.state.collectAsState()
-    VaartaSubScreen(title = "Report a scam", onBack = onBack, modifier = modifier) {
+    VaartaSubScreen(
+        title = "Report a scam",
+        onBack = onBack,
+        modifier = modifier,
+        scrollable = state.step != ComplaintStep.FILE,
+    ) {
         when (state.step) {
             ComplaintStep.PREPARE -> PrepareStep(state, onSelect = vm::selectDestination, onContinue = vm::toReview)
             ComplaintStep.REVIEW -> ReviewStep(
@@ -64,7 +86,138 @@ fun ComplaintFlowScreen(vm: ComplaintFlowViewModel, onBack: () -> Unit, modifier
                 onSetLoss = vm::setLoss,
                 onContinue = vm::toFile,
             )
-            ComplaintStep.FILE -> Column {}   // Task 9 fills this in
+            ComplaintStep.FILE -> FileStep(state, onBack = vm::back)
+        }
+    }
+}
+
+/**
+ * Task 9: the live portal, embedded read-only-by-VAARTA. SAFETY-CRITICAL — the only WebView
+ * interaction here is [AutofillBridge.buildFillJs] via "Fill this page", plus reading a field's
+ * *local* [FilledField.value] (never anything read back from the page) for clipboard copies. There
+ * is no other `evaluateJavascript` call and nothing here ever calls `.click()` — VAARTA fills, the
+ * user reviews and submits on the real government page themselves (Global Constraints).
+ */
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun FileStep(state: ComplaintFlowState, onBack: () -> Unit) {
+    val c = VaartaTheme.colors
+    val context = LocalContext.current
+    val packet = state.packet
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var stepRailExpanded by remember { mutableStateOf(false) }
+
+    fun copyToClipboard(label: String, value: String) {
+        val clipboard = context.getSystemService(ClipboardManager::class.java)
+        clipboard?.setPrimaryClip(ClipData.newPlainText(label, value))
+        Toast.makeText(context, "Copied — paste into '$label'", Toast.LENGTH_SHORT).show()
+    }
+
+    Column(Modifier.fillMaxWidth()) {
+        // Persistent safety banner — always visible, never dismissible.
+        Card(
+            colors = CardDefaults.cardColors(containerColor = c.cautionTint),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = VSpace.xl, vertical = VSpace.sm),
+        ) {
+            Row(
+                Modifier.padding(VSpace.md),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+            ) {
+                VaartaIcon(R.drawable.ic_alert_triangle, contentDescription = null, tint = c.caution, size = 18.dp)
+                Text(
+                    "You review and submit — VAARTA only fills.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.ink,
+                )
+            }
+        }
+
+        // The real government portal, live — mirrors WebViewArticle's factory exactly (JS + DOM
+        // storage on, wide viewport, own WebViewClient, owns its own scrolling).
+        AndroidView(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                    webViewClient = WebViewClient()
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.loadWithOverviewMode = true
+                    settings.useWideViewPort = true
+                    webViewRef = this
+                    packet?.url?.let { loadUrl(it) }
+                }
+            },
+        )
+
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = VSpace.xl, vertical = VSpace.md),
+            verticalArrangement = Arrangement.spacedBy(VSpace.sm),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                VaartaButton(
+                    text = "Fill this page",
+                    onClick = {
+                        webViewRef?.evaluateJavascript(AutofillBridge.buildFillJs(packet?.fields.orEmpty()), null)
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+                VaartaSecondaryButton(
+                    text = "Copy complaint text",
+                    onClick = {
+                        val fields = packet?.fields.orEmpty()
+                        val narrative = fields.firstOrNull { it.key == "incident.description" }
+                            ?: fields.firstOrNull {
+                                it.label.contains("description", ignoreCase = true) ||
+                                    it.label.contains("narrative", ignoreCase = true)
+                            }
+                        narrative?.let { copyToClipboard(it.label, it.value) }
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            val chips = AutofillBridge.fillableFields(packet?.fields.orEmpty())
+            if (chips.isNotEmpty()) {
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+                ) {
+                    for (field in chips) {
+                        AssistChip(
+                            onClick = { copyToClipboard(field.label, field.value) },
+                            label = { Text(field.label) },
+                            colors = AssistChipDefaults.assistChipColors(containerColor = c.indigoTint, labelColor = c.indigoInk),
+                        )
+                    }
+                }
+            }
+
+            TextLinkRow(
+                text = if (stepRailExpanded) "Hide steps ▲" else "Show steps ▾",
+                onClick = { stepRailExpanded = !stepRailExpanded },
+            )
+            if (stepRailExpanded) {
+                val steps = packet?.procedureSteps.orEmpty()
+                Column(verticalArrangement = Arrangement.spacedBy(VSpace.xs)) {
+                    steps.forEachIndexed { i, step ->
+                        val youStep = step.contains("(you)")
+                        Text(
+                            "${i + 1}. $step",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (youStep) c.indigo else c.muted,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(VSpace.xs))
+            TextLinkRow(text = "← Back to review", onClick = onBack)
         }
     }
 }
