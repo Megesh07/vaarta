@@ -145,39 +145,6 @@ fun IconChipCard(
 }
 
 /**
- * A half-width action tile (redesign spec §6.1): icon chip over a short title, no subtitle.
- * Two of these share a row under the wide primary card — the compact end of the tile grammar.
- */
-@Composable
-fun ActionTile(
-    @DrawableRes icon: Int,
-    title: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = VaartaTheme.colors
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = c.panel),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (c.isDark) 0.dp else 1.dp),
-        border = if (c.isDark) BorderStroke(1.dp, c.line) else null,
-        modifier = modifier
-            .heightIn(min = 104.dp)
-            .vaartaPressable(onClick),
-    ) {
-        Column(Modifier.padding(VSpace.lg), verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
-            Surface(color = c.indigoTint, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(40.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    VaartaIcon(icon, contentDescription = null, tint = c.indigo, size = 20.dp)
-                }
-            }
-            Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 2)
-        }
-    }
-}
-
-/**
  * A quiet, centered text link — the replacement for a secondary-button clone of another screen's
  * primary action (redesign spec §6.2, e.g. "Get live help from VAARTA →"). No card, no border —
  * reads as a lightweight way out, not a competing call to action.

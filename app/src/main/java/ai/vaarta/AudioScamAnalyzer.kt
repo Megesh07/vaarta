@@ -16,15 +16,15 @@ import ai.vaarta.core.reasoning.Speaker
 /**
  * The recorded-call scam analyzer (ADR-0003 Phase 4D) — the after-the-fact counterpart to the live
  * [CopilotSession]. Given an audio clip, it produces the same verdict shape the live pipeline does, so
- * a recording replays through the identical [ChatThread] + [StatusBanner] UI and saves as an ordinary
- * history session (source = RECORDING).
+ * a recording replays through the identical [ChatThread] + [StatusBanner] UI. Reached by attaching a
+ * recording in Ask VAARTA (A1: the standalone Analyze screen was merged in — one AI surface).
  *
  * Score ownership is UNCHANGED from live (ADR-0002 D1): the AI transcribes and gives an advisory
  * concern, but the authoritative risk score comes from replaying the transcribed CALLER turns through
  * the deterministic [RiskEngine]. [HybridAlert] then lets the AI's concern RAISE the displayed alert
  * (catching a novel scam the pack missed) but never LOWER the deterministic floor, and reassurance
  * still needs cited consensus. No Android Context here by design — reading the file / persisting is the
- * ViewModel's job ([ai.vaarta.recording.AudioAnalyzerViewModel]).
+ * ViewModel's job ([ai.vaarta.conversation.ConversationViewModel]).
  */
 class AudioScamAnalyzer {
 

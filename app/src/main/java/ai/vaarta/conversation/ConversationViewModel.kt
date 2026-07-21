@@ -1,6 +1,8 @@
 package ai.vaarta.conversation
 
+import ai.vaarta.AudioScamAnalyzer
 import ai.vaarta.ChatItem
+import ai.vaarta.R
 import ai.vaarta.ai.ChatAttachment
 import ai.vaarta.ai.GeminiClient
 import ai.vaarta.core.data.HistoryRepository
@@ -46,6 +48,11 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
     private val _header = MutableStateFlow<CallHeader?>(null)
     val header: StateFlow<CallHeader?> = _header.asStateFlow()
 
+    /** The article/topic this chat is grounded on (e.g. a tapped awareness article's title), so the
+     *  chat can SHOW it and offer topic-specific starters. Null for a plain "Ask VAARTA" chat. */
+    private val _topic = MutableStateFlow<String?>(null)
+    val topic: StateFlow<String?> = _topic.asStateFlow()
+
     private var conversationId: Long? = null
     private var contextText: String? = null
 
@@ -55,16 +62,18 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
      * it's fed to the model as untrusted context, exactly like a saved call's transcript, but shows
      * no verdict header.
      */
-    fun newChat(seedContext: String? = null) {
+    fun newChat(seedContext: String? = null, topic: String? = null) {
         conversationId = null
         contextText = seedContext?.takeIf { it.isNotBlank() }
         _turns.value = emptyList()
         _header.value = null
+        _topic.value = topic?.takeIf { it.isNotBlank() }
     }
 
     /** Open an existing conversation — a chat to continue, or a saved call/recording to ask about. */
     fun open(id: Long) {
         conversationId = id
+        _topic.value = null
         viewModelScope.launch {
             val swt = repo.getSessionWithTurns(id) ?: return@launch
             val items = swt.turns.toChatItems()
@@ -80,9 +89,19 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * A recording IS the question (A1: the standalone Analyze screen was merged in here) — it runs the
+     * real structured analyzer instead of a free-form chat reply, so any attached audio takes over the
+     * whole send regardless of accompanying text/other attachments. Screenshots/images still go to [chat].
+     */
     fun send(text: String, attachments: List<ChatAttachment> = emptyList()) {
         val msg = text.trim()
         if ((msg.isEmpty() && attachments.isEmpty()) || _sending.value) return
+        val audio = attachments.firstOrNull { it.mimeType.startsWith("audio/") }
+        if (audio != null) {
+            sendAudioAttachment(audio)
+            return
+        }
         val youText = buildString {
             if (msg.isNotEmpty()) append(msg)
             for (a in attachments) {
@@ -110,6 +129,59 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Runs the attached recording through [AudioScamAnalyzer] (transcribe → diarize → replay through the
+     * deterministic engine → verdict) instead of [GeminiClient.chat] — the same pipeline the old standalone
+     * Analyze screen used, now reached by attaching audio here. The diarized transcript + verdict become
+     * this conversation's context, so follow-up questions are grounded exactly like opening a saved call.
+     * Fails closed: a plain apology turn, never a fabricated verdict.
+     */
+    private fun sendAudioAttachment(attachment: ChatAttachment) {
+        val you = ChatItem.You("[${attachment.label}]")
+        _turns.value = _turns.value + you
+        _sending.value = true
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val id = conversationId
+                ?: repo.startSession(now, SessionSource.CHAT, conversationTitleFrom(attachment.label)).also { conversationId = it }
+            persist(you, id, now)
+
+            val result = withContext(Dispatchers.IO) {
+                runCatching { AudioScamAnalyzer().analyze(attachment.bytes, attachment.mimeType) }.getOrNull()
+            }
+            val cards = if (result != null) verdictCards(result) else listOf(ChatItem.Assistant(AUDIO_FALLBACK))
+            _turns.value = _turns.value + cards
+            persistAll(cards, id, System.currentTimeMillis())
+            if (result != null) {
+                contextText = buildContext(SessionSource.RECORDING, result.level.name, result.score, result.scamType, cards)
+            }
+            _sending.value = false
+        }
+    }
+
+    /** Stamps the risk verdict onto the analyzer's trailing summary card (or adds a bare one) so the
+     *  card always shows a level + score even when the clip had no scam-type/summary to report. */
+    private fun verdictCards(result: AudioScamAnalyzer.Result): List<ChatItem> {
+        val app = getApplication<Application>()
+        val verdict = app.getString(R.string.chat_audio_verdict, app.getString(levelStringRes(result.level)), result.score)
+        val chat = result.chat.toMutableList()
+        val i = chat.indexOfLast { it is ChatItem.Coach }
+        if (i >= 0) {
+            val coach = chat[i] as ChatItem.Coach
+            chat[i] = coach.copy(warning = listOf(verdict, coach.warning).filter { it.isNotBlank() }.joinToString("\n\n"))
+        } else {
+            chat += ChatItem.Coach(warning = verdict, replies = emptyList())
+        }
+        return chat
+    }
+
+    private fun levelStringRes(level: RiskLevel): Int = when (level) {
+        RiskLevel.OBSERVING -> R.string.state_observing
+        RiskLevel.CAUTION -> R.string.state_caution
+        RiskLevel.HIGH_RISK -> R.string.state_high
+        RiskLevel.SCAM_PATTERN -> R.string.state_scam
+    }
+
     /** Plain-text transcript + verdict for export/share (Download). */
     fun transcriptText(): String = buildString {
         _header.value?.let { h ->
@@ -134,6 +206,10 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun persist(item: ChatItem, id: Long, atMs: Long) {
         listOf(item).toTurnEntities(sessionId = id, baseAtMs = atMs).forEach { repo.appendTurn(it) }
+    }
+
+    private suspend fun persistAll(items: List<ChatItem>, id: Long, baseAtMs: Long) {
+        items.toTurnEntities(sessionId = id, baseAtMs = baseAtMs).forEach { repo.appendTurn(it) }
     }
 
     private fun ChatItem.toChatMessage(): ChatMessage? = when (this) {
@@ -169,5 +245,9 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
         const val FALLBACK =
             "I couldn't reach the assistant just now. Whatever the caller says, never pay money or " +
                 "share an OTP or PIN. If you feel unsure or pressured, hang up and call 1930."
+        const val AUDIO_FALLBACK =
+            "I couldn't analyze that recording — check your connection, or the clip may be too large " +
+                "or in an unsupported format. Whatever the caller says, never pay money or share an OTP " +
+                "or PIN. If you feel unsure or pressured, hang up and call 1930."
     }
 }
