@@ -84,6 +84,7 @@ fun HelpScreen(
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
+    onReport: () -> Unit,
     panicVm: PanicViewModel,
     liveScamType: String?,
     liveRiskLevel: String,
@@ -187,6 +188,14 @@ fun HelpScreen(
             }
 
             HelpSection(title = stringResource(R.string.help_report_title)) {
+                // Temporary, minimal hook (Task 7) into the new complaint co-pilot flow — Task 10
+                // restructures this whole section properly with full string-resource wiring.
+                LinkRow(
+                    icon = R.drawable.ic_file_text,
+                    title = "Report a scam",
+                    onClick = onReport,
+                )
+                Spacer(Modifier.height(VSpace.xs))
                 LinkRow(
                     icon = R.drawable.ic_globe,
                     title = stringResource(R.string.help_report_cybercrime),

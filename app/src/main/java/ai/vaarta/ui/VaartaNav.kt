@@ -4,6 +4,7 @@ import ai.vaarta.R
 import ai.vaarta.HistoryScreen
 import ai.vaarta.SessionViewModel
 import ai.vaarta.VaartaScreen
+import ai.vaarta.complaint.ComplaintFlowViewModel
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.core.reasoning.AwarenessCard
@@ -62,6 +63,8 @@ sealed interface SubScreen {
     data object Live : SubScreen
     data object Chat : SubScreen
     data class Article(val card: AwarenessCard) : SubScreen
+    data object Complaint : SubScreen
+    data object Settings : SubScreen
 }
 
 /**
@@ -77,6 +80,7 @@ fun VaartaNav(
     conversationVm: ConversationViewModel,
     awarenessVm: AwarenessViewModel,
     panicVm: PanicViewModel,
+    complaintVm: ComplaintFlowViewModel,
     openLiveRequests: StateFlow<Int>,
     onShare: (String) -> Unit,
     onShareGeneric: (String) -> Unit,
@@ -99,6 +103,7 @@ fun VaartaNav(
     // else the most recently SAVED call/recording/chat — [PanicContextSelector] picks between them.
     val liveScamType by vm.session.scamType.collectAsState()
     val liveRiskLevel by vm.session.displayedLevel.collectAsState()
+    val complaintDraft by vm.session.complaintDraft.collectAsState()
     val recentCalls by historyVm.sessions.collectAsState()
     val recentScamType = recentCalls.firstOrNull()?.scamType
     val recentRiskLevel = recentCalls.firstOrNull()?.finalLevel
@@ -140,6 +145,8 @@ fun VaartaNav(
                     onAskAbout = { seed, topic -> conversationVm.newChat(seed, topic); sub = SubScreen.Chat },
                     onOpenArticle = { card -> sub = SubScreen.Article(card) },
                 )
+                SubScreen.Complaint -> ComplaintFlowScreen(vm = complaintVm, onBack = { sub = SubScreen.None })
+                SubScreen.Settings -> Unit
                 SubScreen.None -> Unit
             }
         }
@@ -180,6 +187,15 @@ fun VaartaNav(
                 onExportPdf = onExportPdf,
                 onOpenUrl = onOpenUrl,
                 onStartLive = { sub = SubScreen.Live },
+                onReport = {
+                    if (complaintDraft == null) vm.session.generateComplaint()
+                    complaintVm.open(
+                        draft = vm.session.complaintDraft.value,
+                        scamCode = vm.session.complaintDraft.value?.classification?.scamCode,
+                        moneyLost = false,
+                    )
+                    sub = SubScreen.Complaint
+                },
                 panicVm = panicVm,
                 liveScamType = liveScamType,
                 liveRiskLevel = liveRiskLevel.name,

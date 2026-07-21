@@ -1,5 +1,6 @@
 package ai.vaarta
 
+import ai.vaarta.complaint.ComplaintFlowViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.core.data.db.CallSessionEntity
 import ai.vaarta.core.data.db.SessionSource
@@ -123,6 +124,7 @@ class MainActivity : AppCompatActivity() {
     private val conversationVm: ConversationViewModel by viewModels()
     private val awarenessVm: AwarenessViewModel by viewModels()
     private val panicVm: PanicViewModel by viewModels()
+    private val complaintVm: ComplaintFlowViewModel by viewModels()
 
     // Restore signal (redesign spec §B3): bumped every time an Intent asks to jump to the live page
     // (bubble tap or notification tap, both carry [OverlayService.EXTRA_OPEN_LIVE]) — a counter, not a
@@ -141,7 +143,7 @@ class MainActivity : AppCompatActivity() {
                 if (!languageChosen) {
                     FirstRunLanguagePicker(onChosen = { languageChosen = true })
                 } else {
-                    VaartaNav(vm, historyVm, conversationVm, awarenessVm, panicVm, openLiveRequests = openLiveRequests, onShare = ::warnFamily, onShareGeneric = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                    VaartaNav(vm, historyVm, conversationVm, awarenessVm, panicVm, complaintVm = complaintVm, openLiveRequests = openLiveRequests, onShare = ::warnFamily, onShareGeneric = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
                 }
             }
         }
