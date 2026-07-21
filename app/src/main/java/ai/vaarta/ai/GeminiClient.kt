@@ -516,6 +516,67 @@ object GeminiClient {
         }
     }
 
+    // --- Complaint-playbook freshness advisory (Task 11): a low-stakes, background-only web-grounded
+    // check that fires once when the complaint flow opens with a destination selected. Same
+    // fails-closed contract and the same tools+NO responseSchema shape as classify()/chat() (that
+    // combo 400s on this model). Advisory only — the Review screen shows it if present and says
+    // nothing otherwise; it must never block or delay ComplaintStep.PREPARE from rendering.
+
+    /**
+     * Asks whether the filing procedure/documents for [destinationName] ([url]) have materially
+     * changed since the playbook was last [verifiedOn]. Returns a one-sentence advisory, or null if
+     * nothing changed, the model isn't configured, or any failure occurs (fails closed).
+     */
+    fun checkPlaybookFreshness(destinationName: String, url: String, verifiedOn: String): String? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank() || destinationName.isBlank() || url.isBlank()) return null
+        return try {
+            val response = post("$ENDPOINT?key=$key", buildFreshnessRequestBody(destinationName, url, verifiedOn)) ?: return null
+            val text = extractText(response)?.trim().orEmpty()
+            if (text.isBlank() || text.equals("NONE", ignoreCase = true)) null else text
+        } catch (e: Exception) {
+            // DIAGNOSTIC (temporary): type + message only — never the key, URL, or prompt content.
+            Log.w("GeminiClient", "checkPlaybookFreshness failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    private fun buildFreshnessRequestBody(destinationName: String, url: String, verifiedOn: String): String = buildJsonObject {
+        putJsonObject("system_instruction") {
+            putJsonArray("parts") {
+                addJsonObject {
+                    put(
+                        "text",
+                        "You are a fact-checking assistant. Answer in ONE short sentence. " +
+                            "If nothing material has changed, reply with exactly the single word NONE.",
+                    )
+                }
+            }
+        }
+        putJsonArray("contents") {
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") {
+                    addJsonObject {
+                        put(
+                            "text",
+                            "As of today, has the complaint-filing procedure or required documents for " +
+                                "$destinationName ($url) materially changed since $verifiedOn? If yes, name " +
+                                "the change in one short sentence. If no, reply exactly: NONE",
+                        )
+                    }
+                }
+            }
+        }
+        // NOTE: deliberately NO responseMimeType/responseSchema — unsupported alongside tools on this
+        // model (HTTP 400), same as classify()/chat(). Parsed as plain text instead.
+        putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
+        putJsonObject("generationConfig") {
+            put("temperature", 0.2)
+            put("maxOutputTokens", 300)
+        }
+    }.toString()
+
     /** Shared grounded request: a system instruction + one fixed user line + google_search, no schema. */
     private fun buildGroundedBody(systemInstruction: String, userLine: String, maxTokens: Int = 1024): String = buildJsonObject {
         putJsonObject("system_instruction") {
