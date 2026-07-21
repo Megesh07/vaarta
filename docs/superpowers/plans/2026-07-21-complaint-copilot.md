@@ -744,6 +744,7 @@ git commit -m "app — ComplaintPacket + assembler (draft + identity + loss -> f
 package ai.vaarta.complaint
 
 import ai.vaarta.core.complaint.SlotSource
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -778,7 +779,6 @@ class AutofillBridgeTest {
     }
 }
 ```
-(Add `import org.junit.Assert.assertEquals`.)
 
 - [ ] **Step 2: Run to verify it fails**
 
