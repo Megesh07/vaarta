@@ -15,8 +15,14 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
  * and wrapped by [DatabaseKeyManager] (Keystore-backed) — it is never in source or shipped assets.
  */
 @Database(
-    entities = [CallSessionEntity::class, TurnEntity::class, VoiceSampleEntity::class, GuardianEntity::class],
-    version = 4,
+    entities = [
+        CallSessionEntity::class,
+        TurnEntity::class,
+        VoiceSampleEntity::class,
+        GuardianEntity::class,
+        IdentityEntity::class,
+    ],
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -24,6 +30,7 @@ abstract class VaartaDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
     abstract fun voiceprintDao(): VoiceprintDao
     abstract fun guardianDao(): GuardianDao
+    abstract fun identityDao(): IdentityDao
 
     companion object {
         private const val DB_NAME = "vaarta-history.db"
@@ -72,6 +79,25 @@ abstract class VaartaDatabase : RoomDatabase() {
             }
         }
 
+        /** v4 -> v5 (complaint co-pilot): the identity table for reusable filing details. New table only —
+         *  no existing data touched. Holds only the ID *type*, never the number/image (privacy, spec §9). */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `identity` (
+                        `id` INTEGER PRIMARY KEY NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `address` TEXT NOT NULL,
+                        `mobile` TEXT NOT NULL,
+                        `email` TEXT NOT NULL,
+                        `id_type` TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile private var instance: VaartaDatabase? = null
 
         fun get(context: Context): VaartaDatabase = instance ?: synchronized(this) {
@@ -84,7 +110,7 @@ abstract class VaartaDatabase : RoomDatabase() {
             val factory = SupportOpenHelperFactory(passphrase)
             return Room.databaseBuilder(appContext, VaartaDatabase::class.java, DB_NAME)
                 .openHelperFactory(factory)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
         }
     }

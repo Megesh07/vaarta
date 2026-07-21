@@ -111,3 +111,19 @@ data class GuardianEntity(
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "number") val number: String,
 )
+
+/**
+ * The user's reusable complaint-filing details (spec §4). Single-row table — [id] is fixed at 1 so
+ * INSERT OR REPLACE always updates the same row. Deliberately holds NO national-ID number or image —
+ * only the ID *type* — so the most sensitive data (the number/scan) is never at rest; the user attaches
+ * those directly on the portal. Encrypted at rest by the same SQLCipher database; cleared by [IdentityDao.clear].
+ */
+@Entity(tableName = "identity")
+data class IdentityEntity(
+    @PrimaryKey val id: Int = 1,
+    @ColumnInfo(name = "name") val name: String,
+    @ColumnInfo(name = "address") val address: String,
+    @ColumnInfo(name = "mobile") val mobile: String,
+    @ColumnInfo(name = "email") val email: String,
+    @ColumnInfo(name = "id_type") val idType: String,
+)
