@@ -7,6 +7,7 @@ import ai.vaarta.guardian.Guardian
 import ai.vaarta.guardian.GuardianPickerContract
 import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.i18n.AppLanguage
+import ai.vaarta.panic.PanicViewModel
 import ai.vaarta.share.BilingualShare
 import ai.vaarta.ui.components.ConfirmDialog
 import ai.vaarta.ui.components.LinkRow
@@ -83,6 +84,11 @@ fun HelpScreen(
     onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
+    panicVm: PanicViewModel,
+    liveScamType: String?,
+    liveRiskLevel: String,
+    recentScamType: String?,
+    recentRiskLevel: String?,
     modifier: Modifier = Modifier,
 ) {
     val c = VaartaTheme.colors
@@ -90,6 +96,7 @@ fun HelpScreen(
     val complaint by vm.session.complaint.collectAsState()
     val complaintDraft by vm.session.complaintDraft.collectAsState()
     var showPanic by remember { mutableStateOf(false) }
+    val panicState by panicVm.state.collectAsState()
     var showAllSteps by remember { mutableStateOf(false) }
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showClearVoice by remember { mutableStateOf(false) }
@@ -144,7 +151,10 @@ fun HelpScreen(
                     )
                     TextLinkRow(
                         text = stringResource(R.string.help_emergency_open_steps),
-                        onClick = { showPanic = true },
+                        onClick = {
+                            showPanic = true
+                            panicVm.open(liveScamType, liveRiskLevel, recentScamType, recentRiskLevel)
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -278,9 +288,10 @@ fun HelpScreen(
 
     if (showPanic) {
         PanicSheet(
-            onDismissRequest = { showPanic = false },
+            onDismissRequest = { showPanic = false; panicVm.dismiss() },
             onOpenUrl = onOpenUrl,
             onStartLive = onStartLive,
+            personalization = panicState,
         )
     }
 

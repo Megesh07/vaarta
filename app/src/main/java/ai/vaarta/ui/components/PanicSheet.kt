@@ -1,6 +1,7 @@
 package ai.vaarta.ui.components
 
 import ai.vaarta.R
+import ai.vaarta.panic.PanicUiState
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -56,9 +58,11 @@ private fun RightNowStep(number: Int, text: String) {
 }
 
 /**
- * The panic sheet body (redesign spec §6.2): [RightNowSteps] → **Call 1930 now** (the only button)
- * → one quiet "Get live help from VAARTA →" link row. Home's red banner and Help's emergency card
- * both open this same composable so the moment-of-panic guidance never drifts between screens.
+ * The panic sheet body (redesign spec §6.2, §A2): an optional AI-tailored block (only once it
+ * arrives, honestly labelled so it's never confused with the fixed guidance) → [RightNowSteps]
+ * (the safety net, always shown, instantly) → **Call 1930 now** (the only button) → one quiet
+ * "Get live help from VAARTA →" link row. Home's red banner and Help's emergency card both open
+ * this same composable so the moment-of-panic guidance never drifts between screens.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +70,7 @@ fun PanicSheet(
     onDismissRequest: () -> Unit,
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
+    personalization: PanicUiState = PanicUiState(),
 ) {
     val c = VaartaTheme.colors
     ModalBottomSheet(
@@ -77,6 +82,28 @@ fun PanicSheet(
             verticalArrangement = Arrangement.spacedBy(VSpace.md),
         ) {
             Text(stringResource(R.string.panic_heading), style = MaterialTheme.typography.headlineSmall, color = c.scam)
+
+            // AI personalization (redesign spec §A2) — additive only, clearly labelled, never
+            // blocking: while it's in flight or if it never arrives, only the base steps show.
+            val tailored = personalization.personalization
+            if (personalization.loading) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(14.dp), color = c.indigo)
+                    Text(stringResource(R.string.panic_personalizing), style = MaterialTheme.typography.bodySmall, color = c.muted)
+                }
+            } else if (tailored != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
+                    Eyebrow(stringResource(R.string.panic_tailored_label), color = c.indigo)
+                    Text(tailored.heading, style = MaterialTheme.typography.titleMedium, color = c.ink)
+                    Column(verticalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                        tailored.steps.forEach { step ->
+                            Text("•  $step", style = MaterialTheme.typography.bodyMedium, color = c.ink)
+                        }
+                    }
+                }
+                Eyebrow(stringResource(R.string.panic_general_label))
+            }
+
             RightNowSteps()
             Spacer(Modifier.height(VSpace.xs))
             VaartaButton(
