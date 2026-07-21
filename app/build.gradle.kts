@@ -33,6 +33,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0-mvp"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "SAFE_BROWSING_API_KEY", "\"$safeBrowsingApiKey\"")
@@ -107,4 +108,16 @@ dependencies {
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+    // AGP's unit-test android.jar stubs org.json.* to throw "not mocked" at runtime. AutofillBridge
+    // (and LinkChecker) use org.json for real, so pure-JVM tests need the actual JVM implementation
+    // on the test classpath, ahead of the stub, to exercise real quote()/parsing behavior.
+    testImplementation("org.json:json:20240303")
+
+    // Instrumented tests (real device/emulator) — same androidx.test coordinates as core:data's
+    // precedent (GuardianDaoTest/IdentityDaoTest). AutofillBridgeWebViewTest additionally drives a real
+    // WebView via runBlocking/suspendCancellableCoroutine/withTimeout, so coroutines-core is explicit
+    // here rather than relying on it arriving transitively through a lifecycle/activity dependency.
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
