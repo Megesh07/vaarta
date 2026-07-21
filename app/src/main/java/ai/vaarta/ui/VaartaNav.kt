@@ -1,6 +1,5 @@
 package ai.vaarta.ui
 
-import ai.vaarta.AnalyzeScreen
 import ai.vaarta.R
 import ai.vaarta.HistoryScreen
 import ai.vaarta.SessionViewModel
@@ -10,7 +9,7 @@ import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.core.reasoning.AwarenessCard
 import ai.vaarta.feed.AwarenessViewModel
 import ai.vaarta.history.HistoryViewModel
-import ai.vaarta.recording.AudioAnalyzerViewModel
+import ai.vaarta.panic.PanicViewModel
 import ai.vaarta.ui.theme.VaartaTheme
 import ai.vaarta.ui.theme.isReducedMotionEnabled
 import ai.vaarta.ui.theme.motionDurationMs
@@ -40,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,13 +53,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.StateFlow
 
 enum class VaartaTab { HOME, HISTORY, HELP }
 
 sealed interface SubScreen {
     data object None : SubScreen
     data object Live : SubScreen
-    data object Analyze : SubScreen
     data object Chat : SubScreen
     data class Article(val card: AwarenessCard) : SubScreen
 }
@@ -74,9 +74,10 @@ sealed interface SubScreen {
 fun VaartaNav(
     vm: SessionViewModel,
     historyVm: HistoryViewModel,
-    analyzerVm: AudioAnalyzerViewModel,
     conversationVm: ConversationViewModel,
     awarenessVm: AwarenessViewModel,
+    panicVm: PanicViewModel,
+    openLiveRequests: StateFlow<Int>,
     onShare: (String) -> Unit,
     onShareGeneric: (String) -> Unit,
     onExportPdf: (ComplaintDraft) -> Unit,
@@ -86,6 +87,21 @@ fun VaartaNav(
     var sub by remember { mutableStateOf<SubScreen>(SubScreen.None) }
     val feed by awarenessVm.state.collectAsState()
     val density = LocalDensity.current
+
+    // Restore (redesign spec §B3): the bubble/notification asked to jump to the live page — the
+    // counter (not a boolean) so this fires on every restore, including a second one in a row.
+    val openLiveSignal by openLiveRequests.collectAsState()
+    LaunchedEffect(openLiveSignal) {
+        if (openLiveSignal > 0) sub = SubScreen.Live
+    }
+
+    // Panic-sheet personalization context (redesign spec §A2): the live session's current read,
+    // else the most recently SAVED call/recording/chat — [PanicContextSelector] picks between them.
+    val liveScamType by vm.session.scamType.collectAsState()
+    val liveRiskLevel by vm.session.displayedLevel.collectAsState()
+    val recentCalls by historyVm.sessions.collectAsState()
+    val recentScamType = recentCalls.firstOrNull()?.scamType
+    val recentRiskLevel = recentCalls.firstOrNull()?.finalLevel
     val slideUpPx = with(density) { 8.dp.roundToPx() }
     val reducedMotion = isReducedMotionEnabled(LocalContext.current)
 
@@ -108,11 +124,6 @@ fun VaartaNav(
                     onShare = onShare, onExportPdf = onExportPdf, onOpenUrl = onOpenUrl,
                     onBack = { sub = SubScreen.None },
                 )
-                SubScreen.Analyze -> AnalyzeScreen(
-                    analyzerVm = analyzerVm, historyVm = historyVm,
-                    onBack = { analyzerVm.reset(); sub = SubScreen.None },
-                    onShare = onShare, onOpenUrl = onOpenUrl,
-                )
                 SubScreen.Chat -> ConversationScreen(
                     vm = conversationVm,
                     onBack = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
@@ -122,10 +133,12 @@ fun VaartaNav(
                 )
                 is SubScreen.Article -> ArticleScreen(
                     card = currentSub.card,
+                    relatedPool = feed.cards,
                     onBack = { sub = SubScreen.None; tab = VaartaTab.HOME },
                     onOpenUrl = onOpenUrl,
                     onShare = onShare,
-                    onAskAbout = { seed -> conversationVm.newChat(seed); sub = SubScreen.Chat },
+                    onAskAbout = { seed, topic -> conversationVm.newChat(seed, topic); sub = SubScreen.Chat },
+                    onOpenArticle = { card -> sub = SubScreen.Article(card) },
                 )
                 SubScreen.None -> Unit
             }
@@ -140,13 +153,18 @@ fun VaartaNav(
             VaartaTab.HOME -> HomeScreen(
                 aiConfigured = vm.session.aiConfigured,
                 onStartLive = { sub = SubScreen.Live },
-                onAnalyzeRecording = { sub = SubScreen.Analyze },
                 onAskVaarta = { conversationVm.newChat(); sub = SubScreen.Chat },
                 onOpenUrl = onOpenUrl,
                 feedCards = feed.cards,
                 feedOrigin = feed.origin,
                 feedRefreshing = feed.refreshing,
                 onOpenArticle = { card -> sub = SubScreen.Article(card) },
+                onRefreshFeed = { awarenessVm.refresh() },
+                panicVm = panicVm,
+                liveScamType = liveScamType,
+                liveRiskLevel = liveRiskLevel.name,
+                recentScamType = recentScamType,
+                recentRiskLevel = recentRiskLevel,
                 modifier = Modifier.padding(pad),
             )
             VaartaTab.HISTORY -> HistoryScreen(
@@ -162,6 +180,11 @@ fun VaartaNav(
                 onExportPdf = onExportPdf,
                 onOpenUrl = onOpenUrl,
                 onStartLive = { sub = SubScreen.Live },
+                panicVm = panicVm,
+                liveScamType = liveScamType,
+                liveRiskLevel = liveRiskLevel.name,
+                recentScamType = recentScamType,
+                recentRiskLevel = recentRiskLevel,
                 modifier = Modifier.padding(pad),
             )
         }

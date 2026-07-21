@@ -14,10 +14,11 @@ import ai.vaarta.export.PdfExporter
 import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.history.HistoryViewModel
 import ai.vaarta.i18n.AppLanguage
-import ai.vaarta.recording.AudioAnalyzerViewModel
+import ai.vaarta.panic.PanicViewModel
 import ai.vaarta.share.BilingualShare
 import ai.vaarta.ui.FirstRunLanguagePicker
 import ai.vaarta.ui.RiskHero
+import ai.vaarta.ui.rememberIsOnline
 import ai.vaarta.ui.VaartaIcon
 import ai.vaarta.ui.VaartaNav
 import ai.vaarta.ui.components.ConfirmDialog
@@ -106,6 +107,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -117,13 +120,19 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
     private val vm: SessionViewModel by viewModels()
     private val historyVm: HistoryViewModel by viewModels()
-    private val analyzerVm: AudioAnalyzerViewModel by viewModels()
     private val conversationVm: ConversationViewModel by viewModels()
     private val awarenessVm: AwarenessViewModel by viewModels()
+    private val panicVm: PanicViewModel by viewModels()
+
+    // Restore signal (redesign spec §B3): bumped every time an Intent asks to jump to the live page
+    // (bubble tap or notification tap, both carry [OverlayService.EXTRA_OPEN_LIVE]) — a counter, not a
+    // boolean, so VaartaNav's LaunchedEffect fires on every restore, not just the first.
+    private val openLiveRequests = MutableStateFlow(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // system-bar icons follow light/dark correctly (spec §8.1)
+        handleOpenLiveIntent(intent)
         setContent {
             VaartaTheme {
                 // One-time, not-skippable language choice (redesign spec §3B.1) — gates the rest of
@@ -132,15 +141,31 @@ class MainActivity : AppCompatActivity() {
                 if (!languageChosen) {
                     FirstRunLanguagePicker(onChosen = { languageChosen = true })
                 } else {
-                    VaartaNav(vm, historyVm, analyzerVm, conversationVm, awarenessVm, onShare = ::warnFamily, onShareGeneric = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
+                    VaartaNav(vm, historyVm, conversationVm, awarenessVm, panicVm, openLiveRequests = openLiveRequests, onShare = ::warnFamily, onShareGeneric = ::shareText, onExportPdf = ::exportAndSharePdf, onOpenUrl = ::openUrl)
                 }
             }
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleOpenLiveIntent(intent)
+    }
+
+    /** Restore (redesign spec §B3): the bubble/notification's Intent carries [OverlayService
+     *  .EXTRA_OPEN_LIVE] — bump the signal so VaartaNav jumps to the live page, and tell the service
+     *  to hide the bubble (it keeps running as the mic host; only its window goes away). */
+    private fun handleOpenLiveIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(OverlayService.EXTRA_OPEN_LIVE, false) == true) {
+            openLiveRequests.value++
+            OverlayService.hideBubble(this)
+        }
+    }
+
     /**
-     * The single entry point behind every "Warn your family" action (Live's alert-family, Analyze's
-     * share-warning, the Article and Help screen rows — all wired to `onShare`). Task 5, spec §7: if
+     * The single entry point behind every "Warn your family" action (Live's alert-family, the Article
+     * and Help screen rows — all wired to `onShare`). Task 5, spec §7: if
      * a guardian contact has been chosen, skip the "who do I send this to" friction entirely and open
      * a direct SMS pre-filled with the message; otherwise this is exactly today's behavior, unchanged.
      * Task 9 hardening fix: guardian lookup now reads the encrypted SQLCipher-backed [GuardianStore]
@@ -206,6 +231,7 @@ fun VaartaScreen(
     val scamSources by vm.session.scamSources.collectAsState()
     val question by vm.session.currentQuestion.collectAsState()
     val aiEnabled by vm.session.aiEnabled.collectAsState()
+    val isOnline by rememberIsOnline()
     val aiSuggestion by vm.session.aiSuggestion.collectAsState()
     val aiLoading by vm.session.aiLoading.collectAsState()
     val liveStatus by vm.session.liveStatus.collectAsState()
@@ -348,14 +374,25 @@ fun VaartaScreen(
             // Live controls — bottom-anchored group; three explicit states (redesign spec §6.3).
             when {
                 liveStatus != null -> {
-                    // Active: the ring + pulsing dot above already say "this is live" — just the exit.
+                    // Active: the ring + pulsing dot above already say "this is live". Minimize keeps
+                    // the SAME shared session running behind the dialer (redesign spec §B2/§B3) —
+                    // launchFloating() already handles the overlay/mic permission hops.
                     Text(
                         stringResource(R.string.live_active_caption),
                         style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
                     )
                     VaartaSecondaryButton(
+                        text = stringResource(R.string.live_float),
+                        onClick = { launchFloating() },
+                        leadingIcon = R.drawable.ic_pip,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    VaartaSecondaryButton(
                         text = stringResource(R.string.live_stop),
-                        onClick = { vm.session.stopLiveListening() },
+                        onClick = {
+                            vm.session.stopLiveListening()
+                            OverlayService.stop(context) // no-op if it was never running
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -396,8 +433,10 @@ fun VaartaScreen(
                         onClick = { vm.session.runDemoCall() },
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // No opt-in toggle: live protection is always intelligent when online, and honestly
+                    // reports "offline — on-device only" with no internet (auto-resumes on reconnect).
                     if (vm.session.aiConfigured) {
-                        AiConsentRow(enabled = aiEnabled, onToggle = { vm.session.setAiEnabled(it) })
+                        LiveIntelligenceStatus(isOnline = isOnline)
                     }
                 }
             }
@@ -439,22 +478,30 @@ private fun QuestionCard(text: String, onCycle: () -> Unit) {
 }
 
 /**
- * Opt-in consent for the cloud AI layer (ADR-0002/0003) — OFF by default. Compacted to one line +
- * switch (redesign spec §6.3) — the old 5-line paragraph was a major source of "text text text".
+ * Honest live-intelligence status (live-session redesign 2026-07-21) — replaces the old opt-in
+ * toggle. Live protection is always intelligent when online; with no internet it says so plainly and
+ * keeps running the on-device engine, auto-resuming AI when the connection returns.
  */
 @Composable
-private fun AiConsentRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.indigoTint)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(VSpace.md), verticalAlignment = Alignment.CenterVertically) {
-            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
-                VaartaIcon(R.drawable.ic_sparkle, contentDescription = null, tint = VaartaTheme.colors.indigoInk, size = 18.dp)
-                Text(
-                    stringResource(R.string.live_ai_consent_compact),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = VaartaTheme.colors.ink,
-                )
-            }
-            Switch(checked = enabled, onCheckedChange = onToggle)
+private fun LiveIntelligenceStatus(isOnline: Boolean) {
+    val c = VaartaTheme.colors
+    Card(colors = CardDefaults.cardColors(containerColor = if (isOnline) c.indigoTint else c.panel)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(VSpace.md),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+        ) {
+            VaartaIcon(
+                if (isOnline) R.drawable.ic_sparkle else R.drawable.ic_nav_shield,
+                contentDescription = null,
+                tint = if (isOnline) c.indigoInk else c.muted,
+                size = 18.dp,
+            )
+            Text(
+                stringResource(if (isOnline) R.string.live_ai_online else R.string.live_ai_offline),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isOnline) c.indigoInk else c.muted,
+            )
         }
     }
 }
@@ -733,103 +780,4 @@ private fun HistoryRow(session: CallSessionEntity, onOpen: () -> Unit) {
     }
 }
 
-// --- Phase 4D: recorded-call analyzer screen ---
-
-/**
- * Analyze a recorded call after the fact (Phase 4D, ADR-0003): a picked clip is transcribed +
- * classified by the AI, replayed through the deterministic engine, and shown with the SAME verdict
- * banner + WhatsApp-style thread as a live call — then optionally saved to history as a RECORDING.
- * Fails closed: a friendly message on any error, never a fabricated verdict.
- */
-@Composable
-internal fun AnalyzeScreen(
-    analyzerVm: AudioAnalyzerViewModel,
-    historyVm: HistoryViewModel,
-    onBack: () -> Unit,
-    onShare: (String) -> Unit,
-    onOpenUrl: (String) -> Unit,
-) {
-    val state by analyzerVm.state.collectAsState()
-    val context = LocalContext.current
-    // The screen owns its own picker, so every entry point (Home card, Live button, reopening after
-    // an analysis) can start a new analysis right here — no dead-end Idle state.
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) analyzerVm.analyze(uri)
-    }
-
-    VaartaSubScreen(title = stringResource(R.string.analyze_title), onBack = onBack) {
-        when (val s = state) {
-            AudioAnalyzerViewModel.UiState.Idle -> {
-                Text(
-                    stringResource(R.string.analyze_intro),
-                    style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.muted,
-                )
-                VaartaSecondaryButton(
-                    text = stringResource(R.string.analyze_pick_recording),
-                    onClick = { picker.launch("audio/*") },
-                    leadingIcon = R.drawable.ic_headphones,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            AudioAnalyzerViewModel.UiState.Running -> {
-                Spacer(Modifier.height(40.dp))
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(VSpace.md)) {
-                    CircularProgressIndicator(color = VaartaTheme.colors.indigo)
-                    Text(stringResource(R.string.analyze_transcribing), style = MaterialTheme.typography.titleMedium, color = VaartaTheme.colors.ink)
-                    Text(stringResource(R.string.analyze_transcribing_sub), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
-                }
-            }
-
-            is AudioAnalyzerViewModel.UiState.Error -> {
-                Card(colors = CardDefaults.cardColors(containerColor = VaartaTheme.colors.scamTint)) {
-                    Text(s.message, modifier = Modifier.padding(VSpace.lg), style = MaterialTheme.typography.bodyMedium, color = VaartaTheme.colors.scam)
-                }
-                VaartaSecondaryButton(text = stringResource(R.string.common_back), onClick = onBack, leadingIcon = R.drawable.ic_arrow_left, modifier = Modifier.fillMaxWidth())
-            }
-
-            is AudioAnalyzerViewModel.UiState.Done -> {
-                val r = s.result
-                val savedToast = stringResource(R.string.live_saved)
-                // Auto-save the analyzed recording to Conversations (v2 — keyed on the result so it
-                // saves once per analysis; the user picked the clip, which is the consent).
-                LaunchedEffect(r) {
-                    historyVm.save(SessionSource.RECORDING, r.score, r.level.name, r.scamType, r.chat) {
-                        Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
-                    }
-                }
-                RiskHero(
-                    level = r.level,
-                    score = r.score,
-                    reassure = r.reassure,
-                    aiRaised = r.aiRaised,
-                    detectedStages = r.detectedStages,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
-                Text(
-                    stringResource(R.string.analyze_disclaimer),
-                    style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted,
-                )
-                if (r.chat.isNotEmpty()) ChatThread(r.chat, onOpenUrl)
-
-                if (r.level.ordinal >= RiskLevel.HIGH_RISK.ordinal && !r.reassure) {
-                    val warningMessage = stringResource(R.string.analyze_share_warning_message, levelText(r.level))
-                    VaartaButton(
-                        text = stringResource(R.string.analyze_share_warning),
-                        onClick = { onShare(BilingualShare.compose(warningMessage, AppLanguage.current())) },
-                        leadingIcon = R.drawable.ic_bell,
-                        destructive = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.fillMaxWidth()) {
-                    VaartaIcon(R.drawable.ic_check, contentDescription = null, tint = VaartaTheme.colors.muted, size = 16.dp)
-                    Text(stringResource(R.string.live_saved), style = MaterialTheme.typography.bodySmall, color = VaartaTheme.colors.muted)
-                }
-            }
-        }
-        Spacer(Modifier.height(24.dp))
-    }
-}
 

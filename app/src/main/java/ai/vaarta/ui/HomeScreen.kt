@@ -3,11 +3,11 @@ package ai.vaarta.ui
 import ai.vaarta.R
 import ai.vaarta.core.reasoning.AwarenessCard
 import ai.vaarta.feed.AwarenessViewModel
-import ai.vaarta.ui.components.ActionTile
 import ai.vaarta.ui.components.Eyebrow
 import ai.vaarta.ui.components.EmptyState
 import ai.vaarta.ui.components.IconChipCard
 import ai.vaarta.ui.components.PanicSheet
+import ai.vaarta.panic.PanicViewModel
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import ai.vaarta.ui.theme.isReducedMotionEnabled
@@ -39,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,13 +47,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import kotlinx.coroutines.delay
 
 /**
@@ -65,18 +72,24 @@ import kotlinx.coroutines.delay
 fun HomeScreen(
     aiConfigured: Boolean,
     onStartLive: () -> Unit,
-    onAnalyzeRecording: () -> Unit,
     onAskVaarta: () -> Unit,
     onOpenUrl: (String) -> Unit,
     feedCards: List<AwarenessCard>,
     feedOrigin: AwarenessViewModel.Origin,
     feedRefreshing: Boolean,
     onOpenArticle: (AwarenessCard) -> Unit,
+    onRefreshFeed: () -> Unit,
+    panicVm: PanicViewModel,
+    liveScamType: String?,
+    liveRiskLevel: String,
+    recentScamType: String?,
+    recentRiskLevel: String?,
     modifier: Modifier = Modifier,
 ) {
     val c = VaartaTheme.colors
     val scroll = rememberScrollState()
     var showPanic by remember { mutableStateOf(false) }
+    val panicState by panicVm.state.collectAsState()
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -99,7 +112,10 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 72.dp)
-                    .clickable { showPanic = true },
+                    .clickable {
+                        showPanic = true
+                        panicVm.open(liveScamType, liveRiskLevel, recentScamType, recentRiskLevel)
+                    },
             ) {
                 val a11y = stringResource(R.string.home_panic_a11y)
                 Row(
@@ -121,38 +137,41 @@ fun HomeScreen(
                 }
             }
 
-            // The tile grammar: live help leads, the two quick actions share a row.
+            // The purposeful-blocks grammar (spec §A3): live help leads, Ask VAARTA follows in the
+            // same card language — it's the one AI surface (chat, screenshots, and now recordings).
             IconChipCard(
                 icon = R.drawable.ic_mic,
                 title = stringResource(R.string.home_action_live_title),
                 subtitle = stringResource(R.string.home_action_live_subtitle),
                 onClick = onStartLive,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(VSpace.md), modifier = Modifier.fillMaxWidth()) {
-                ActionTile(
-                    icon = R.drawable.ic_nav_chat,
-                    title = stringResource(R.string.home_action_ask),
-                    onClick = onAskVaarta,
-                    modifier = Modifier.weight(1f),
-                )
-                if (aiConfigured) {
-                    ActionTile(
-                        icon = R.drawable.ic_headphones,
-                        title = stringResource(R.string.home_action_recording),
-                        onClick = onAnalyzeRecording,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+            IconChipCard(
+                icon = R.drawable.ic_nav_chat,
+                title = stringResource(R.string.home_action_ask),
+                subtitle = stringResource(R.string.home_action_ask_subtitle),
+                onClick = onAskVaarta,
+            )
 
             // Trending scams — the magazine feed (spec §5.2). Featured story + compact rows.
             Spacer(Modifier.height(VSpace.xs))
             Column {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     Text(stringResource(R.string.home_feed_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
                     if (feedRefreshing) {
                         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(14.dp))
                     }
+                    Spacer(Modifier.weight(1f))
+                    // Manual live refresh — the feed also refreshes automatically on each open.
+                    Text(
+                        stringResource(R.string.home_feed_refresh),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (feedRefreshing) c.faint else c.indigo,
+                        modifier = Modifier.vaartaPressable(onClick = onRefreshFeed, enabled = !feedRefreshing),
+                    )
                 }
                 Text(
                     when (feedOrigin) {
@@ -182,9 +201,10 @@ fun HomeScreen(
 
     if (showPanic) {
         PanicSheet(
-            onDismissRequest = { showPanic = false },
+            onDismissRequest = { showPanic = false; panicVm.dismiss() },
             onOpenUrl = onOpenUrl,
             onStartLive = onStartLive,
+            personalization = panicState,
         )
     }
 }
@@ -232,8 +252,8 @@ private fun FeaturedScamCard(card: AwarenessCard, onClick: () -> Unit) {
     ) {
         Column {
             Box {
-                ScamCover(
-                    "${card.scamType} ${card.title}",
+                ArticleImage(
+                    card = card,
                     modifier = Modifier.fillMaxWidth().aspectRatio(16f / 7f),
                     corner = 0.dp,
                 )
@@ -270,6 +290,33 @@ private fun FeaturedScamCard(card: AwarenessCard, onClick: () -> Unit) {
 // The pill sits on the cover art (always indigo), so its ink is theme-independent.
 private val VaartaLightIndigo = Color(0xFF3B35A8)
 
+/**
+ * The card's visual: the article's REAL preview image ([AwarenessCard.imageUrl]) when we have one,
+ * otherwise the generated category illustration. The illustration also stands in while the photo is
+ * still loading and on any load error, so the feed never shows a blank/broken image box.
+ */
+@Composable
+private fun ArticleImage(card: AwarenessCard, modifier: Modifier, corner: Dp) {
+    val label = "${card.scamType} ${card.title}"
+    if (card.imageUrl.isNullOrBlank()) {
+        ScamCover(label, modifier = modifier, corner = corner)
+        return
+    }
+    SubcomposeAsyncImage(
+        model = card.imageUrl,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = if (corner > 0.dp) modifier.clip(RoundedCornerShape(corner)) else modifier,
+    ) {
+        if (painter.state is AsyncImagePainter.State.Success) {
+            SubcomposeAsyncImageContent()
+        } else {
+            // Loading or error → the illustration fills the same box (never a blank/broken frame).
+            ScamCover(label, modifier = Modifier.fillMaxSize(), corner = corner)
+        }
+    }
+}
+
 /** A compact trending story: cover thumb, category eyebrow, title. No body preview (spec §5.2). */
 @Composable
 private fun AwarenessCardRow(card: AwarenessCard, onClick: () -> Unit) {
@@ -289,7 +336,7 @@ private fun AwarenessCardRow(card: AwarenessCard, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(VSpace.md),
         ) {
-            ScamCover("${card.scamType} ${card.title}", modifier = Modifier.size(56.dp))
+            ArticleImage(card = card, modifier = Modifier.size(56.dp), corner = 12.dp)
             Column(Modifier.weight(1f)) {
                 if (card.scamType.isNotBlank()) {
                     Eyebrow(card.scamType, color = c.indigo)

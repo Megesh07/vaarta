@@ -4,6 +4,7 @@
     <!-- Needed only for the opt-in cloud AI layer (ADR-0002). Gated at runtime by consent +
          fails-closed logic; the app's core protection works fully offline without it. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Mic capture for live listening (opt-in). Runtime-requested; the app works via Manual Mode
          and the demo without it. Speakerphone + mic is the only compliant call-audio path (ADR-0002). -->
@@ -30,7 +31,12 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name">
+            android:label="@string/app_name"
+            android:launchMode="singleTask">
+            <!-- singleTask (redesign spec §B3): restoring from the floating bubble sends an Intent
+                 back to MainActivity — this guarantees Android reuses the EXISTING instance (via
+                 onNewIntent) instead of creating a duplicate on top, so the live page's state (and
+                 the shared CopilotSession it renders) is never disturbed by the restore. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -41,6 +41,7 @@ import ai.vaarta.ui.theme.stateLabel
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -63,7 +64,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -77,19 +77,14 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * The floating in-call copilot (Phase 4C, ADR-0003 Phase C). A foreground service (type=microphone)
- * that owns one [CopilotSession] for the whole call and draws it over the dialer as a draggable
- * bubble that expands into a ~45%-height panel showing the live WhatsApp-style thread ([ChatThread] —
- * the exact same composable the in-app screen and history detail use, so nothing drifts).
+ * The floating in-call copilot (Phase 4C, ADR-0003 Phase C; shared-session refactor, redesign spec
+ * §B2/§B3). A foreground service (type=microphone) that renders the ONE shared [CopilotSession]
+ * ([LiveSessionHolder]) over the dialer: a draggable bubble that expands into a small floating panel
+ * (the SAME chat thread + risk state as the in-app page), which itself can open the full live page
+ * in [MainActivity] — the shared session makes all three (bubble / panel / full page) the exact same
+ * conversation, never a fresh or duplicated one.
  *
  * Why a service: the mic capture and the live socket must survive the user switching to the phone
  * app, which an Activity's lifecycle can't guarantee. Why an overlay window: it's the only compliant
@@ -97,10 +92,6 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Compose in a non-Activity window needs a lifecycle/viewmodel/savedstate owner of its own — this
  * service is that owner (the three ViewTree owners on each [ComposeView] point back here).
- *
- * Consent note (ADR-0004): stopping does NOT silently persist. The finished session is published via
- * [activeSession] so the app can offer the existing explicit "Save this call" action — auto-saving
- * would violate ADR-0004's explicit-consent-to-save stance.
  */
 class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
 
@@ -114,9 +105,9 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     private val savedStateController = SavedStateRegistryController.create(this)
     override val savedStateRegistry: SavedStateRegistry get() = savedStateController.savedStateRegistry
 
-    // The copilot pipeline runs on the service's own scope — cancelled on destroy, tearing down any
-    // in-flight coach/ground calls. This is the SAME class the in-app ViewModel wraps (Phase 4C-1).
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    // The ONE shared session (redesign spec §B2) — same instance the in-app live page renders via
+    // SessionViewModel. Fetched, never created here, so minimizing an in-app call continues it
+    // rather than starting a second, empty one.
     private lateinit var session: CopilotSession
 
     private lateinit var windowManager: WindowManager
@@ -145,8 +136,7 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         // Default: icon parked top-right, a thumb's reach below the status bar.
         bubbleX = sw - dp(72)
         bubbleY = dp(96)
-        session = CopilotSession(scope, this)
-        activeSessionState.value = session
+        session = LiveSessionHolder.getOrCreate(applicationContext)
     }
 
     private fun dp(v: Int): Int = (v * density).toInt()
@@ -164,8 +154,14 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> { stopEverything(); return START_NOT_STICKY }
+            // Restoring to the app (panel's "open app" action, or the notification) hides both
+            // overlay windows but leaves the foreground mic service running underneath — same
+            // session, ready to float again (spec §B3: "the service may keep running... hidden").
+            ACTION_HIDE_BUBBLE -> { removeBubble(); removePanel(); return START_NOT_STICKY }
         }
         // Default (ACTION_START): become a foreground mic service, show the bubble, start listening.
+        // startLiveListening() no-ops if the shared session is already live (e.g. minimizing an
+        // in-app call) — whichever surface started first keeps owning the mic (redesign spec §B2).
         startAsForeground()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
@@ -187,7 +183,8 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
             )
         }
         val open = PendingIntent.getActivity(
-            this, 0, Intent(this, MainActivity::class.java),
+            this, 0,
+            Intent(this, MainActivity::class.java).putExtra(EXTRA_OPEN_LIVE, true),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val stop = PendingIntent.getService(
@@ -209,7 +206,7 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         }
     }
 
-    // --- Overlay windows (collapsed bubble <-> expanded panel) -------------------------------------
+    // --- Overlay windows (collapsed bubble <-> expanded panel <-> full app) -------------------------
 
     private fun baseParams(): WindowManager.LayoutParams {
         val type =
@@ -300,6 +297,7 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
                     session = session,
                     transformOrigin = origin,
                     onCollapse = { showBubble() },
+                    onOpenApp = { restoreToApp() },
                     onStop = { stopEverything() },
                     onDrag = { dx, dy ->
                         val (w, h) = screenSize()
@@ -325,6 +323,21 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     private fun removeBubble() { bubbleView?.let { runCatching { windowManager.removeView(it) } }; bubbleView = null }
     private fun removePanel() { panelView?.let { runCatching { windowManager.removeView(it) } }; panelView = null }
 
+    /** Open app (redesign spec §B3, from the panel's own expand action): brings [MainActivity] to
+     *  the front on the live page (singleTask + [EXTRA_OPEN_LIVE]) and hides both overlay windows —
+     *  the service keeps running so floating can resume instantly, with no permission re-prompt and
+     *  no lost turns. */
+    private fun restoreToApp() {
+        removeBubble()
+        removePanel()
+        startActivity(
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                putExtra(EXTRA_OPEN_LIVE, true)
+            },
+        )
+    }
+
     // --- Teardown ----------------------------------------------------------------------------------
 
     private fun stopEverything() {
@@ -336,11 +349,11 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     }
 
     override fun onDestroy() {
-        session.close()
-        activeSessionState.value = null
+        // Deliberately does NOT close the shared session (redesign spec §B2) — it's process-scoped
+        // via LiveSessionHolder and may still be rendered in-app; only stopEverything() (an explicit
+        // Stop) ends the call itself, and this service tearing down never should.
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         store.clear()
-        scope.cancel()
         super.onDestroy()
     }
 
@@ -349,14 +362,13 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
     companion object {
         const val ACTION_START = "ai.vaarta.overlay.START"
         const val ACTION_STOP = "ai.vaarta.overlay.STOP"
+        const val ACTION_HIDE_BUBBLE = "ai.vaarta.overlay.HIDE_BUBBLE"
         private const val CHANNEL_ID = "vaarta_live"
         private const val NOTIF_ID = 1001
 
-        /** The live copilot session while the overlay is running, so the app (single source of truth)
-         *  can observe the SAME thread and offer the explicit "Save this call" action (ADR-0004).
-         *  Null when no overlay session is active. */
-        private val activeSessionState = MutableStateFlow<CopilotSession?>(null)
-        val activeSession: StateFlow<CopilotSession?> = activeSessionState.asStateFlow()
+        /** Set on the Intent that restores [MainActivity] (panel's "open app" action, or the
+         *  notification) — tells the app to jump straight to the live page (redesign spec §B3). */
+        const val EXTRA_OPEN_LIVE = "ai.vaarta.overlay.OPEN_LIVE"
 
         fun start(context: Context) {
             val intent = Intent(context, OverlayService::class.java).setAction(ACTION_START)
@@ -366,6 +378,12 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         fun stop(context: Context) {
             context.startService(Intent(context, OverlayService::class.java).setAction(ACTION_STOP))
         }
+
+        /** Hides both overlay windows while leaving the mic-hosting service running (redesign spec
+         *  §B3) — call once the app has been restored to the foreground so nothing lingers on top. */
+        fun hideBubble(context: Context) {
+            context.startService(Intent(context, OverlayService::class.java).setAction(ACTION_HIDE_BUBBLE))
+        }
     }
 }
 
@@ -373,8 +391,8 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
 
 /** Collapsed bubble — the SAME [RiskRing] used everywhere else, at overlay scale (design system §1):
  *  colour alone carries risk while listening, the wave glyph marks true idle, and the ring's own
- *  shield-x takes over at SCAM_PATTERN. Tap expands; drag repositions (both via Compose gestures —
- *  reliable inside an overlay ComposeView). */
+ *  shield-x takes over at SCAM_PATTERN. Tap expands to the floating panel; drag repositions (both
+ *  via Compose gestures — reliable inside an overlay ComposeView). */
 @Composable
 private fun BubbleContent(
     level: RiskLevel,
@@ -414,13 +432,16 @@ private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
  * The expanded panel — a FLOATING, draggable, resizable card that fills its (window-sized) bounds,
  * grown from the icon via a scale/alpha animation anchored at [transformOrigin]. The header is the
  * drag surface; a corner handle resizes. It never spawns full-width at the bottom, so the dialer's
- * own call controls stay reachable (spec §6.2).
+ * own call controls stay reachable (spec §6.2). [onOpenApp] (redesign spec §B3) is this panel's own
+ * further "expand" — it hands off to the exact same shared session rendered full-screen in
+ * [MainActivity], for whenever the small floating view isn't enough.
  */
 @Composable
 private fun PanelContent(
     session: CopilotSession,
     transformOrigin: TransformOrigin,
     onCollapse: () -> Unit,
+    onOpenApp: () -> Unit,
     onStop: () -> Unit,
     onDrag: (Float, Float) -> Unit,
     onResize: (Float, Float) -> Unit,
@@ -474,6 +495,14 @@ private fun PanelContent(
                         Text("● $liveStatus", color = c.indigo, style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.weight(1f))
+                    // The panel's own "expand" (redesign spec §B3): hands off to the full live page.
+                    IconButton(onClick = onOpenApp) {
+                        ai.vaarta.ui.VaartaIcon(
+                            R.drawable.ic_link_external,
+                            contentDescription = stringResource(R.string.overlay_open_app),
+                            tint = c.indigo, size = 18.dp,
+                        )
+                    }
                     TextButton(onClick = onCollapse) { Text(stringResource(R.string.overlay_hide), style = MaterialTheme.typography.labelLarge, color = c.muted) }
                 }
 

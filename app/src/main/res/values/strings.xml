@@ -9,13 +9,20 @@
     <string name="home_action_live_title">Help me on a call</string>
     <string name="home_action_live_subtitle">VAARTA listens on speaker and coaches you live</string>
     <string name="home_action_ask">Ask VAARTA</string>
-    <string name="home_action_recording">Check a recording</string>
+    <string name="home_action_ask_subtitle">Ask a question, or attach a screenshot or recording</string>
     <string name="home_feed_title">Trending scams in India</string>
     <string name="home_feed_origin_live">Live from the web</string>
     <string name="home_feed_origin_cached">From your last refresh</string>
     <string name="home_feed_origin_seed">Built-in guide — updates when you\'re online</string>
     <string name="home_feed_empty">Scam-awareness stories will appear here once you\'re online.</string>
     <string name="home_feed_seen_in">Seen in %1$s</string>
+    <string name="home_feed_refresh">Refresh</string>
+
+    <!-- Live-article view (live-news feed redesign 2026-07-21). -->
+    <string name="article_open_browser">Open in browser</string>
+    <string name="article_reader_error">Couldn\'t load the article here.</string>
+    <string name="article_related">Related scams</string>
+    <string name="article_loading">Loading article…</string>
 
     <!-- Panic sheet (redesign spec §6.2) — shared verbatim between Home and Help so copy never drifts. -->
     <string name="panic_heading">Do this right now</string>
@@ -25,6 +32,9 @@
     <string name="panic_step_4">Call 1930 (the government cyber-crime helpline).</string>
     <string name="panic_call_1930">Call 1930 now</string>
     <string name="panic_get_live_help">Get live help from VAARTA →</string>
+    <string name="panic_personalizing">Checking your situation…</string>
+    <string name="panic_tailored_label">Based on your situation</string>
+    <string name="panic_general_label">General safety steps</string>
 
     <!-- Live v2 (redesign spec §6.3). -->
     <string name="live_title">Live protection</string>
@@ -35,6 +45,9 @@
     <string name="live_float">Float over your call</string>
     <string name="live_watch_demo">Watch how it works</string>
     <string name="live_ai_consent_compact">AI live coach — opt-in, sends the caller\'s words to Google. Off = fully on-device.</string>
+    <!-- Live intelligence status (no toggle; always on when online) — 2026-07-21. -->
+    <string name="live_ai_online">AI active — coaching you live</string>
+    <string name="live_ai_offline">Offline — on-device protection only</string>
     <string name="live_saved">Saved to your conversations</string>
     <string name="live_done">Done</string>
     <string name="live_start_again">Start again</string>
@@ -64,6 +77,14 @@
     <string name="chat_starter_1">A caller says my parcel has drugs in it</string>
     <string name="chat_starter_2">They\'re threatening digital arrest</string>
     <string name="chat_starter_3">Is this UPI payment request safe?</string>
+
+    <!-- Ask-about-an-article chat (live-news feed, 2026-07-21): visible topic + article-specific starters. -->
+    <string name="chat_about_article_title">Ask about this article</string>
+    <string name="chat_topic_eyebrow">Asking about this article</string>
+    <string name="chat_empty_article_title">Ask me anything about this article</string>
+    <string name="chat_article_starter_1">Summarise this article for me</string>
+    <string name="chat_article_starter_2">How does this scam work?</string>
+    <string name="chat_article_starter_3">How do I protect myself and my family?</string>
     <string name="chat_composer_hint">Type your question…</string>
     <string name="chat_attach_sheet_title">Attach</string>
     <string name="chat_attach_photo">Photo</string>
@@ -115,16 +136,6 @@
     <string name="live_tap_another_question">Tap for another question</string>
     <string name="live_share_via">Share via</string>
     <string name="live_share_complaint_pdf">Share complaint PDF</string>
-
-    <!-- Analyze-a-recording screen (Phase 4D). -->
-    <string name="analyze_title">Analyze a recording</string>
-    <string name="analyze_intro">Pick a recorded call — VAARTA will transcribe it, check it against known scam patterns, and give you a verdict.</string>
-    <string name="analyze_pick_recording">Pick a recording</string>
-    <string name="analyze_transcribing">Transcribing and checking the recording…</string>
-    <string name="analyze_transcribing_sub">This can take up to a minute for a longer clip.</string>
-    <string name="analyze_disclaimer">Analyzed from a recording. The risk score is computed on-device from the transcript; the AI transcribed and helped classify it.</string>
-    <string name="analyze_share_warning">Share this warning</string>
-    <string name="analyze_share_warning_message">VAARTA: I analyzed a call recording and it looks like a scam (%1$s).</string>
 
     <!-- Risk states + chat bubbles (design system §4/§6, ChatView.kt/RiskHero.kt/RiskRing.kt/Theme.kt). -->
     <string name="state_observing">Listening &amp; checking</string>
@@ -185,6 +196,8 @@
     <string name="chat_download_transcript">Download transcript</string>
     <string name="chat_thinking">VAARTA is thinking…</string>
     <string name="chat_remove_a11y">Remove</string>
+    <!-- Recording-in-chat result card (A1: recording analysis merged into Ask VAARTA). -->
+    <string name="chat_audio_verdict">Verdict: %1$s · risk %2$d/100</string>
 
     <!-- Bottom nav (spec §6.8). -->
     <string name="nav_home">Home</string>
@@ -224,5 +237,6 @@
     <string name="overlay_notif_text">Listening for scam signs. Tap to open.</string>
     <string name="overlay_notif_stop">Stop</string>
     <string name="overlay_hide">Hide</string>
+    <string name="overlay_open_app">Open in app</string>
     <string name="overlay_listening_coach">Listening — I\'ll show what to say.</string>
 </resources>

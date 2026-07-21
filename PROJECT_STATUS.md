@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-19 (portfolio-polish-to-10 plan complete — 9 tasks + hardening pass + final whole-branch review, all reviewed; URLhaus Auth-Key follow-up closed same day, `task_e2bb31b0`) · **Updated by:** implementation session (AI-assisted) · **Branch:** `vaarta-v2-ux`
+**Last updated:** 2026-07-19 (first real-device live-call test run — mic pipeline confirmed working on physical hardware, but a real Gemini Live transcription-hallucination bug found; see change log) · **Updated by:** implementation session (AI-assisted) · **Branch:** `main`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -197,12 +197,21 @@ and jumps to the top. The previously-planned polish items drop below it. Full pl
    streaming, safety-filtered contextual suggestions rendered in-app. The inputTranscription→score
    half is coded and matches the proven protocol, but is **unverified** — PC acoustic-loopback audio
    quality wasn't clean enough to judge it fairly (see below).
-3. **→ current focus: Real device test** — sideload `app-debug.apk` on the owner's physical Android
-   phone and repeat the live-listening test on an actual call (or a second phone dialing in) with
-   speakerphone. This is now priority #1, specifically to validate the one thing PC testing
-   structurally can't: does the caller's real speech (electrical path via speakerphone mic, not
-   speaker→air→laptop-mic acoustic loopback) reach `inputTranscription` cleanly enough to move the
-   deterministic risk score live? Everything else in Phase B already has PC evidence.
+3. **→ current focus: Real device test** — 🟡 **partially run, 2026-07-19 (see change log for full
+   detail).** Sideloaded on the owner's real phone (`V2130`) over USB, live protection started with
+   AI live coach on. Confirmed for the first time on physical hardware: `AudioCapture` captures real,
+   dynamic, non-zero mic PCM, and the full pipeline (mic → `GeminiLiveClient` WebSocket → Gemini Live
+   `inputTranscription` → chat UI → AI coach reply) runs end-to-end live. **But** the test used a PC
+   text-to-speech voice relayed through PC speakers into the phone's mic (acoustic loopback, not a
+   real call), and Gemini's `inputTranscription` hallucinated fluent but unrelated Tamil/Telugu text
+   instead of transcribing the English speech — and kept fabricating new "conversation" content
+   minutes after audio input had stopped. The deterministic `RiskEngine` correctly never matched this
+   garbled text (score stayed 0 all session) since it only knows EN/HI/Hinglish patterns — so
+   score-ownership safety held, but transcription reliability under real acoustic conditions is now a
+   documented open concern, not a proven-working path. **Still needed:** a real human voice close to
+   the phone, or an actual two-phone speakerphone call, to know whether this hallucination is an
+   artifact of the synthetic-TTS/PC-speaker relay (likely, given the docs already flagged acoustic-
+   loopback quality as the confound) or a deeper `inputTranscription` reliability issue.
 4. ~~**Phase C — Floating bubble**~~ **DONE (overlay half), verified on the emulator (2026-07-09).**
    `OverlayService` (FGS type=microphone) hosts the extracted `CopilotSession` and draws a draggable
    `TYPE_APPLICATION_OVERLAY` bubble → ~45% panel with the shared `ChatThread`. User-initiated flow
@@ -239,6 +248,7 @@ tag, not a ticket in an external system.
 | `task_6a52885f` | "Manual Mode" cue UI absent from the app | **Not a gap.** Deliberately deleted in the v2 pivot (see the corrected 2026-07-19 changelog entry above and `docs/superpowers/specs/2026-07-14-vaarta-v2-intelligence-ux-design.md`). No code needed. |
 | `task_e2bb31b0` | URLhaus's current API requires an `Auth-Key` HTTP header (a real API change since the scam-link-checker plan was written) — not wired up, so URLhaus currently no-ops to `UNKNOWN` (safe, fails closed); only Google Safe Browsing can flag a URL today, and only once a key is configured | **Closed — 2026-07-19.** `URLHAUS_AUTH_KEY` wired end-to-end: `secrets.properties` → `BuildConfig.URLHAUS_AUTH_KEY` (`app/build.gradle.kts`) → `Auth-Key` header in `LinkChecker.urlhaus()`. Live-verified with a real key against the real API (`https://urlhaus-api.abuse.ch/v1/url/`, HTTP 200, `query_status: no_results` correctly mapping to `CLEAN_SO_FAR`). Both URLhaus and Safe Browsing now independently contribute; either key alone is enough to enable the checker. |
 | `task_9f3a1c22` | Task 5's guardian contact picker regressed against `docs/PRIVACY_SECURITY.md`'s own binding data-inventory ("Guardian contact ... SQLCipher") and permission list ("Never: READ_CONTACTS") — guardian data was stored in plain SharedPreferences and the picker held `READ_CONTACTS` | **Closed — Task 9** of the current plan (hardening pass). Guardian storage moved into the encrypted SQLCipher database (`GuardianEntity`/`GuardianDao`, migration 3→4); the picker now targets `CommonDataKinds.Phone.CONTENT_URI` directly and needs no `READ_CONTACTS` at all. |
+| `task_b91d4a05` | Gemini Live's `inputTranscription` hallucinated fluent Tamil/Telugu text (unrelated to the actual English audio) on the first real physical-device live-call test, and kept fabricating new fake "conversation" content minutes after audio input stopped | **Open — found 2026-07-19**, first real-device test. Test method used a PC TTS voice relayed acoustically through PC speakers into the phone mic, not a real call, so this may be an acoustic-loopback-quality artifact rather than a deeper bug — needs a real-voice/real-call retest to confirm before deciding a fix (e.g. confidence/silence gating on `inputTranscription` output before it reaches the coach). `RiskEngine` never matched the garbled text, so the deterministic score stayed correctly at 0 — no score-safety impact, but AI-coach output was reacting to fabricated caller dialogue. |
 
 ## 6. Process rules to follow (do not skip)
 
@@ -262,6 +272,43 @@ tag, not a ticket in an external system.
   other way around.
 
 ## 8. Change log
+
+- **2026-07-19 (evening) — First real-device live-call test run (wireless-adb setup led to USB,
+  `V2130` phone, `task_b91d4a05` found).** Set up per README's wireless-adb guide, hit an
+  install-time drop to `offline` mid-transfer over Wi-Fi (large 207MB APK over a flaky wireless-
+  debugging link), switched to USB per this session's judgment call — far more reliable for a live
+  audio test session than Wi-Fi. Verified via `adb`, not assumed: process alive (`pidof`), correct
+  activity focused (`dumpsys window`), no `FATAL`/`AndroidRuntime` crash in logcat.
+  - **Confirmed working on physical hardware for the first time:** `AudioCapture` produces real,
+    dynamic, non-zero PCM peaks (2000–13000 range) from the phone's actual mic — not a stub. The
+    full pipeline (mic → `AudioCapture` → `GeminiLiveClient` WebSocket → Gemini Live
+    `inputTranscription` → live "Caller" transcript bubbles in the UI → contextual AI coach replies)
+    runs end-to-end, live, rendering in real time. Session start/stop and auto-save-to-history
+    (`Saved to your conversations`) all worked cleanly; app never crashed.
+  - **Real bug found, not fixed yet (`task_b91d4a05`):** test audio was a Windows TTS voice speaking
+    an English digital-arrest scam script, played through this PC's speakers and picked up
+    acoustically by the phone's mic (not a real call — no second phone/human voice was available in
+    this pass). Gemini's `inputTranscription` did not transcribe the English speech; it produced
+    fluent, plausible-sounding **Tamil and Telugu** text unrelated to what was said, and kept
+    generating entirely new fabricated "conversation" turns for minutes *after* audio playback had
+    already stopped (i.e. off near-silence) — a hallucination, not a mistranscription or a dropped
+    connection. The AI coach reacted contextually to this fabricated text with real "SAY THIS"
+    warnings.
+  - **RiskEngine correctly did not move (stayed 0/`OBSERVING` all session).** The deterministic
+    engine only matches EN/HI/Hinglish signal patterns from the intel pack, so the garbled
+    Tamil/Telugu text never matched anything — score ownership held exactly as designed, and this is
+    a real, positive data point (a bad transcript cannot manufacture a false score). The AI coach
+    layer has no equivalent hard gate, though, so it visibly reacted to content that was never
+    actually said.
+  - **Not yet resolved:** whether this is (a) an acoustic-loopback artifact — TTS-through-PC-speaker-
+    across-a-room is exactly the audio-quality confound this file's own Phase B notes already
+    predicted for PC testing, now reproduced on the phone's mic instead of a laptop's — or (b) a
+    genuine `inputTranscription` reliability gap that would also show up on a real call. Needs a
+    retest with a real human voice close to the phone (or a genuine two-phone speakerphone call) to
+    tell those apart before deciding whether `CopilotSession`/`GeminiLiveClient` needs a
+    confidence/silence gate on transcription output reaching the coach. Tracked as `task_b91d4a05` in
+    §5's Open follow-ups tracker — **do not mark the Phase B real-device milestone "done" until that
+    retest happens**, per this file's own honesty rule (§7).
 
 - **2026-07-19 — Task 9 hardening pass caught + fixed a real privacy-doc regression from Task 5
   (guardian contact picker; `task_9f3a1c22`).** Task 5's per-task review checked the guardian picker
