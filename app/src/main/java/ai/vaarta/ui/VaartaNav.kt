@@ -146,7 +146,7 @@ fun VaartaNav(
                     onOpenArticle = { card -> sub = SubScreen.Article(card) },
                 )
                 SubScreen.Complaint -> ComplaintFlowScreen(vm = complaintVm, onBack = { sub = SubScreen.None })
-                SubScreen.Settings -> Unit
+                SubScreen.Settings -> SettingsScreen(vm = vm, onBack = { sub = SubScreen.None })
                 SubScreen.None -> Unit
             }
         }
@@ -196,6 +196,7 @@ fun VaartaNav(
                     )
                     sub = SubScreen.Complaint
                 },
+                onOpenSettings = { sub = SubScreen.Settings },
                 panicVm = panicVm,
                 liveScamType = liveScamType,
                 liveRiskLevel = liveRiskLevel.name,

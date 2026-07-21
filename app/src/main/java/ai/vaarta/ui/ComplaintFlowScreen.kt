@@ -477,10 +477,14 @@ private fun DocumentRow(item: ChecklistItem) {
     }
 }
 
-/** Name/address/mobile/email/ID-type — one sheet reused for both first-time add and later edit. */
+/**
+ * Name/address/mobile/email/ID-type — one sheet reused for both first-time add and later edit.
+ * `internal` (not `private`) — Task 10 reuses this same sheet from `SettingsScreen.kt`'s "Your
+ * filing details" row rather than duplicating the form.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun IdentitySheet(
+internal fun IdentitySheet(
     initial: IdentityDetails?,
     onDismiss: () -> Unit,
     onSave: (IdentityDetails) -> Unit,

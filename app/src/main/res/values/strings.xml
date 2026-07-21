@@ -66,10 +66,18 @@
     <string name="help_report_cybercrime">cybercrime.gov.in — file a complaint</string>
     <string name="help_report_chakshu">Sanchar Saathi (Chakshu) — report the fraud number/SMS</string>
     <string name="help_tools_title">Tools</string>
-    <string name="help_tools_complaint">Generate a complaint draft</string>
-    <string name="help_tools_complaint_sub">Turn what VAARTA detected into a ready-to-file draft</string>
+    <string name="help_tools_complaint">Quick complaint draft (text/PDF only)</string>
+    <string name="help_tools_complaint_sub">A simple text draft you can copy or export — no guided steps</string>
     <string name="help_tools_warn_family">Warn your family</string>
     <string name="help_tools_warn_family_sub">Send a short warning — one message can stop a scam</string>
+    <string name="help_tools_warn_family_sub_direct">Sends straight to %1$s — one message can stop a scam</string>
+    <string name="help_open_settings">Settings</string>
+
+    <!-- Complaint co-pilot IA (Task 10): "Report a scam" is the new guided flow (Tasks 7–9); the
+         "Quick complaint draft" row above is the older text/PDF-only draft, kept on purpose as a
+         secondary action so its already-shipped PDF export isn\'t lost. -->
+    <string name="complaint_report_title">Report a scam</string>
+    <string name="complaint_report_sub">We\'ll help you file it, step by step</string>
 
     <!-- Chat v2 (redesign spec §6.7). -->
     <string name="chat_title">Ask VAARTA</string>
@@ -222,6 +230,17 @@
     <string name="guardian_row_title">Guardian contact</string>
     <string name="guardian_not_set">Not set — tap to choose</string>
     <string name="guardian_clear">Remove guardian</string>
+
+    <!-- Settings screen (Task 10): Help IA restructure moved language/guardian/clear-voice out of
+         Help; this is the new home for them plus filing details and privacy. -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_guardian_desc">So "Warn your family" can send straight to them instead of opening the share sheet.</string>
+    <string name="settings_your_details">Your filing details</string>
+    <string name="settings_your_details_sub">Saved once on this device, reused for every complaint you file</string>
+    <string name="settings_your_details_add">Add your details once</string>
+    <string name="settings_your_details_edit">Edit</string>
+    <string name="settings_your_details_clear">Clear</string>
+    <string name="settings_privacy_title">Privacy</string>
 
     <!-- Confirmation dialogs for destructive actions (Task 4). -->
     <string name="action_cancel">Cancel</string>

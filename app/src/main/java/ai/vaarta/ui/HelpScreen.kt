@@ -4,12 +4,10 @@ import ai.vaarta.R
 import ai.vaarta.SessionViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.guardian.Guardian
-import ai.vaarta.guardian.GuardianPickerContract
 import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.panic.PanicViewModel
 import ai.vaarta.share.BilingualShare
-import ai.vaarta.ui.components.ConfirmDialog
 import ai.vaarta.ui.components.LinkRow
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.components.TextLinkRow
@@ -17,7 +15,6 @@ import ai.vaarta.ui.components.VaartaButton
 import ai.vaarta.ui.components.VaartaSecondaryButton
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,26 +32,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 
 /**
  * Plain, calm steps for someone who has already been defrauded (spec §4.3). Ordered by urgency —
@@ -73,9 +65,10 @@ private val SCAMMED_STEP_IDS = listOf(
 
 /**
  * The social-good pillar (spec §4.3): how and where to get help and report a scam, always reachable.
+ * Task 10 trimmed this to actions only — language, guardian management, and clear-voice-data moved
+ * to [SettingsScreen], reached via the "Settings" row at the bottom.
  * The complaint draft (reused from the deterministic engine) lives here now, off the live screen.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpScreen(
     vm: SessionViewModel,
@@ -85,6 +78,7 @@ fun HelpScreen(
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
     onReport: () -> Unit,
+    onOpenSettings: () -> Unit,
     panicVm: PanicViewModel,
     liveScamType: String?,
     liveRiskLevel: String,
@@ -99,31 +93,17 @@ fun HelpScreen(
     var showPanic by remember { mutableStateOf(false) }
     val panicState by panicVm.state.collectAsState()
     var showAllSteps by remember { mutableStateOf(false) }
-    var showLanguagePicker by remember { mutableStateOf(false) }
-    var showClearVoice by remember { mutableStateOf(false) }
-    var currentLanguage by remember { mutableStateOf(AppLanguage.current()) }
+    val currentLanguage = remember { AppLanguage.current() }
 
-    // Guardian contact picker (Task 5, spec §7; Task 9 hardening fix) — a one-time, changeable
-    // choice so "Warn your family" can skip the share chooser next time. GuardianStore wraps the
-    // encrypted SQLCipher database (core:data), so every read/write is a suspend call; the picker
-    // itself needs no READ_CONTACTS — the system grants a temporary read on the picked Phone-data
-    // URI (GuardianPickerContract).
+    // Guardian contact (Task 5, spec §7; Task 9 hardening fix) — read-only here now (Task 10 moved
+    // the pick/clear management rows to Settings). Kept so "Warn your family" can show whether it
+    // will send straight to the guardian or open the share chooser; the actual branching for the
+    // send itself already lives once, in MainActivity's `warnFamily`, driven by its own fresh
+    // GuardianStore read — this local copy is display-only.
     val context = LocalContext.current
     val guardianStore = remember { GuardianStore.create(context) }
-    val scope = rememberCoroutineScope()
     var guardian by remember { mutableStateOf<Guardian?>(null) }
     LaunchedEffect(Unit) { guardian = guardianStore.get() }
-    val guardianPicker = rememberLauncherForActivityResult(GuardianPickerContract()) { picked ->
-        if (picked != null) {
-            scope.launch {
-                guardianStore.set(picked.name, picked.number)
-                guardian = picked
-            }
-        }
-    }
-    fun pickGuardian() {
-        guardianPicker.launch(Unit)
-    }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -188,11 +168,12 @@ fun HelpScreen(
             }
 
             HelpSection(title = stringResource(R.string.help_report_title)) {
-                // Temporary, minimal hook (Task 7) into the new complaint co-pilot flow — Task 10
-                // restructures this whole section properly with full string-resource wiring.
+                // Primary action (Task 10): the guided complaint co-pilot (Tasks 7–9) — picks the
+                // right destination, walks Prepare → Review → File, and fills the real portal.
                 LinkRow(
                     icon = R.drawable.ic_file_text,
-                    title = "Report a scam",
+                    title = stringResource(R.string.complaint_report_title),
+                    subtitle = stringResource(R.string.complaint_report_sub),
                     onClick = onReport,
                 )
                 Spacer(Modifier.height(VSpace.xs))
@@ -246,49 +227,24 @@ fun HelpScreen(
                     Spacer(Modifier.height(VSpace.sm))
                 }
                 val warnFamilyMessage = stringResource(R.string.help_warn_family_message)
+                val warnFamilySubtitle = guardian?.let { g ->
+                    stringResource(R.string.help_tools_warn_family_sub_direct, g.name)
+                } ?: stringResource(R.string.help_tools_warn_family_sub)
                 LinkRow(
                     icon = R.drawable.ic_bell,
                     title = stringResource(R.string.help_tools_warn_family),
-                    subtitle = stringResource(R.string.help_tools_warn_family_sub),
+                    subtitle = warnFamilySubtitle,
                     onClick = { onShare(BilingualShare.compose(warnFamilyMessage, currentLanguage)) },
                 )
-                Spacer(Modifier.height(VSpace.xs))
-                LinkRow(
-                    icon = R.drawable.ic_phone,
-                    title = stringResource(R.string.guardian_row_title),
-                    subtitle = guardian?.name ?: stringResource(R.string.guardian_not_set),
-                    onClick = { pickGuardian() },
-                )
-                if (guardian != null) {
-                    TextLinkRow(
-                        text = stringResource(R.string.guardian_clear),
-                        onClick = {
-                            scope.launch {
-                                guardianStore.clear()
-                                guardian = null
-                            }
-                        },
-                    )
-                }
-            }
-            HelpSection(title = "") {
-                HelpLanguageRow(current = currentLanguage, onClick = { showLanguagePicker = true })
             }
 
-            // Voice-attribution privacy control (Part D). Same destructive-action idiom as the
-            // Conversations screen's "Delete all" row (MainActivity.kt HistoryScreen kebab sheet):
-            // now gated behind a confirmation dialog.
+            // Settings (Task 10) — language, guardian management, filing details, and privacy all
+            // live in one place now, off the action-only Help list.
             HelpSection(title = "") {
-                Text(
-                    stringResource(R.string.settings_clear_voice_data_desc),
-                    style = MaterialTheme.typography.bodySmall, color = c.muted,
-                )
-                Spacer(Modifier.height(VSpace.sm))
-                VaartaSecondaryButton(
-                    text = stringResource(R.string.settings_clear_voice_data),
-                    onClick = { showClearVoice = true },
-                    leadingIcon = R.drawable.ic_close,
-                    modifier = Modifier.fillMaxWidth(),
+                LinkRow(
+                    icon = R.drawable.ic_settings,
+                    title = stringResource(R.string.help_open_settings),
+                    onClick = onOpenSettings,
                 )
             }
             Spacer(Modifier.height(VSpace.xxl))
@@ -303,32 +259,6 @@ fun HelpScreen(
             personalization = panicState,
         )
     }
-
-    if (showLanguagePicker) {
-        ModalBottomSheet(
-            onDismissRequest = { showLanguagePicker = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = VSpace.xxl).padding(bottom = VSpace.xxxl)) {
-                Text(stringResource(R.string.language_picker_title), style = MaterialTheme.typography.titleLarge, color = c.ink)
-                Spacer(Modifier.height(VSpace.md))
-                LanguageOptionsList(onSelect = { language ->
-                    currentLanguage = language
-                    showLanguagePicker = false
-                    AppLanguage.apply(language) // AppCompatActivity recreates itself — no manual recreate()
-                })
-            }
-        }
-    }
-
-    ConfirmDialog(
-        visible = showClearVoice,
-        title = stringResource(R.string.confirm_clear_voice_title),
-        body = stringResource(R.string.confirm_clear_voice_body),
-        confirmLabel = stringResource(R.string.settings_clear_voice_data),
-        onConfirm = { vm.session.clearVoiceData() },
-        onDismiss = { showClearVoice = false },
-    )
 }
 
 /** A single numbered step: a calm circular badge + the instruction, aligned as a row. */
