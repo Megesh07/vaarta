@@ -1,0 +1,66 @@
+{
+  "packId": "complaint-playbook@2026.07.1",
+  "verifiedOn": "2026-07-21",
+  "destinations": [
+    {
+      "id": "ncrp",
+      "name": "National Cyber Crime Reporting Portal",
+      "url": "https://cybercrime.gov.in/Webform/Accept.aspx",
+      "phone": "1930",
+      "scamCodes": ["SC-01", "SC-02", "SC-03", "SC-04", "SC-05"],
+      "requiresMoneyLost": true,
+      "categoryValue": "Online Financial Fraud",
+      "fields": [
+        { "key": "incident.category", "label": "Category of complaint", "slot": "category", "selector": null },
+        { "key": "incident.datetime", "label": "Approx. date & time of incident", "slot": "incidentDate", "selector": null },
+        { "key": "incident.platform", "label": "Where did the incident occur?", "slot": "platform", "selector": null },
+        { "key": "incident.description", "label": "Incident description", "slot": "narrative", "selector": "textarea#incidentDesc", "minChars": 200 },
+        { "key": "suspect.mobile", "label": "Suspect mobile number", "slot": "callerNumber", "selector": "input#suspectMobile" },
+        { "key": "complainant.name", "label": "Your name", "slot": "identity.name", "selector": "input#complainantName" },
+        { "key": "complainant.mobile", "label": "Your mobile", "slot": "identity.mobile", "selector": "input#complainantMobile" },
+        { "key": "complainant.email", "label": "Your email", "slot": "identity.email", "selector": "input#complainantEmail" },
+        { "key": "complainant.address", "label": "Your address", "slot": "identity.address", "selector": "textarea#complainantAddress" }
+      ],
+      "documents": [
+        { "key": "transcript", "label": "Call transcript", "providedByVaarta": true, "note": "VAARTA has this from the call." },
+        { "key": "signals", "label": "Detected scam signals (timeline)", "providedByVaarta": true, "note": "VAARTA has this from the analysis." },
+        { "key": "id_proof", "label": "Your national ID proof", "providedByVaarta": false, "note": "PAN / Aadhaar / DL / Voter / Passport as .jpg/.jpeg/.png, max 5 MB." },
+        { "key": "txn_proof", "label": "Bank transaction proof", "providedByVaarta": false, "note": "Only if money was lost: statement / receipt showing the 12-digit Transaction ID / UTR." }
+      ],
+      "procedure": [
+        { "order": 1, "text": "Register with your mobile + email and verify the OTP", "userOnly": true },
+        { "order": 2, "text": "Accept the terms, then choose category: Online Financial Fraud" },
+        { "order": 3, "text": "Fill the incident, suspect and your details (VAARTA fills these)" },
+        { "order": 4, "text": "Attach your ID proof and any transaction proof" },
+        { "order": 5, "text": "Solve the CAPTCHA", "userOnly": true },
+        { "order": 6, "text": "Preview everything and check it is correct" },
+        { "order": 7, "text": "Submit — you get a 14-digit acknowledgement by SMS", "userOnly": true }
+      ]
+    },
+    {
+      "id": "chakshu",
+      "name": "Sanchar Saathi — Chakshu (report the number)",
+      "url": "https://sancharsaathi.gov.in/sfc/",
+      "phone": null,
+      "scamCodes": ["SC-02", "SC-03", "SC-08"],
+      "requiresMoneyLost": false,
+      "categoryValue": "Impersonation as Government official / Agency",
+      "fields": [
+        { "key": "medium", "label": "Communication medium", "slot": "platform", "selector": null },
+        { "key": "sender.number", "label": "Sender / caller number", "slot": "callerNumber", "selector": "input#senderNumber" },
+        { "key": "description", "label": "Description", "slot": "narrative", "selector": "textarea#description", "minChars": 30 }
+      ],
+      "documents": [
+        { "key": "screenshot", "label": "Screenshot of the call/SMS", "providedByVaarta": false, "note": "Mandatory: a screenshot of the fraud call log or SMS." },
+        { "key": "transcript", "label": "Call transcript", "providedByVaarta": true, "note": "VAARTA has this — useful for the description." }
+      ],
+      "procedure": [
+        { "order": 1, "text": "Choose medium (Call / SMS / WhatsApp) and the fraud category" },
+        { "order": 2, "text": "Enter the sender number and description (VAARTA fills these)" },
+        { "order": 3, "text": "Attach the mandatory screenshot", "userOnly": true },
+        { "order": 4, "text": "Enter your number, solve the CAPTCHA and verify the OTP", "userOnly": true },
+        { "order": 5, "text": "Accept the declaration, preview and Submit", "userOnly": true }
+      ]
+    }
+  ]
+}
