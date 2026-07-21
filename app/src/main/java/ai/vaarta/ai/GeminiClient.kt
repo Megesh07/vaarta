@@ -531,7 +531,12 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || destinationName.isBlank() || url.isBlank()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildFreshnessRequestBody(destinationName, url, verifiedOn)) ?: return null
+            val instruction = "You are a fact-checking assistant. Answer in ONE short sentence. " +
+                "If nothing material has changed, reply with exactly the single word NONE."
+            val userLine = "As of today, has the complaint-filing procedure or required documents for " +
+                "$destinationName ($url) materially changed since $verifiedOn? If yes, name " +
+                "the change in one short sentence. If no, reply exactly: NONE"
+            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, userLine, maxTokens = 1024)) ?: return null
             val text = extractText(response)?.trim().orEmpty()
             if (text.isBlank() || text.equals("NONE", ignoreCase = true)) null else text
         } catch (e: Exception) {
@@ -540,42 +545,6 @@ object GeminiClient {
             null
         }
     }
-
-    private fun buildFreshnessRequestBody(destinationName: String, url: String, verifiedOn: String): String = buildJsonObject {
-        putJsonObject("system_instruction") {
-            putJsonArray("parts") {
-                addJsonObject {
-                    put(
-                        "text",
-                        "You are a fact-checking assistant. Answer in ONE short sentence. " +
-                            "If nothing material has changed, reply with exactly the single word NONE.",
-                    )
-                }
-            }
-        }
-        putJsonArray("contents") {
-            addJsonObject {
-                put("role", "user")
-                putJsonArray("parts") {
-                    addJsonObject {
-                        put(
-                            "text",
-                            "As of today, has the complaint-filing procedure or required documents for " +
-                                "$destinationName ($url) materially changed since $verifiedOn? If yes, name " +
-                                "the change in one short sentence. If no, reply exactly: NONE",
-                        )
-                    }
-                }
-            }
-        }
-        // NOTE: deliberately NO responseMimeType/responseSchema — unsupported alongside tools on this
-        // model (HTTP 400), same as classify()/chat(). Parsed as plain text instead.
-        putJsonArray("tools") { addJsonObject { putJsonObject("google_search") { } } }
-        putJsonObject("generationConfig") {
-            put("temperature", 0.2)
-            put("maxOutputTokens", 300)
-        }
-    }.toString()
 
     /** Shared grounded request: a system instruction + one fixed user line + google_search, no schema. */
     private fun buildGroundedBody(systemInstruction: String, userLine: String, maxTokens: Int = 1024): String = buildJsonObject {
