@@ -196,6 +196,10 @@
     <string name="chat_about_call_title">Is call ke baare mein</string>
     <string name="chat_download_transcript">Transcript download karo</string>
     <string name="chat_report_this">Isko report karo</string>
+    <string name="chat_warn_family">Apne family ko warn karo</string>
+    <string name="chat_warn_family_prefix">⚠️ VAARTA se warning: Mujhe abhi ek suspected %1$s mila (risk %2$d/100).\n\n</string>
+    <string name="chat_warn_family_prefix_chat">⚠️ VAARTA se warning: Maine jo bataya, usse yeh scam jaisa lagta hai.\n\n</string>
+    <string name="chat_warn_family_generic_kind">scam</string>
     <string name="chat_thinking">VAARTA soch raha hai…</string>
     <string name="chat_remove_a11y">Hatao</string>
 

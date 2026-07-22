@@ -191,6 +191,24 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * A "warn my family" message scoped to THIS conversation — never the generic, situation-blind
+     * template Help used to send (owner directive, 2026-07-22: the same "why is this generalized"
+     * critique that applied to the complaint action applies here too). Mirrors [ArticleScreen]'s
+     * existing per-article warn message, which already got this right. Null when there's nothing to
+     * warn about yet (no turns).
+     */
+    fun warnFamilyText(prefix: String, suffix: String): String? {
+        val items = _turns.value
+        if (items.isEmpty()) return null
+        val callerLine = items.filterIsInstance<ChatItem.Caller>().firstOrNull()?.text
+        return buildString {
+            append(prefix)
+            callerLine?.let { append("\"$it\"\n\n") }
+            append(suffix)
+        }
+    }
+
+    /**
      * Builds a [ComplaintDraft] scoped to THIS conversation's own transcript/verdict — a live call,
      * an analyzed recording, or a plain chat where the user typed out what happened all produce one
      * here, since a scam report is about a specific incident, never a generic app-wide action (owner

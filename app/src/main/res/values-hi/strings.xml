@@ -195,6 +195,10 @@
     <string name="chat_about_call_title">इस कॉल के बारे में</string>
     <string name="chat_download_transcript">ट्रांसक्रिप्ट डाउनलोड करें</string>
     <string name="chat_report_this">इसकी रिपोर्ट करें</string>
+    <string name="chat_warn_family">अपने परिवार को आगाह करें</string>
+    <string name="chat_warn_family_prefix">⚠️ VAARTA की चेतावनी: मुझे अभी एक संदिग्ध %1$s मिला (जोखिम %2$d/100)।\n\n</string>
+    <string name="chat_warn_family_prefix_chat">⚠️ VAARTA की चेतावनी: मैंने जो बताया, उससे यह एक स्कैम जैसा लगता है।\n\n</string>
+    <string name="chat_warn_family_generic_kind">स्कैम</string>
     <string name="chat_thinking">VAARTA सोच रहा है…</string>
     <string name="chat_remove_a11y">हटाएं</string>
 

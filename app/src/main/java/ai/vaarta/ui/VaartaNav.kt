@@ -185,7 +185,6 @@ fun VaartaNav(
             )
             VaartaTab.HELP -> HelpScreen(
                 vm = vm,
-                onShare = onShare,
                 onOpenUrl = onOpenUrl,
                 onStartLive = { sub = SubScreen.Live },
                 onOpenSettings = { sub = SubScreen.Settings },

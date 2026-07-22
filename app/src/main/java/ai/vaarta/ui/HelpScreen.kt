@@ -2,11 +2,7 @@ package ai.vaarta.ui
 
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
-import ai.vaarta.guardian.Guardian
-import ai.vaarta.guardian.GuardianStore
-import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.panic.PanicViewModel
-import ai.vaarta.share.BilingualShare
 import ai.vaarta.ui.components.LinkRow
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.components.TextLinkRow
@@ -34,7 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
@@ -64,16 +58,15 @@ private val SCAMMED_STEP_IDS = listOf(
 /**
  * The social-good pillar (spec §4.3): how and where to get help and report a scam, always reachable.
  * Task 10 trimmed this to actions only — language, guardian management, and clear-voice-data moved
- * to [SettingsScreen], reached via the "Settings" row at the bottom. Complaint generation is NOT a
- * generic app-wide action here (owner directive, 2026-07-22: every call/recording/chat is a distinct
- * incident with its own context, so "Report this" lives per-conversation in [ConversationScreen]
+ * to [SettingsScreen], reached via the "Settings" row at the bottom. Report/warn-family are NOT
+ * generic app-wide actions here (owner directive, 2026-07-22: every call/recording/chat is a
+ * distinct incident with its own context, so both live per-conversation in [ConversationScreen]
  * instead, reached via History) — this screen only keeps the two direct portal links for someone who
  * doesn't have a saved conversation yet and just wants to file manually.
  */
 @Composable
 fun HelpScreen(
     vm: SessionViewModel,
-    onShare: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -89,17 +82,6 @@ fun HelpScreen(
     var showPanic by remember { mutableStateOf(false) }
     val panicState by panicVm.state.collectAsState()
     var showAllSteps by remember { mutableStateOf(false) }
-    val currentLanguage = remember { AppLanguage.current() }
-
-    // Guardian contact (Task 5, spec §7; Task 9 hardening fix) — read-only here now (Task 10 moved
-    // the pick/clear management rows to Settings). Kept so "Warn your family" can show whether it
-    // will send straight to the guardian or open the share chooser; the actual branching for the
-    // send itself already lives once, in MainActivity's `warnFamily`, driven by its own fresh
-    // GuardianStore read — this local copy is display-only.
-    val context = LocalContext.current
-    val guardianStore = remember { GuardianStore.create(context) }
-    var guardian by remember { mutableStateOf<Guardian?>(null) }
-    LaunchedEffect(Unit) { guardian = guardianStore.get() }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -178,19 +160,6 @@ fun HelpScreen(
                 Text(
                     stringResource(R.string.help_report_caption),
                     style = MaterialTheme.typography.bodySmall, color = c.muted,
-                )
-            }
-
-            HelpSection(title = stringResource(R.string.help_tools_title)) {
-                val warnFamilyMessage = stringResource(R.string.help_warn_family_message)
-                val warnFamilySubtitle = guardian?.let { g ->
-                    stringResource(R.string.help_tools_warn_family_sub_direct, g.name)
-                } ?: stringResource(R.string.help_tools_warn_family_sub)
-                LinkRow(
-                    icon = R.drawable.ic_bell,
-                    title = stringResource(R.string.help_tools_warn_family),
-                    subtitle = warnFamilySubtitle,
-                    onClick = { onShare(BilingualShare.compose(warnFamilyMessage, currentLanguage)) },
                 )
             }
 

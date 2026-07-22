@@ -7,6 +7,7 @@ import ai.vaarta.ai.ChatAttachment
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.i18n.AppLanguage
+import ai.vaarta.share.BilingualShare
 import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
@@ -147,6 +148,17 @@ fun ConversationScreen(
         vm.buildComplaintDraft()?.let(onReport)
     }
 
+    // Same fix, applied to "Warn my family" (owner directive, 2026-07-22): the message names what
+    // THIS conversation actually was, never a static generic template.
+    val warnFamilyPrefixThisChat = header?.let {
+        stringResource(R.string.chat_warn_family_prefix, it.scamType ?: stringResource(R.string.chat_warn_family_generic_kind), it.score)
+    } ?: stringResource(R.string.chat_warn_family_prefix_chat)
+    val warnFamilySuffix = stringResource(R.string.article_warn_suffix)
+    fun warnFamilyThis() {
+        vm.warnFamilyText(warnFamilyPrefixThisChat, warnFamilySuffix)
+            ?.let { onShare(BilingualShare.compose(it, AppLanguage.current())) }
+    }
+
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             VaartaBackBar(
@@ -192,32 +204,13 @@ fun ConversationScreen(
                             Text(it, style = MaterialTheme.typography.labelLarge, color = c.indigoInk)
                         }
                     }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
-                        modifier = Modifier.vaartaPressable({ onShareGeneric(vm.transcriptText()) }).padding(vertical = VSpace.xs),
-                    ) {
-                        VaartaIcon(R.drawable.ic_download, contentDescription = null, tint = c.indigo, size = 16.dp)
-                        Text(stringResource(R.string.chat_download_transcript), style = MaterialTheme.typography.bodySmall, color = c.indigo)
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
-                        modifier = Modifier.vaartaPressable(::reportThis).padding(vertical = VSpace.xs),
-                    ) {
-                        VaartaIcon(R.drawable.ic_file_text, contentDescription = null, tint = c.indigo, size = 16.dp)
-                        Text(stringResource(R.string.chat_report_this), style = MaterialTheme.typography.bodySmall, color = c.indigo)
-                    }
+                    ConversationActionRow(R.drawable.ic_download, stringResource(R.string.chat_download_transcript), onClick = { onShareGeneric(vm.transcriptText()) })
+                    ConversationActionRow(R.drawable.ic_file_text, stringResource(R.string.chat_report_this), onClick = ::reportThis)
+                    ConversationActionRow(R.drawable.ic_bell, stringResource(R.string.chat_warn_family), onClick = ::warnFamilyThis)
                 }
                 if (turns.isNotEmpty() && header == null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
-                        modifier = Modifier.vaartaPressable(::reportThis).padding(vertical = VSpace.xs),
-                    ) {
-                        VaartaIcon(R.drawable.ic_file_text, contentDescription = null, tint = c.indigo, size = 16.dp)
-                        Text(stringResource(R.string.chat_report_this), style = MaterialTheme.typography.bodySmall, color = c.indigo)
-                    }
+                    ConversationActionRow(R.drawable.ic_file_text, stringResource(R.string.chat_report_this), onClick = ::reportThis)
+                    ConversationActionRow(R.drawable.ic_bell, stringResource(R.string.chat_warn_family), onClick = ::warnFamilyThis)
                 }
                 if (turns.isEmpty() && header == null) {
                     Spacer(Modifier.height(if (topic != null) VSpace.lg else VSpace.xxl))
@@ -337,6 +330,21 @@ fun ConversationScreen(
                 }
             }
         }
+    }
+}
+
+/** One tappable action tied to THIS conversation (Download / Report / Warn family) — every action
+ *  here reads from this specific chat's own transcript/verdict, never a generic app-wide state. */
+@Composable
+private fun ConversationActionRow(icon: Int, text: String, onClick: () -> Unit) {
+    val c = VaartaTheme.colors
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+        modifier = Modifier.vaartaPressable(onClick).padding(vertical = VSpace.xs),
+    ) {
+        VaartaIcon(icon, contentDescription = null, tint = c.indigo, size = 16.dp)
+        Text(text, style = MaterialTheme.typography.bodySmall, color = c.indigo)
     }
 }
 
