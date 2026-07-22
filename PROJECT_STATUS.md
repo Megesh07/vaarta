@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-19 (first real-device live-call test run — mic pipeline confirmed working on physical hardware, but a real Gemini Live transcription-hallucination bug found; see change log) · **Updated by:** implementation session (AI-assisted) · **Branch:** `main`
+**Last updated:** 2026-07-22 (complaint co-pilot shipped — intelligent, assisted scam reporting replaces the old link-list Help section; see change log) · **Updated by:** implementation session (AI-assisted) · **Branch:** `main`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -134,11 +134,15 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Live audio capture (`AudioCapture`) | **Closed, PC-verified.** 16kHz mono PCM16 via `AudioRecord`, VOICE_RECOGNITION→MIC fallback. Verified on the `vaarta_test` emulator booted with `-allow-host-audio`: `dumpsys audio` showed an active un-silenced recording session, and temporary diagnostic peak-logging confirmed real, dynamic, non-zero PCM reaching the app (cross-checked independently against an `ffmpeg` host recording of the same acoustic signal). |
 | Live audio → AI suggestion streaming (`GeminiLiveClient`, ADR-0002 Phase B) | **Closed, PC-verified for this half.** OkHttp WebSocket, the protocol proven in `tools:demo:liveProbe`. Live-verified end-to-end on PC: mic audio streamed to Gemini Live produced real, safe, contextual suggestions rendered in `AiSuggestionCard` (e.g. correctly referenced India's 1930 cybercrime helpline, unprompted, in response to a synthetic scam script). One real bug found live-testing and fixed (per-fragment `.trim()` was jamming streamed words together — see 2026-07-07 PC-test changelog entry). |
 | Recorded-audio scam analyzer (`GeminiClient.analyzeAudio` + `AudioScamAnalyzer`, ADR-0003 Phase 4D) | **Closed, verified end-to-end on the emulator (2026-07-09).** Pick any audio clip → `generateContent` transcribes + classifies it → transcript replayed through the deterministic `RiskEngine` (score ownership unchanged) → `HybridAlert` + reused web-grounding → shared `StatusBanner`/`ChatThread` verdict → optional save as `SessionSource.RECORDING`. Gate A proved the free key does inline-audio understanding (HTTP 200, accurate transcript). Live emulator run: a synthetic digital-arrest clip scored **100/100 SCAM_PATTERN** (deterministic, not AI), web-grounded as "Digital Arrest Scam" with 3 real cited sources, saved + replayed from encrypted history with sources intact. Fails closed on any error. |
+| **Complaint co-pilot** (spec `docs/superpowers/specs/2026-07-21-complaint-copilot-design.md`, plan `docs/superpowers/plans/2026-07-21-complaint-copilot.md`, 13 tasks) | **Closed, verified end-to-end (2026-07-22).** Replaces the old inert "call 1930 / here are two links" Help section with an intelligent flow: a curated `complaint-playbook-v1.json` (real, researched NCRP + Chakshu procedure/fields/documents, `core:reasoning`) drives a deterministic `ComplaintRouter` (scam code + money-lost → ranked destinations, 4 unit tests); an encrypted on-device `IdentityVault` (SQLCipher, migration 4→5, deliberately holds only name/address/mobile/email/ID-*type* — never an ID number or scan, 4 instrumented tests) holds reusable filing details; `ComplaintPacketAssembler` (5 unit tests) merges the router's destination + the existing `ComplaintDraft` + identity + loss into pre-filled fields, a document checklist, and procedure steps; `AutofillBridge` fills the *real* government portal inside an in-app WebView via safe, escaped JS (3 unit + 1 instrumented test against a bundled mock page — **independently verified structurally incapable of touching Submit/OTP/CAPTCHA regardless of input**, selectors sourced only from the curated pack, never from transcript/user text) with tap-to-fill chips as the always-present fallback; a 3-step Prepare→Review→File UI ties it together; an advisory, fail-silent AI web-grounding check flags if a portal's procedure has changed since the pack's `verifiedOn` date. **VAARTA never auto-submits — the user's own tap is always the final Submit/OTP/CAPTCHA action.** Help trimmed to actions only (Emergency, lost-money steps, Report-a-scam, Quick-complaint-draft kept as a secondary text/PDF-only fallback so the already-shipped PDF export wasn't lost, Warn-family); a new Settings screen holds language/guardian/filing-details/privacy. Hindi + Hinglish translated (machine-drafted, pending native review — see checklist below). Built via subagent-driven development: 13 implementer+reviewer cycles, 2 fix rounds (a routing-data gap in the pack, a proven-truncating token budget on the freshness check), the safety-critical tasks (Task 6 autofill bridge, Task 9 File step against the *real live* Chakshu portal) reviewed on the most capable model given the stakes. 258 unit tests / 0 failures (fresh count), both instrumented tests pass on `vaarta_test`, `assembleDebug` clean, manually verified end-to-end on a clean install (screenshotted: trimmed Help → Report a scam → Prepare routes correctly). One known follow-up: one Chakshu pack CSS selector is stale against the live site's current DOM (tap-to-fill fallback already covers it — tracked below). |
 
 **Total (2026-07-09 snapshot, now stale): 24 automated tests, 0 failures.** **Current true count as
-of 2026-07-19 (fresh JUnit XML, clean rebuild, independently re-verified twice): 167 tests, 0
-failures, 0 lint errors across every module.** Always re-count from fresh XML before quoting a
-number in this file — this table has been wrong about its own test count at least three times in
+of 2026-07-22 (fresh JUnit XML, clean rebuild after the complaint co-pilot's 13 tasks): 258 tests, 0
+failures, across every module** (0 lint errors was last independently confirmed 2026-07-19; the
+2026-07-22 `lintDebug` run surfaced 37 pre-existing `MissingTranslation` errors across 19 keys in
+`values-hi` unrelated to any string this plan touched, confirmed present as far back as this plan's
+own starting commit — tracked as a follow-up below, not a regression). Always re-count from fresh XML
+before quoting a number in this file — this table has been wrong about its own test count at least three times in
 this project's history (see the 2026-07-07 correction below); don't let it happen a fourth time.
 
 **Correction (2026-07-07):** earlier notes in this file's history and in conversation said "14"
@@ -249,6 +253,8 @@ tag, not a ticket in an external system.
 | `task_e2bb31b0` | URLhaus's current API requires an `Auth-Key` HTTP header (a real API change since the scam-link-checker plan was written) — not wired up, so URLhaus currently no-ops to `UNKNOWN` (safe, fails closed); only Google Safe Browsing can flag a URL today, and only once a key is configured | **Closed — 2026-07-19.** `URLHAUS_AUTH_KEY` wired end-to-end: `secrets.properties` → `BuildConfig.URLHAUS_AUTH_KEY` (`app/build.gradle.kts`) → `Auth-Key` header in `LinkChecker.urlhaus()`. Live-verified with a real key against the real API (`https://urlhaus-api.abuse.ch/v1/url/`, HTTP 200, `query_status: no_results` correctly mapping to `CLEAN_SO_FAR`). Both URLhaus and Safe Browsing now independently contribute; either key alone is enough to enable the checker. |
 | `task_9f3a1c22` | Task 5's guardian contact picker regressed against `docs/PRIVACY_SECURITY.md`'s own binding data-inventory ("Guardian contact ... SQLCipher") and permission list ("Never: READ_CONTACTS") — guardian data was stored in plain SharedPreferences and the picker held `READ_CONTACTS` | **Closed — Task 9** of the current plan (hardening pass). Guardian storage moved into the encrypted SQLCipher database (`GuardianEntity`/`GuardianDao`, migration 3→4); the picker now targets `CommonDataKinds.Phone.CONTENT_URI` directly and needs no `READ_CONTACTS` at all. |
 | `task_b91d4a05` | Gemini Live's `inputTranscription` hallucinated fluent Tamil/Telugu text (unrelated to the actual English audio) on the first real physical-device live-call test, and kept fabricating new fake "conversation" content minutes after audio input stopped | **Open — found 2026-07-19**, first real-device test. Test method used a PC TTS voice relayed acoustically through PC speakers into the phone mic, not a real call, so this may be an acoustic-loopback-quality artifact rather than a deeper bug — needs a real-voice/real-call retest to confirm before deciding a fix (e.g. confidence/silence gating on `inputTranscription` output before it reaches the coach). `RiskEngine` never matched the garbled text, so the deterministic score stayed correctly at 0 — no score-safety impact, but AI-coach output was reacting to fabricated caller dialogue. |
+| `task_cc0mplaint01` | The Chakshu destination's `textarea#description` CSS selector in `complaint-playbook-v1.json` doesn't match the live `sancharsaathi.gov.in/sfc/` site's current DOM (found live-testing Task 9's File step against the real portal, 2026-07-22) | **Open, low severity.** `AutofillBridge`'s "Fill this page" silently doesn't populate that one field on the real site; tap-to-fill (the always-present fallback, per spec §3.3's "honest gap") already covers it correctly. Needs a build-time re-inspection of the live form to capture the current real selector. No safety impact — the never-auto-submit guarantee is independent of selector accuracy. |
+| `task_cc0mplaint02` | `lintDebug` (2026-07-22, complaint co-pilot's Task 13 gate) found 37 `MissingTranslation` errors across 19 keys, all in `values-hi` only (`home_action_ask_subtitle`, `panic_tailored_label`, `live_ai_online`, etc. — article/chat/home/live/panic features, none touched by this plan) | **Open, pre-existing — not a regression.** Confirmed present in `values-hi/strings.xml` as far back as `06e8702`, the complaint co-pilot plan's own starting commit, before any of its 13 tasks ran. Needs a dedicated Hindi-translation pass unrelated to this plan. |
 
 ## 6. Process rules to follow (do not skip)
 
@@ -272,6 +278,49 @@ tag, not a ticket in an external system.
   other way around.
 
 ## 8. Change log
+
+- **2026-07-22 — Complaint co-pilot shipped (13 tasks, subagent-driven development, spec+plan
+  linked in the table row above).** Owner's directive: the old Help "report" section was pure
+  information (call 1930, two links) with no product value — VAARTA should *do the work*, not
+  describe it. Researched the real, current NCRP (cybercrime.gov.in) and Chakshu (Sanchar Saathi)
+  procedures (§3 of the spec — 4-part NCRP form, 200-char min description, required docs/formats;
+  Chakshu's public no-login form, 30-char min, mandatory screenshot) rather than assuming. Built:
+  a curated `complaint-playbook-v1.json` pack + deterministic `ComplaintRouter`
+  (`core:reasoning`), an encrypted `IdentityVault` (SQLCipher, migration 4→5, deliberately no ID
+  number/scan at rest), `ComplaintPacketAssembler` (merges the pack + the existing
+  `ComplaintDraft` + identity + loss into pre-filled fields/checklist/steps), `AutofillBridge`
+  (safe JS-fill of the *real* live portal in an in-app WebView, tap-to-fill as the always-present
+  floor), the 3-step Prepare→Review→File UI, and an advisory fail-silent AI freshness check.
+  **Hard rail enforced throughout, including during testing:** VAARTA never auto-submits, never
+  touches OTP/CAPTCHA — `AutofillBridge` was independently verified (opus-level review) to be
+  *structurally* incapable of this regardless of input, and all testing used bundled mock HTML or
+  read-only loads of the real sites, never a real submission.
+  - **Process:** brainstorming → spec (`docs/superpowers/specs/2026-07-21-complaint-copilot-design.md`)
+    → plan (`docs/superpowers/plans/2026-07-21-complaint-copilot.md`) → subagent-driven execution,
+    fresh implementer + reviewer per task. 2 fix rounds: Task 1's pack was missing the NCRP
+    money-lost fields (`loss.amount`/`txnId`/`txnDate`) despite `requiresMoneyLost: true` and a
+    downstream assembler already expecting them — caught by review, fixed same-cycle. Task 11's
+    freshness check reinvented the request-body builder with `maxOutputTokens=300`, a value this
+    codebase had already twice documented as truncating grounded responses — fixed to reuse the
+    existing `buildGroundedBody` helper at its safe 1024 default.
+  - **Deliberate deviations from the original plan text, made as controller-level judgment calls
+    (not silently, each reasoned through and reviewer-verified):** kept the pre-existing "Quick
+    complaint draft" text/PDF-export row instead of deleting it as originally planned — deleting
+    it would have silently regressed a real, already-shipped PDF-export feature the new flow
+    doesn't yet replace; `ComplaintPacket`/`AutofillBridge` live in `app`, not `core:complaint`
+    (module-acyclicity, since the assembler needs both `core:complaint` and `core:reasoning`
+    types).
+  - **Verification:** 258 unit tests / 0 failures (fresh XML), `IdentityDaoTest` (4/4) and
+    `AutofillBridgeWebViewTest` (1/1, proves fill works and `window.__submitted` stays false)
+    both pass on `vaarta_test`, `assembleDebug` clean, manually verified end-to-end on a fresh
+    install (language picker → Home → Help, now trimmed and led by "Report a scam" → Prepare
+    correctly routes with no session). Two low-severity follow-ups logged (`task_cc0mplaint01`,
+    `task_cc0mplaint02`) — a stale Chakshu selector (tap-to-fill already covers it) and a
+    pre-existing, unrelated `values-hi` translation gap predating this plan's own starting commit.
+  - **Not done in this pass (explicitly out of scope per the plan):** i18n of the
+    `ComplaintFlowScreen.kt` Prepare/Review/File body text (still plain English literals — Task 10
+    only localized the Help/Settings entry points); a pack-refresh mechanism beyond the bundled
+    `verifiedOn` date + AI freshness advisory; portals beyond NCRP + Chakshu.
 
 - **2026-07-19 (evening) — First real-device live-call test run (wireless-adb setup led to USB,
   `V2130` phone, `task_b91d4a05` found).** Set up per README's wireless-adb guide, hit an
