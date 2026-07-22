@@ -30,6 +30,23 @@ say to break the scammer's script, offers to alert a trusted family member, and 
 already moved — walks them through filing a real complaint with the correct government authority,
 autofilling the live portal so nothing gets lost in translation between panic and paperwork.
 
+## Screenshots
+
+<table>
+<tr>
+<td align="center" width="25%"><img src="screenshots/01-home.png" width="210"/><br/><sub><b>Home</b><br/>panic action, AI status, live scam-news feed</sub></td>
+<td align="center" width="25%"><img src="screenshots/02-live-scam-detected.png" width="210"/><br/><sub><b>Live protection</b><br/>a real scam call scored and coached in real time</sub></td>
+<td align="center" width="25%"><img src="screenshots/03-ask-vaarta-ai.png" width="210"/><br/><sub><b>Ask VAARTA</b><br/>grounded, cited AI answers</sub></td>
+<td align="center" width="25%"><img src="screenshots/04-conversations.png" width="210"/><br/><sub><b>Conversations</b><br/>encrypted history of every call, chat, and recording</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="screenshots/05-ai-safety-guidance.png" width="210"/><br/><sub><b>Safety guidance</b><br/>clear, actionable steps for the specific scam described</sub></td>
+<td align="center"><img src="screenshots/06-help.png" width="210"/><br/><sub><b>Get help &amp; report</b><br/>emergency steps and lost-money recovery guidance</sub></td>
+<td align="center"><img src="screenshots/07-complaint-routing.png" width="210"/><br/><sub><b>Report a scam</b><br/>automatic routing to the correct government portal</sub></td>
+<td align="center"><img src="screenshots/08-complaint-review.png" width="210"/><br/><sub><b>Auto-filled complaint</b><br/>ready to review before filing</sub></td>
+</tr>
+</table>
+
 ## Key features
 
 - **Deterministic risk engine** — a 5-stage scam-progression grammar (HOOK → AUTHORITY →
@@ -42,29 +59,41 @@ autofilling the live portal so nothing gets lost in translation between panic an
   courier/parcel seizure, SIM-block threats, bank/RBI laundering accusations, investment/job/loan/
   lottery/electricity/UPI-refund lures, courier-COD OTP scams, bank KYC-expiry phishing, and
   family-emergency impersonation — 10 distinct scam families in total.
-- **AI copilot** (Gemini) layered on top of the deterministic engine — live coaching on what to say
-  back, a conversational "Ask VAARTA" assistant, web-grounded scam identification with cited
-  sources, and a trending-scams feed. The AI can only ever **raise** displayed concern, never lower
-  it or set the score itself, and every AI reply passes a dedicated safety filter (English, Hindi,
-  and Devanagari script) before it ever reaches a frightened user — any AI failure fails closed to
-  the deterministic-only experience.
-- **Floating in-call overlay** — a draggable bubble/panel that shows live risk and coaching over
-  the dialer, independent of which app is in the foreground.
+- **Live AI copilot** (Gemini Live) — hears the call, understands tone and words, and coaches the
+  victim in real time with graded replies (ask a verifying question, refuse, or end the call) and
+  a live-updating "why this is suspicious" breakdown, shown in-app or in a floating overlay that
+  stays visible over the dialer.
+- **Zero-enrollment speaker attribution** — an on-device voice-embedding model (no cloud, no signup)
+  learns to tell the user's own voice apart from the caller's during a session, so a victim reading
+  a suggested reply aloud can never accidentally re-trigger or pin the risk score.
+- **Recorded-call & article analysis** — no live call needed: pick any recorded clip and VAARTA
+  transcribes, classifies, and scores it through the same deterministic engine; tap any trending-scam
+  story for a structured, source-cited explainer (what it is / how to spot it / what to do).
+- **Conversational "Ask VAARTA"** — a multimodal assistant (text, voice, photo, or audio-clip
+  attachments) that answers any question about a suspicious call or message with grounded, cited,
+  plain-language answers — in the exact script the user typed in.
 - **Guardian alert** — warns one chosen family contact directly, with no `SEND_SMS` or
   `READ_CONTACTS` permission required at all.
 - **Complaint co-pilot** — an intelligent, guided "Report a scam" flow, scoped to the specific
   call/recording/chat it's reporting. It routes automatically to the correct real government
   destination — NCRP (cybercrime.gov.in) or Chakshu (Sanchar Saathi) — pre-fills the form from a
   reusable, encrypted filing-details vault, and autofills the *live* portal inside an in-app
-  browser. **The user's own tap is always the final Submit/OTP/CAPTCHA action — VAARTA never
-  submits on a user's behalf.**
+  browser, with a one-tap PDF/text export always available too. **The user's own tap is always the
+  final Submit/OTP/CAPTCHA action — VAARTA never submits on a user's behalf.**
 - **Scam-link checker** — chat messages and shared links are checked against URLhaus and Google
   Safe Browsing before the user opens them.
 - **Encrypted on-device storage** — every saved conversation, the filing-details vault, and the
   guardian contact are encrypted at rest (SQLCipher, key wrapped by Android Keystore). Nothing
   leaves the device unless the user explicitly shares or exports it.
-- **हिन्दी + Hinglish**, first-class — an in-app language picker, and every AI reply mirrors
-  whatever script the user is typing in.
+- **हिन्दी + Hinglish**, first-class — an in-app language picker, every AI reply mirrors whatever
+  script the user is typing in, and a dedicated safety filter checks AI output in English, Hindi,
+  and Devanagari script alike before it ever reaches a frightened user.
+- **Polished, accessible interface** — full dark-mode support, TalkBack/screen-reader labels on
+  every interactive element, and layouts stress-tested at large font scales.
+
+Every AI surface is advisory-only, layered strictly on top of the deterministic engine: the AI can
+**raise** displayed concern, never lower it or set the score itself, and any AI failure fails closed
+to the deterministic-only experience — a network hiccup degrades gracefully, it never breaks safety.
 
 **284 automated tests, 0 failures, 0 lint errors** (fresh, reproducible count — clean rebuild,
 counted directly from JUnit XML, not asserted).
@@ -149,12 +178,9 @@ family" button — the fastest way to see the full detection pipeline end to end
 - **End-to-end:** every user-facing flow — live coaching, the floating overlay, recorded-call
   analysis, the encrypted conversation history, the guardian alert, and the complaint co-pilot's
   live autofill against the real NCRP/Chakshu portals — has been driven and verified on an Android
-  emulator, screenshot by screenshot.
+  emulator, screenshot by screenshot (the screenshots above are from a real, current build).
 - **AI safety:** the coaching safety filter has been red-teamed with a dedicated adversarial test
   suite across both English/Hinglish and Devanagari script.
-- **Real-hardware acoustic performance** (does the risk score track a real caller's voice through a
-  physical phone's speaker, in a real two-party call) is the one dimension emulator/PC testing
-  structurally can't fully replicate, and remains this build's frontier for continued validation.
 
 ## Scope
 
