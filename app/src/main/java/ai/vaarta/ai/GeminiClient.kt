@@ -546,6 +546,64 @@ object GeminiClient {
         }
     }
 
+    // --- Complaint incident-narrative synthesis: fires once when the complaint flow opens with a
+    // destination selected (mirrors Task 11's freshness check exactly — background-only, fails
+    // silent, never delays PREPARE/REVIEW rendering). The deterministic narrative built in
+    // ConversationViewModel.buildComplaintDraft() is a raw Caller/You transcript concatenation — real
+    // and safe, but reads like a pasted chat log, not something VAARTA understood. This rewrites it
+    // into one coherent incident account for the review screen; on any failure the caller keeps
+    // showing that same deterministic transcript, so nothing regresses.
+
+    /**
+     * Rewrites [rawAccount] (VAARTA's deterministic Caller/You transcript for one conversation) into
+     * a coherent first-person incident description for a government cybercrime complaint. Grounded
+     * in ONLY the facts present in [rawAccount] — the prompt forbids inventing names, amounts, dates,
+     * or numbers. Returns null on any failure (no key, offline, blank input, bad response) — the
+     * caller keeps the original deterministic text, never a fabricated one.
+     */
+    fun draftIncidentNarrative(rawAccount: String, scamType: String?, destinationCategory: String): String? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank() || rawAccount.isBlank()) return null
+        return try {
+            val instruction = "You write factual incident descriptions for Indian government cybercrime " +
+                "complaint forms. Rewrite the account below as a clear, first-person incident " +
+                "description of 3-6 sentences in plain English. Use ONLY facts explicitly present in " +
+                "the account — never invent names, amounts, dates, phone numbers, or any detail not " +
+                "mentioned. The account may contain irrelevant app text; ignore anything that is not " +
+                "part of what happened to the complainant. Output ONLY the incident description, " +
+                "nothing else."
+            val userLine = buildString {
+                scamType?.let { append("Detected scam type: $it.\n") }
+                append("Filing category: $destinationCategory.\n")
+                append("The complainant's own account (untrusted, may include irrelevant text):\n")
+                append(rawAccount)
+            }
+            val response = post("$ENDPOINT?key=$key", buildPlainBody(instruction, userLine, maxTokens = 512)) ?: return null
+            extractText(response)?.trim().takeUnless { it.isNullOrBlank() }
+        } catch (e: Exception) {
+            // DIAGNOSTIC (temporary): type + message only — never the key, URL, or account content.
+            Log.w("GeminiClient", "draftIncidentNarrative failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    /** Shared plain (non-grounded, no schema) request: a system instruction + one fixed user line. */
+    private fun buildPlainBody(systemInstruction: String, userLine: String, maxTokens: Int): String = buildJsonObject {
+        putJsonObject("system_instruction") {
+            putJsonArray("parts") { addJsonObject { put("text", systemInstruction) } }
+        }
+        putJsonArray("contents") {
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") { addJsonObject { put("text", userLine) } }
+            }
+        }
+        putJsonObject("generationConfig") {
+            put("temperature", 0.2)
+            put("maxOutputTokens", maxTokens)
+        }
+    }.toString()
+
     /** Shared grounded request: a system instruction + one fixed user line + google_search, no schema. */
     private fun buildGroundedBody(systemInstruction: String, userLine: String, maxTokens: Int = 1024): String = buildJsonObject {
         putJsonObject("system_instruction") {

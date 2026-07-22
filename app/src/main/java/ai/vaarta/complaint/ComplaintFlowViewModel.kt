@@ -58,6 +58,25 @@ class ComplaintFlowViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
+
+        // Same background-only, fails-silent pattern: rewrites the deterministic Caller/You transcript
+        // into one coherent incident account instead of the raw line-by-line dump (owner-reported bug,
+        // 2026-07-22: the report felt "generic" partly because it read like a pasted chat log). Fires
+        // once per open(); the packet keeps showing the deterministic text — already real and safe —
+        // until/unless this resolves, and forever if it never does.
+        if (draft != null && selected != null && draft.narrative.text.isNotBlank()) {
+            viewModelScope.launch {
+                val polished = withContext(Dispatchers.IO) {
+                    GeminiClient.draftIncidentNarrative(draft.narrative.text, draft.classification.scamName, selected.categoryValue)
+                }
+                // Race guard: only apply while this is still the open draft/destination (the user could
+                // have switched destinations or re-opened the flow while the call was in flight).
+                if (polished != null && this@ComplaintFlowViewModel.draft === draft && _state.value.selected == selected) {
+                    this@ComplaintFlowViewModel.draft = draft.copy(narrative = draft.narrative.copy(text = polished))
+                    reassemble()
+                }
+            }
+        }
     }
 
     fun selectDestination(d: ComplaintDestination) { _state.value = _state.value.copy(selected = d) }

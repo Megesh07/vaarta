@@ -219,20 +219,25 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
      * is deliberately null — there's no reliable way to recover the deterministic SC-xx code from a
      * saved session's free-text `scamType` label, so [ai.vaarta.core.reasoning.ComplaintRouter]'s
      * existing null-code fallback (show every destination, let the user pick) applies instead.
+     *
+     * The narrative is built from Caller/You turns ONLY (what the scammer said, what the user said
+     * happened). VAARTA's own Assistant/Coach turns are deliberately excluded: they're VAARTA talking
+     * back, never part of the incident, and including them let the fail-closed apology text
+     * ("I couldn't reach the assistant just now...") end up inside a real incident description
+     * (owner-reported, 2026-07-22).
      * Returns null when there's nothing to report yet (no turns).
      */
     fun buildComplaintDraft(): ComplaintDraft? {
         val items = _turns.value
         if (items.isEmpty()) return null
         val h = _header.value
-        val transcript = items.joinToString("\n") { item ->
+        val transcript = items.mapNotNull { item ->
             when (item) {
                 is ChatItem.Caller -> "Caller: ${item.text}"
                 is ChatItem.You -> "Me: ${item.text}"
-                is ChatItem.Coach -> "VAARTA advised: ${item.warning}"
-                is ChatItem.Assistant -> "VAARTA: ${item.text}"
+                is ChatItem.Coach, is ChatItem.Assistant -> null
             }
-        }
+        }.joinToString("\n")
         val narrativeText = buildString {
             h?.let {
                 append("VAARTA's verdict: ${it.level.name} (risk ${it.score}/100)")
