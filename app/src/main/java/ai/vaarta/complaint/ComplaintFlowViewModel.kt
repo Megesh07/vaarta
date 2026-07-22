@@ -69,9 +69,13 @@ class ComplaintFlowViewModel(app: Application) : AndroidViewModel(app) {
                 val polished = withContext(Dispatchers.IO) {
                     GeminiClient.draftIncidentNarrative(draft.narrative.text, draft.classification.scamName, selected.categoryValue)
                 }
-                // Race guard: only apply while this is still the open draft/destination (the user could
-                // have switched destinations or re-opened the flow while the call was in flight).
-                if (polished != null && this@ComplaintFlowViewModel.draft === draft && _state.value.selected == selected) {
+                // Race guard: only apply while this is still the open draft/destination AND the user
+                // hasn't already moved on to FILE (the live government WebView) — past REVIEW, the
+                // user has already reviewed and accepted the deterministic text; silently rewriting the
+                // narrative under them there would fill a field they never actually saw.
+                if (polished != null && this@ComplaintFlowViewModel.draft === draft &&
+                    _state.value.selected == selected && _state.value.step != ComplaintStep.FILE
+                ) {
                     this@ComplaintFlowViewModel.draft = draft.copy(narrative = draft.narrative.copy(text = polished))
                     reassemble()
                 }

@@ -397,7 +397,11 @@ object GeminiClient {
             val response = post("$ENDPOINT?key=$key", buildChatRequestBody(context, history, userText, attachments), CHAT_TIMEOUT_MS) ?: return null
             val text = extractText(response)?.trim().orEmpty()
             if (text.isEmpty()) return null
-            if (hasDevanagari(text) && !hasDevanagari(userText)) {
+            // Only correct when the user actually typed Latin-script words — a blank userText (an
+            // attachment-only send) has no script to mirror, and LanguageDirectives.mirrorUserLanguage
+            // says ambiguous input should legitimately fall back to the UI language, which can be
+            // Hindi. Retrying would wrongly "fix" a correct Devanagari reply in that case.
+            if (userText.isNotBlank() && hasDevanagari(text) && !hasDevanagari(userText)) {
                 Log.w("GeminiClient", "chat: Devanagari reply to non-Devanagari input, retrying once")
                 val retryResponse = post(
                     "$ENDPOINT?key=$key",
@@ -417,7 +421,7 @@ object GeminiClient {
         }
     }
 
-    private fun hasDevanagari(text: String): Boolean = text.any { it.code in 0x0900..0x097F }
+    internal fun hasDevanagari(text: String): Boolean = text.any { it.code in 0x0900..0x097F }
 
     private fun buildChatRequestBody(
         context: String?,

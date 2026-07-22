@@ -33,8 +33,10 @@ VAARTA listens to phone calls of frightened people. If this document is wrong, t
 | Settings/consents (+ timestamped consent log) | operation + DPDPA accountability | DataStore (encrypted) | life of install |
 | Intel packs | detection | app storage (public content, signed) | replaced by updates |
 | Debug logs | diagnostics | RAM buffer; export only by user action | session-scoped |
+| Scanned URL (chat link checker) | reputation lookup only | sent to URLhaus + Google Safe Browsing (opt-in, key-gated); never stored by VAARTA | not retained by VAARTA |
+| On-device voiceprint (zero-enrollment speaker attribution, `core:voice`) | distinguish the user's own echoed words from the caller so a self-read reply can't pin the risk score | SQLCipher (`voice_sample` table, embedding only, added 2026-07-19) | until user clears voice data (Settings) |
 
-**Explicitly never processed:** contact list (guardian picked via system picker returns one entry), call logs (`READ_CALL_LOG` never requested), SMS content, location, advertising ID, voiceprints/biometrics, other apps' data.
+**Explicitly never processed:** contact list (guardian picked via system picker returns one entry), call logs (`READ_CALL_LOG` never requested), SMS content, location, advertising ID, other apps' data. **Correction (2026-07-22 audit):** this line previously also listed "voiceprints/biometrics" as never processed — that predates the 2026-07-19 zero-enrollment speaker-attribution feature (Part D) and is no longer accurate; see the voiceprint row above. The embedding never leaves the device and identifies no one outside this install (it's a local same/not-same-speaker comparison, not an identity match against any external system).
 
 ## 3. Data lifecycle
 
@@ -70,6 +72,21 @@ Distinct, individually revocable consent moments, each recorded `(consent_id, ve
 ## 6. Security architecture
 
 **Threat model (assets × adversaries):** scammer coaching victim in real time (UX countermeasures — MOBILE_UX_SPEC.md §9); scammer-controlled speech as engine/LLM input (injection — AI_REASONING_ENGINE.md §6.2); device thief/abusive family member reading saved evidence; malicious pattern pack / supply chain; on-path network attacker; curious co-installed apps.
+
+> **This table is the FOUNDATION design's full target architecture (frozen 2026-07-05), not a status
+> report on the current hackathon/portfolio MVP build (ADR-0001 scope lock) — the two are expected to
+> differ, but the gap is enumerated here rather than left implicit, per a 2026-07-22 audit pass.
+> **Verified actually implemented in the current build:** encryption at rest (SQLCipher/AES-256, Room
+> wired via `SupportOpenHelperFactory`, key wrapped by a non-exportable Android Keystore AES-256-GCM
+> key, `core/data/.../DatabaseKeyManager.kt`); TLS-only network calls (no cleartext, all endpoints
+> hardcoded `https://`); no API keys committed to the repo (secrets stay in git-ignored
+> `secrets.properties`, confirmed absent from full git history). **Designed here but NOT yet built in
+> the MVP** (tracked as follow-ups, not silently dropped): StrongBox-backed key (Keystore key is
+> AES-256/GCM but doesn't call `setIsStrongBoxBacked(true)`), BiometricPrompt app-lock, certificate
+> pinning + an explicit Network Security Config file (TLS-only already holds via Android's
+> cleartext-blocked-by-default on `minSdk 29`, just not the pinning/NSC control itself), Ed25519
+> pattern-pack signing (the MVP's intel pack is bundled read-only, not fetched/updated), R8/minify in
+> the release build (`isMinifyEnabled = false` in `app/build.gradle.kts` today).
 
 | Control | Detail |
 |---|---|

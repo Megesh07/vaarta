@@ -2,11 +2,6 @@ package ai.vaarta
 
 import ai.vaarta.core.common.RiskEvent
 import ai.vaarta.core.common.Stage
-import ai.vaarta.core.complaint.ComplaintBuilder
-import ai.vaarta.core.complaint.ComplaintDraft
-import ai.vaarta.core.complaint.ComplaintInput
-import ai.vaarta.core.complaint.ComplaintRenderers
-import ai.vaarta.core.complaint.DetectedSignal
 import ai.vaarta.ai.GeminiClient
 import ai.vaarta.ai.GeminiLiveClient
 import ai.vaarta.ai.TranscriptPlausibility
@@ -142,14 +137,6 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
 
     private val _state = MutableStateFlow(idle)
     val state: StateFlow<RiskState> = _state.asStateFlow()
-
-    private val _complaint = MutableStateFlow<String?>(null)
-    val complaint: StateFlow<String?> = _complaint.asStateFlow()
-
-    /** The structured draft behind [complaint]'s text — needed for PDF export, which this holder
-     * doesn't render itself (no Android Context here by design). */
-    private val _complaintDraft = MutableStateFlow<ComplaintDraft?>(null)
-    val complaintDraft: StateFlow<ComplaintDraft?> = _complaintDraft.asStateFlow()
 
     /**
      * The one verification question currently shown (MOBILE_UX_SPEC.md §3.2) — null when no stage
@@ -586,8 +573,6 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
         lastEventAtMs = 0
         questionIndex = 0
         applyState(idle)
-        _complaint.value = null
-        _complaintDraft.value = null
         lastCallerLine = ""
         _aiSuggestion.value = null
         _aiLoading.value = false
@@ -694,28 +679,5 @@ class CopilotSession(private val scope: CoroutineScope, private val appContext: 
         }
         // Keep the hybrid banner in step with the deterministic floor even between groundings.
         recomputeDisplayed(newState)
-    }
-
-    fun generateComplaint() {
-        val fired = engine.sessionSignals()
-        if (fired.isEmpty()) {
-            _complaint.value = "No warning signs detected yet — run the demo call or start live protection first."
-            _complaintDraft.value = null
-            return
-        }
-        val start = 1_720_000_000_000L
-        val input = ComplaintInput(
-            callerNumber = "+91 92XXXXXX21",
-            callStartEpochMs = start,
-            callEndEpochMs = start + lastEventAtMs + 5_000,
-            languages = listOf("en", "hi"),
-            matchedScamCode = "SC-01",
-            matchedScamName = "Digital Arrest - police/CBI impersonation",
-            finalScore = _state.value.score,
-            detectedSignals = fired.map { DetectedSignal(it.signalId, it.category, it.stage, it.atMs, it.explain) },
-        )
-        val draft = ComplaintBuilder.assemble(input, generatedAtEpochMs = start + lastEventAtMs + 20_000)
-        _complaintDraft.value = draft
-        _complaint.value = ComplaintRenderers.toText(draft)
     }
 }

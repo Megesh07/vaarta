@@ -231,21 +231,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
         val items = _turns.value
         if (items.isEmpty()) return null
         val h = _header.value
-        val transcript = items.mapNotNull { item ->
-            when (item) {
-                is ChatItem.Caller -> "Caller: ${item.text}"
-                is ChatItem.You -> "Me: ${item.text}"
-                is ChatItem.Coach, is ChatItem.Assistant -> null
-            }
-        }.joinToString("\n")
-        val narrativeText = buildString {
-            h?.let {
-                append("VAARTA's verdict: ${it.level.name} (risk ${it.score}/100)")
-                it.scamType?.let { st -> append(", identified as \"$st\"") }
-                append(".\n\n")
-            }
-            append(transcript)
-        }
+        val narrativeText = incidentNarrativeText(h, conversationTranscript(items))
         val nowIso = Instant.now().toString()
         val startIso = sessionStartedAtMs?.let { Instant.ofEpochMilli(it).toString() } ?: nowIso
         return ComplaintDraft(

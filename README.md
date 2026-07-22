@@ -37,13 +37,17 @@ opt-in AI copilot, and auto-drafts the cyber-crime complaint.
   you explicitly share it.
 - **Real guardian contact picker** — pick one contact via the system picker (no `READ_CONTACTS`
   permission needed at all — see `docs/decisions/`), and "Warn my family" sends directly to them.
-- **Complaint auto-draft** — JSON/TXT/PDF export, ready to file at cybercrime.gov.in.
+- **Complaint co-pilot** — an intelligent, guided "Report a scam" flow (per saved conversation, not
+  a generic app-wide button) that routes to the right real government destination (NCRP or Chakshu),
+  pre-fills the form fields from a reusable, encrypted filing-details vault, and autofills the *live*
+  government portal inside an in-app WebView — the user's own tap is always the final Submit/OTP/
+  CAPTCHA action, never VAARTA's. Text/PDF export of a quick draft is also available per conversation.
 - **हिन्दी + Hinglish** UI, in-app language picker, LLM responses mirror whatever script the user
   types in.
 
-**167 automated tests, 0 failures, 0 lint errors** (fresh count as of 2026-07-19, re-verified from
-a clean rebuild — see [PROJECT_STATUS.md §4](PROJECT_STATUS.md) for the evidence trail and what's
-still genuinely unverified).
+**284 automated tests, 0 failures, 0 lint errors** (fresh count as of 2026-07-22, re-verified from a
+clean rebuild as part of a final pre-submission audit pass — see
+[PROJECT_STATUS.md §4](PROJECT_STATUS.md) for the evidence trail and what's still genuinely unverified).
 
 ## Getting started
 
@@ -152,15 +156,17 @@ MIT — see [LICENSE](LICENSE).
 3. ✅ Encrypted local history (SQLCipher), floating overlay, real guardian contact picker
 4. ✅ हिन्दी + Hinglish UI and LLM language mirroring
 5. ✅ Scam-link checker (URLhaus + Safe Browsing), both sources live and Auth-Keyed
-6. ⬜ **Real-device speakerphone test — validate live transcription quality on an actual call.**
+6. ✅ Complaint co-pilot — guided, per-conversation "Report a scam" routing to NCRP/Chakshu with
+   live-portal autofill (never auto-submits)
+7. ⬜ **Real-device speakerphone test — validate live transcription quality on an actual call.**
    See [Testing on a real phone](#testing-on-a-real-phone-wanted) above — this is the top
    community-testable item.
-7. ⬜ Native-speaker review of the Hindi/Hinglish strings (machine-drafted, checklist in
+8. ⬜ Native-speaker review of the Hindi/Hinglish strings (machine-drafted, checklist in
    PROJECT_STATUS.md §8)
-8. ⬜ `CallScreeningService` real in-call auto-detection — deliberately deferred (Android 15
+9. ⬜ `CallScreeningService` real in-call auto-detection — deliberately deferred (Android 15
    foreground-service-start restrictions + Play policy; the app currently starts via a manual tap,
    not automatically on an incoming call)
-9. ⬜ Voice-anomaly (deepfake) detection — spike-gated, not yet attempted; see the spec's
+10. ⬜ Voice-anomaly (deepfake) detection — spike-gated, not yet attempted; see the spec's
    Increment J for why this is measured before it's promised
 
 Deliberately **out of MVP scope**: on-device LLM, Play Store publishing, DOCX export, Elder Mode,

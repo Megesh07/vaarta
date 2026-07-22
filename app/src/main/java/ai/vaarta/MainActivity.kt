@@ -220,7 +220,6 @@ fun VaartaScreen(
     historyVm: HistoryViewModel,
     onOpenHistory: () -> Unit,
     onShare: (String) -> Unit,
-    onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
     onBack: () -> Unit,
 ) {

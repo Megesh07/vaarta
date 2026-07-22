@@ -61,6 +61,7 @@ object SuggestionSafetyFilter {
         // Isolation compliance — negating "tell" IS the danger (inverted polarity vs. payment/OTP).
         Regex("""\b(won'?t|will\s+not|don'?t|do\s+not|never)\s+tell\s+(my\s+)?(family|anyone|husband|wife|son|daughter|parents|police)\b""", RegexOption.IGNORE_CASE),
         Regex("""kisi\s+ko\s+(mat\s+batao|nahi[n]?\s+bataunga)""", RegexOption.IGNORE_CASE),
+        Regex("""किसी\s*को\s*(मत\s*बताओ|मत\s*बताना|नहीं\s*बताऊंगा|नहीं\s*बताऊंगी)"""),
         // Accusing the specific caller (SCAM_INTELLIGENCE.md §9 — only "matches known patterns", never accuse).
         Regex("""(he|she|they|this\s+(person|caller))\s+(is|are)\s+(a\s+)?(criminal|fraudster|scammer|fraud|scam)""", RegexOption.IGNORE_CASE),
     )
@@ -77,6 +78,13 @@ object SuggestionSafetyFilter {
     private val paymentCompliance =
         compliance("""pay|transfer|send|deposit|wire|scan""", """money|amount|fine|fee|penalty|deposit|funds|payment|upi|qr\s*code|account""")
     private val paymentComplianceHindi = Regex("""paisa\s*(transfer|bhej|bhejo|bhejenge|de\s*doonga|de\s*denge)""", RegexOption.IGNORE_CASE)
+    // Devanagari script (CoachPrompt tells the model to reply in Devanagari for Hindi UI — this filter
+    // must be able to catch a dangerous reply in that script too, not just Latin/Hinglish, since a
+    // reply the deny-list can't scan is a reply that reaches the user unfiltered).
+    // Tight adjacency only (\s* = whitespace, no arbitrary word gap) — same discipline as the Hindi
+    // pattern above: this is what keeps a negated refusal ("पैसे नहीं दूंगा") from matching, since
+    // "नहीं" sits directly between the noun and the danger verb and isn't part of either alternation.
+    private val paymentComplianceDevanagari = Regex("""पैसे?\s*(ट्रांसफर|भेज(ो|ें|ना)?|दे\s*(दो|दीजिए|देंगे|दूंगा)|जमा\s*कर)""")
 
     // OTP/PIN/CVV/Aadhaar/PAN/bank-detail disclosure — the single most damaging real-world gap.
     // Phase D: verbs extended to read-out/repeat/type-in/enter (how a victim actually "gives" a code),
@@ -87,6 +95,11 @@ object SuggestionSafetyFilter {
         """otp|pin|cvv|aadhaar|adhaar|aadhar|pan(?:\s*(?:number|card))?|bank\s*details?|account\s*number|card\s*number|password|verification\s*code|otp\s*code|one[-\s]*time\s*(?:password|pin|code)|security\s*code|passcode|code""",
     )
     private val disclosureComplianceHindi = Regex("""(otp|pin|aadhaar|adhaar)\s*(bata|batao|share|de\s*doonga|de\s*denge)""", RegexOption.IGNORE_CASE)
+    // Devanagari script — OTP/PIN/Aadhaar are near-universally written as Latin loanwords even inside
+    // Devanagari sentences (so the pattern above already catches most real cases), but cover the
+    // spelled-out Devanagari forms too for completeness.
+    // Tight adjacency only — see the reasoning on paymentComplianceDevanagari above.
+    private val disclosureComplianceDevanagari = Regex("""(ओटीपी|पिन|आधार)\s*(बता(ओ|ना|\s*दो|\s*दीजिए)?|शेयर\s*कर|दे\s*(दो|दीजिए|देंगे|दूंगा))""")
 
     // Staying on the line / keeping this secret — the other half of isolation compliance.
     private val stayOnLineCompliance =
@@ -112,10 +125,10 @@ object SuggestionSafetyFilter {
         for (p in bannedPatterns) {
             if (p.containsMatchIn(trimmed)) return Result.Rejected("banned phrasing: ${p.pattern}")
         }
-        if (paymentCompliance.containsMatchIn(trimmed) || paymentComplianceHindi.containsMatchIn(trimmed)) {
+        if (paymentCompliance.containsMatchIn(trimmed) || paymentComplianceHindi.containsMatchIn(trimmed) || paymentComplianceDevanagari.containsMatchIn(trimmed)) {
             return Result.Rejected("advises paying/transferring")
         }
-        if (disclosureCompliance.containsMatchIn(trimmed) || disclosureComplianceHindi.containsMatchIn(trimmed)) {
+        if (disclosureCompliance.containsMatchIn(trimmed) || disclosureComplianceHindi.containsMatchIn(trimmed) || disclosureComplianceDevanagari.containsMatchIn(trimmed)) {
             return Result.Rejected("advises sharing OTP/PIN/ID/bank details")
         }
         if (stayOnLineCompliance.containsMatchIn(trimmed)) {

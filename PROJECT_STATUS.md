@@ -1,6 +1,6 @@
 # VAARTA — Project Status (READ THIS FIRST)
 
-**Last updated:** 2026-07-22 (complaint co-pilot shipped — intelligent, assisted scam reporting replaces the old link-list Help section; see change log) · **Updated by:** implementation session (AI-assisted) · **Branch:** `main`
+**Last updated:** 2026-07-22 (final pre-submission audit: Report/Warn-family/PDF-export moved fully to per-conversation context, a real Devanagari gap in the AI safety filter closed, dead code removed, 284 tests green, 0 lint errors — see change log) · **Updated by:** implementation session (AI-assisted) · **Branch:** `main`
 **This file is the single source of truth for "what's built, what's not, what's next."**
 Keep it current — every session/collaborator updates it before stopping (see "Rules for keeping
 this file honest" at the bottom). If this file and someone's memory disagree, this file wins.
@@ -134,16 +134,16 @@ $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 | Live audio capture (`AudioCapture`) | **Closed, PC-verified.** 16kHz mono PCM16 via `AudioRecord`, VOICE_RECOGNITION→MIC fallback. Verified on the `vaarta_test` emulator booted with `-allow-host-audio`: `dumpsys audio` showed an active un-silenced recording session, and temporary diagnostic peak-logging confirmed real, dynamic, non-zero PCM reaching the app (cross-checked independently against an `ffmpeg` host recording of the same acoustic signal). |
 | Live audio → AI suggestion streaming (`GeminiLiveClient`, ADR-0002 Phase B) | **Closed, PC-verified for this half.** OkHttp WebSocket, the protocol proven in `tools:demo:liveProbe`. Live-verified end-to-end on PC: mic audio streamed to Gemini Live produced real, safe, contextual suggestions rendered in `AiSuggestionCard` (e.g. correctly referenced India's 1930 cybercrime helpline, unprompted, in response to a synthetic scam script). One real bug found live-testing and fixed (per-fragment `.trim()` was jamming streamed words together — see 2026-07-07 PC-test changelog entry). |
 | Recorded-audio scam analyzer (`GeminiClient.analyzeAudio` + `AudioScamAnalyzer`, ADR-0003 Phase 4D) | **Closed, verified end-to-end on the emulator (2026-07-09).** Pick any audio clip → `generateContent` transcribes + classifies it → transcript replayed through the deterministic `RiskEngine` (score ownership unchanged) → `HybridAlert` + reused web-grounding → shared `StatusBanner`/`ChatThread` verdict → optional save as `SessionSource.RECORDING`. Gate A proved the free key does inline-audio understanding (HTTP 200, accurate transcript). Live emulator run: a synthetic digital-arrest clip scored **100/100 SCAM_PATTERN** (deterministic, not AI), web-grounded as "Digital Arrest Scam" with 3 real cited sources, saved + replayed from encrypted history with sources intact. Fails closed on any error. |
-| **Complaint co-pilot** (spec `docs/superpowers/specs/2026-07-21-complaint-copilot-design.md`, plan `docs/superpowers/plans/2026-07-21-complaint-copilot.md`, 13 tasks) | **Closed, verified end-to-end (2026-07-22).** Replaces the old inert "call 1930 / here are two links" Help section with an intelligent flow: a curated `complaint-playbook-v1.json` (real, researched NCRP + Chakshu procedure/fields/documents, `core:reasoning`) drives a deterministic `ComplaintRouter` (scam code + money-lost → ranked destinations, 4 unit tests); an encrypted on-device `IdentityVault` (SQLCipher, migration 4→5, deliberately holds only name/address/mobile/email/ID-*type* — never an ID number or scan, 4 instrumented tests) holds reusable filing details; `ComplaintPacketAssembler` (5 unit tests) merges the router's destination + the existing `ComplaintDraft` + identity + loss into pre-filled fields, a document checklist, and procedure steps; `AutofillBridge` fills the *real* government portal inside an in-app WebView via safe, escaped JS (3 unit + 1 instrumented test against a bundled mock page — **independently verified structurally incapable of touching Submit/OTP/CAPTCHA regardless of input**, selectors sourced only from the curated pack, never from transcript/user text) with tap-to-fill chips as the always-present fallback; a 3-step Prepare→Review→File UI ties it together; an advisory, fail-silent AI web-grounding check flags if a portal's procedure has changed since the pack's `verifiedOn` date. **VAARTA never auto-submits — the user's own tap is always the final Submit/OTP/CAPTCHA action.** Help trimmed to actions only (Emergency, lost-money steps, Report-a-scam, Quick-complaint-draft kept as a secondary text/PDF-only fallback so the already-shipped PDF export wasn't lost, Warn-family); a new Settings screen holds language/guardian/filing-details/privacy. Hindi + Hinglish translated (machine-drafted, pending native review — see checklist below). Built via subagent-driven development: 13 implementer+reviewer cycles, 2 fix rounds (a routing-data gap in the pack, a proven-truncating token budget on the freshness check), the safety-critical tasks (Task 6 autofill bridge, Task 9 File step against the *real live* Chakshu portal) reviewed on the most capable model given the stakes. 258 unit tests / 0 failures (fresh count), both instrumented tests pass on `vaarta_test`, `assembleDebug` clean, manually verified end-to-end on a clean install (screenshotted: trimmed Help → Report a scam → Prepare routes correctly). One known follow-up: one Chakshu pack CSS selector is stale against the live site's current DOM (tap-to-fill fallback already covers it — tracked below). |
+| **Complaint co-pilot** (spec `docs/superpowers/specs/2026-07-21-complaint-copilot-design.md`, plan `docs/superpowers/plans/2026-07-21-complaint-copilot.md`, 13 tasks) | **Closed, verified end-to-end (2026-07-22).** Replaces the old inert "call 1930 / here are two links" Help section with an intelligent flow: a curated `complaint-playbook-v1.json` (real, researched NCRP + Chakshu procedure/fields/documents, `core:reasoning`) drives a deterministic `ComplaintRouter` (scam code + money-lost → ranked destinations, 4 unit tests); an encrypted on-device `IdentityVault` (SQLCipher, migration 4→5, deliberately holds only name/address/mobile/email/ID-*type* — never an ID number or scan, 4 instrumented tests) holds reusable filing details; `ComplaintPacketAssembler` (5 unit tests) merges the router's destination + the existing `ComplaintDraft` + identity + loss into pre-filled fields, a document checklist, and procedure steps; `AutofillBridge` fills the *real* government portal inside an in-app WebView via safe, escaped JS (3 unit + 1 instrumented test against a bundled mock page — **independently verified structurally incapable of touching Submit/OTP/CAPTCHA regardless of input**, selectors sourced only from the curated pack, never from transcript/user text) with tap-to-fill chips as the always-present fallback; a 3-step Prepare→Review→File UI ties it together; an advisory, fail-silent AI web-grounding check flags if a portal's procedure has changed since the pack's `verifiedOn` date. **VAARTA never auto-submits — the user's own tap is always the final Submit/OTP/CAPTCHA action.** Help trimmed to actions only (Emergency, lost-money steps, Report-a-scam, Quick-complaint-draft kept as a secondary text/PDF-only fallback so the already-shipped PDF export wasn't lost, Warn-family); a new Settings screen holds language/guardian/filing-details/privacy. Hindi + Hinglish translated (machine-drafted, pending native review — see checklist below). Built via subagent-driven development: 13 implementer+reviewer cycles, 2 fix rounds (a routing-data gap in the pack, a proven-truncating token budget on the freshness check), the safety-critical tasks (Task 6 autofill bridge, Task 9 File step against the *real live* Chakshu portal) reviewed on the most capable model given the stakes. 258 unit tests / 0 failures (fresh count), both instrumented tests pass on `vaarta_test`, `assembleDebug` clean, manually verified end-to-end on a clean install (screenshotted: trimmed Help → Report a scam → Prepare routes correctly). One known follow-up: one Chakshu pack CSS selector is stale against the live site's current DOM (tap-to-fill fallback already covers it — tracked below). **Correction (2026-07-22, later same day):** the Help IA description above ("Report-a-scam, Quick-complaint-draft... kept as a secondary fallback, Warn-family" as Help rows) is now stale — four same-day follow-up commits moved Report/Warn-family/PDF-export off Help entirely into each conversation's own context. See the "Same-day follow-ups + final audit" entry below for the current, accurate description. |
 
 **Total (2026-07-09 snapshot, now stale): 24 automated tests, 0 failures.** **Current true count as
-of 2026-07-22 (fresh JUnit XML, clean rebuild after the complaint co-pilot's 13 tasks): 258 tests, 0
-failures, across every module** (0 lint errors was last independently confirmed 2026-07-19; the
-2026-07-22 `lintDebug` run surfaced 37 pre-existing `MissingTranslation` errors across 19 keys in
-`values-hi` unrelated to any string this plan touched, confirmed present as far back as this plan's
-own starting commit — tracked as a follow-up below, not a regression). Always re-count from fresh XML
-before quoting a number in this file — this table has been wrong about its own test count at least three times in
-this project's history (see the 2026-07-07 correction below); don't let it happen a fourth time.
+of 2026-07-22, later same day (fresh JUnit XML after the final pre-submission audit pass, which
+added new tests for previously-untested logic — see change log): 284 tests, 0 failures, across
+every module, `lintDebug` clean (0 errors)** — the 37 `MissingTranslation`/`ExtraTranslation` errors
+present earlier that same day were fixed in the audit pass, not carried forward.
+Always re-count from fresh XML before quoting a number in this file — this table has been wrong
+about its own test count at least three times in this project's history (see the 2026-07-07
+correction below); don't let it happen a fourth time.
 
 **Correction (2026-07-07):** earlier notes in this file's history and in conversation said "14"
 then implied "15", then "18" total tests — all were stale counts as tests were added along the way
@@ -254,7 +254,12 @@ tag, not a ticket in an external system.
 | `task_9f3a1c22` | Task 5's guardian contact picker regressed against `docs/PRIVACY_SECURITY.md`'s own binding data-inventory ("Guardian contact ... SQLCipher") and permission list ("Never: READ_CONTACTS") — guardian data was stored in plain SharedPreferences and the picker held `READ_CONTACTS` | **Closed — Task 9** of the current plan (hardening pass). Guardian storage moved into the encrypted SQLCipher database (`GuardianEntity`/`GuardianDao`, migration 3→4); the picker now targets `CommonDataKinds.Phone.CONTENT_URI` directly and needs no `READ_CONTACTS` at all. |
 | `task_b91d4a05` | Gemini Live's `inputTranscription` hallucinated fluent Tamil/Telugu text (unrelated to the actual English audio) on the first real physical-device live-call test, and kept fabricating new fake "conversation" content minutes after audio input stopped | **Open — found 2026-07-19**, first real-device test. Test method used a PC TTS voice relayed acoustically through PC speakers into the phone mic, not a real call, so this may be an acoustic-loopback-quality artifact rather than a deeper bug — needs a real-voice/real-call retest to confirm before deciding a fix (e.g. confidence/silence gating on `inputTranscription` output before it reaches the coach). `RiskEngine` never matched the garbled text, so the deterministic score stayed correctly at 0 — no score-safety impact, but AI-coach output was reacting to fabricated caller dialogue. |
 | `task_cc0mplaint01` | The Chakshu destination's `textarea#description` CSS selector in `complaint-playbook-v1.json` doesn't match the live `sancharsaathi.gov.in/sfc/` site's current DOM (found live-testing Task 9's File step against the real portal, 2026-07-22) | **Open, low severity.** `AutofillBridge`'s "Fill this page" silently doesn't populate that one field on the real site; tap-to-fill (the always-present fallback, per spec §3.3's "honest gap") already covers it correctly. Needs a build-time re-inspection of the live form to capture the current real selector. No safety impact — the never-auto-submit guarantee is independent of selector accuracy. |
-| `task_cc0mplaint02` | `lintDebug` (2026-07-22, complaint co-pilot's Task 13 gate) found 37 `MissingTranslation` errors across 19 keys, all in `values-hi` only (`home_action_ask_subtitle`, `panic_tailored_label`, `live_ai_online`, etc. — article/chat/home/live/panic features, none touched by this plan) | **Open, pre-existing — not a regression.** Confirmed present in `values-hi/strings.xml` as far back as `06e8702`, the complaint co-pilot plan's own starting commit, before any of its 13 tasks ran. Needs a dedicated Hindi-translation pass unrelated to this plan. |
+| `task_cc0mplaint02` | `lintDebug` (2026-07-22, complaint co-pilot's Task 13 gate) found 37 `MissingTranslation` errors across 19 keys, all in `values-hi` only (`home_action_ask_subtitle`, `panic_tailored_label`, `live_ai_online`, etc. — article/chat/home/live/panic features, none touched by this plan) | **Closed — 2026-07-22 final audit pass.** Added machine-drafted Hindi + Hinglish translations for all 19 keys (same pending-native-review status as the rest of the corpus) and deleted the 9 dead orphaned keys (`analyze_*`, `home_action_recording`) the same lint run had flagged as `ExtraTranslation`. `lintDebug` clean. |
+| `task_audit0722a` | DB-encryption instrumented tests (`GuardianDaoTest`, `IdentityDaoTest`) build via `Room.inMemoryDatabaseBuilder` with no `SupportOpenHelperFactory` — they exercise plain unencrypted Room, never the real SQLCipher path `VaartaDatabase.get()` actually uses in production. `DatabaseKeyManager` (Keystore-wrapped passphrase, crypto-shredding `destroyKey()`) has zero test coverage. Found by test-engineer audit, 2026-07-22. | **Open.** Needs a file-backed `SupportOpenHelperFactory(passphrase)` instrumented test asserting the raw `.db` bytes aren't plaintext-readable, plus a `DatabaseKeyManager` test for passphrase stability/destroy semantics. |
+| `task_audit0722b` | All 4 Room migrations (`MIGRATION_1_2`..`MIGRATION_4_5`) are untested — every DAO test builds the current schema directly via `inMemoryDatabaseBuilder`, never runs the `Migration` objects. A bad migration could silently corrupt/drop a real user's data on upgrade with nothing to catch it. Found by test-engineer audit, 2026-07-22. | **Open.** Needs `androidx.room:room-testing`'s `MigrationTestHelper`-based tests, one per migration, inserting representative v(n-1) rows and asserting they survive. |
+| `task_audit0722c` | `DatabaseKeyManager`'s own doc comment says callers should zero the passphrase `ByteArray` after `SupportOpenHelperFactory` consumes it; `VaartaDatabase.build()` never does. Found by security audit, 2026-07-22. | **Open, low severity (defense-in-depth only — SQLCipher copies the passphrase internally per that same doc comment, so this isn't a live vulnerability).** Deliberately not fixed blind this pass: whether `Arrays.fill()` is safe to call immediately after `SupportOpenHelperFactory(passphrase)` construction depends on exactly when the library copies vs. retains the array, which needs a real device to verify before touching safety-critical key-handling code. |
+| `task_audit0722d` | `docs/diagrams/vaarta-architecture-v1.svg` is dated 2026-07-07 (pre-v2-pivot) — still shows the deleted Manual Mode feature and has no box for the AI copilot, complaint co-pilot, encrypted history, overlay, or language support. Found during the 2026-07-22 final audit while checking hackathon-deliverable readiness. | **Open — real gap against the required "Architecture Diagram" deliverable.** Needs a dedicated redraw reflecting the actual current v2 architecture, not a rushed patch; deliberately not attempted under today's submission-prep time pressure (deck/video are already deferred to a dedicated pass per §5's standing decision — this should follow the same discipline). |
+| `task_audit0722e` | `ConversationViewModel` (`AndroidViewModel`, constructs `HistoryRepository.create(app)`) has no unit test harness in this project (no Robolectric configured) — `buildComplaintDraft()`'s ViewModel-level wiring and `warnFamilyText()` are exercised only by their extracted pure helpers (`IncidentNarrativeTest.kt`), not end-to-end. Found by test-engineer audit, 2026-07-22. | **Open.** Needs a decision on whether to add Robolectric to the app module's test deps, or keep extracting pure logic out of `AndroidViewModel`s as the lighter-weight alternative (the pattern this pass already used). |
 
 ## 6. Process rules to follow (do not skip)
 
@@ -278,6 +283,103 @@ tag, not a ticket in an external system.
   other way around.
 
 ## 8. Change log
+
+- **2026-07-22 (later still) — Same-day follow-ups + final pre-submission audit (lock-down for
+  hackathon submission, Requirement 6: AI for Digital Public Safety).** Four small follow-up commits
+  landed the same day as the complaint co-pilot (owner feedback: per-action Help rows still felt
+  "generalized" — each saved conversation is its own incident, so its actions should live there, not
+  in a generic Help list): **(1)** `f038d75` — `GeminiClient.chat()` retries once, with a corrective
+  directive, when a reply comes back in Devanagari but the user's own message didn't use it (root
+  cause: Gemini's own grounding tool-call loop can re-inject Hindi after our system instruction).
+  **(2)** `98309f3` — `buildComplaintDraft()` now builds the incident narrative from Caller/You turns
+  only, excluding VAARTA's own Assistant/Coach turns (previously a fail-closed apology could leak into
+  a real government complaint), plus a fail-silent background AI pass that rewrites the raw transcript
+  into one coherent incident account. **(3)/(4)** `4aa5b61`/`0296433` — "Warn my family" and "Report a
+  scam" moved from generic, situation-blind Help rows into per-conversation actions
+  (`ConversationViewModel.warnFamilyText`/`buildComplaintDraft`), each built from that specific
+  call/recording/chat's own transcript and verdict; Help now keeps only the two direct portal links
+  for someone with no saved conversation yet.
+  - **Audit method:** a fresh `./gradlew clean test lintDebug` run, then three independent specialist
+    passes (code-reviewer, security-auditor, test-engineer) run in parallel against the real `main`
+    tip, cross-checked directly against the repo before acting on any finding (one subagent's isolated
+    worktree turned out to be pinned to an older commit and produced two false claims — "AutofillBridge/
+    IdentityVault don't exist" — independently disproven by grepping the real tree; discarded, not
+    acted on. Its other findings, and both other agents' full reports, checked out against the real
+    code and were acted on below).
+  - **Real bug fixed, found by review:** the Devanagari retry guard above didn't account for a blank
+    `userText` (an attachment-only send, e.g. "what is this?" with just an image) — `chat()` already
+    allows that case, and `LanguageDirectives.mirrorUserLanguage` says ambiguous input should correctly
+    fall back to the UI language, which can legitimately be Hindi. The guard was "correcting" a
+    genuinely correct Devanagari reply in that case. Fixed: the retry now only fires when the user's
+    own message was non-blank.
+  - **Real safety gap found + closed:** `SuggestionSafetyFilter` (the last-line deny-list before an AI
+    coaching reply reaches a frightened user) had zero Devanagari-script coverage, even though
+    `CoachPrompt` explicitly instructs the model to reply in Devanagari for Hindi UI users — a
+    dangerous instruction in Hindi script (pay/transfer, share OTP/PIN/Aadhaar, "don't tell anyone")
+    could reach the user completely unfiltered. Added three Devanagari pattern sets (payment
+    compliance, OTP/PIN/Aadhaar disclosure, isolation compliance), same tight-adjacency discipline as
+    the existing romanized-Hindi patterns (so a negated refusal like "पैसे नहीं दूंगा" stays accepted),
+    plus 4 new regression cases in `SuggestionSafetyRedTeamTest.kt` pinning both directions. Tamil/
+    Telugu/Bengali coverage was explicitly NOT attempted — those aren't supported UI languages
+    (EN/HI/Hinglish only, ADR-0001), so extending the filter to them would be scope creep, not a gap.
+  - **Real dead code / silently-regressed feature found + fixed:** the Help IA moves above left PDF
+    export unreachable — `onExportPdf`/`exportAndSharePdf`/`PdfExporter` were still threaded from
+    `MainActivity` through `VaartaNav` into `VaartaScreen`, but the only button that ever called it
+    (Help's old "Quick complaint draft" card) was deleted, and nothing re-wired it; a previously
+    "closed," live-verified feature had silently gone dead. Fixed by moving the wiring to where it's
+    actually needed: `ConversationScreen` gained its own "Export PDF" action (same
+    `ConversationViewModel.buildComplaintDraft()` used by Report/Warn-family), removed from the now-
+    unused `VaartaScreen` param chain. Also deleted a second, older piece of dead code found in the
+    same area: `CopilotSession`'s pre-complaint-co-pilot `_complaint`/`complaintDraft`/
+    `generateComplaint()` (a hardcoded-caller-number, single-scam-code demo generator from the original
+    2026-07-07 MVP, fully superseded and confirmed to have zero remaining readers anywhere in the app).
+  - **Real race condition found + fixed:** `ComplaintFlowViewModel.open()`'s background AI narrative
+    rewrite could resolve and silently overwrite the reviewed incident description *after* the user
+    had already moved on to the FILE step (the live government WebView) — the existing race guard
+    checked the draft/destination but not the flow step. Fixed by also gating on
+    `_state.value.step != ComplaintStep.FILE`.
+  - **Tests added for the three previously-untested 2026-07-22 commits** (test-engineer's top
+    finding: these shipped with zero tests despite containing pure, testable logic): extracted
+    `buildComplaintDraft()`'s transcript-filtering into pure top-level functions
+    (`conversationTranscript`/`incidentNarrativeText`, `ai/vaarta/conversation/IncidentNarrative.kt`)
+    with a new `IncidentNarrativeTest.kt` (6 cases, incl. pinning that a fail-closed Assistant apology
+    never reaches the narrative); made `GeminiClient.hasDevanagari` `internal` and added
+    `GeminiClientScriptGuardTest.kt` (5 cases). `draftIncidentNarrative()`'s own fail-closed contract
+    (blank key/account → null) and `ConversationViewModel`'s full `buildComplaintDraft()`/
+    `warnFamilyText()` wiring remain untested (the latter needs an `AndroidViewModel` test harness this
+    project doesn't have yet — tracked below, not silently skipped).
+  - **Translation debt fixed:** `lintDebug` was failing on 37 real errors — 19 keys added since
+    2026-07-21 (article/chat/home/live/panic strings) that never got Hindi translations, plus 9 dead
+    keys (`analyze_*`, `home_action_recording`) orphaned in `values-hi`/`values-b+hi+Latn` from a
+    screen that no longer exists (recording analysis merged into Ask VAARTA, per the existing
+    `chat_audio_verdict` comment). Added machine-drafted Hindi + Hinglish translations for all 19
+    (same "pending native review" status as the rest of the corpus) and deleted the 9 orphaned keys.
+    `lintDebug` is clean (0 errors) as of this pass.
+  - **Doc-drift fixed in `docs/PRIVACY_SECURITY.md`:** §6's security-architecture table is the
+    FOUNDATION design's full target (frozen 2026-07-05), not a status report on the MVP build — added
+    an explicit callout of what's actually implemented (SQLCipher + Keystore-wrapped key, TLS-only, no
+    secrets in the repo/history) vs. designed-but-not-yet-built (StrongBox-backed key, BiometricPrompt
+    app-lock, certificate pinning/NSC, Ed25519 pack signing, R8/minify in release — `isMinifyEnabled =
+    false` today). Also fixed §2's data inventory: it claimed voiceprints/biometrics are "explicitly
+    never processed," which predates the 2026-07-19 zero-enrollment speaker-attribution feature
+    (Part D) and was simply wrong — added the on-device-only voiceprint row and a correction note.
+    Added a scanned-URL row for the link checker's opt-in URLhaus/Safe Browsing lookups.
+  - **Verified, not fixed this pass (deliberately deferred, tracked as follow-ups below):** DB-
+    encryption tests exercise plain unencrypted in-memory Room, never the real SQLCipher path; all 4
+    Room migrations (`MIGRATION_1_2`..`MIGRATION_4_5`) are untested against real upgrade data; the
+    `DatabaseKeyManager` passphrase isn't zeroed after `SupportOpenHelperFactory` consumes it (SQLCipher
+    copies it internally per the class's own doc comment, so this is defense-in-depth, not a live
+    vulnerability — didn't risk a blind fix to safety-critical key-handling code without a device to
+    verify SQLCipher's copy timing against); `docs/diagrams/vaarta-architecture-v1.svg` is from
+    2026-07-07 and still depicts deleted Manual Mode with no AI copilot/complaint-co-pilot/encrypted-
+    history at all — a real gap against the hackathon's required "Architecture Diagram" deliverable,
+    needs a dedicated redraw pass, not a rushed patch under submission pressure.
+  - **Git hygiene:** confirmed no secrets ever committed (grepped full history, not just current tree);
+    confirmed the `vaarta-v2-ux` branch is fully contained in `main` (empty `main..vaarta-v2-ux` diff)
+    and safe to delete, pending owner confirmation before touching the remote.
+  - **Final verification:** full `./gradlew clean test lintDebug` re-run after all fixes above (see
+    the exact fresh count in the header/§4 test-count line — always re-counted from XML, never
+    assumed).
 
 - **2026-07-22 — Complaint co-pilot shipped (13 tasks, subagent-driven development, spec+plan
   linked in the table row above).** Owner's directive: the old Help "report" section was pure

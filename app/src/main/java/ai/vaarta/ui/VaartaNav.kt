@@ -125,7 +125,7 @@ fun VaartaNav(
                 SubScreen.Live -> VaartaScreen(
                     vm = vm, historyVm = historyVm,
                     onOpenHistory = { sub = SubScreen.None; tab = VaartaTab.HISTORY },
-                    onShare = onShare, onExportPdf = onExportPdf, onOpenUrl = onOpenUrl,
+                    onShare = onShare, onOpenUrl = onOpenUrl,
                     onBack = { sub = SubScreen.None },
                 )
                 SubScreen.Chat -> ConversationScreen(
@@ -134,6 +134,7 @@ fun VaartaNav(
                     onOpenUrl = onOpenUrl,
                     onShare = onShare,
                     onShareGeneric = onShareGeneric,
+                    onExportPdf = onExportPdf,
                     onReport = { draft ->
                         complaintVm.open(draft = draft, scamCode = null, moneyLost = false)
                         sub = SubScreen.Complaint

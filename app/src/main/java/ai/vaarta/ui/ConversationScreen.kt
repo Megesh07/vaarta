@@ -82,6 +82,7 @@ fun ConversationScreen(
     onShare: (String) -> Unit,
     onShareGeneric: (String) -> Unit,
     onReport: (ComplaintDraft) -> Unit,
+    onExportPdf: (ComplaintDraft) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     androidx.activity.compose.BackHandler(onBack = onBack) // system back == the back bar (spec §8.2)
@@ -148,6 +149,13 @@ fun ConversationScreen(
         vm.buildComplaintDraft()?.let(onReport)
     }
 
+    // Export PDF, scoped to THIS conversation (same fix family as reportThis/warnFamilyThis,
+    // 2026-07-22): re-wired here after the Help IA restructure removed its old generic entry point
+    // ("Quick complaint draft") without replacing it, which had silently made PdfExporter unreachable.
+    fun exportThisPdf() {
+        vm.buildComplaintDraft()?.let(onExportPdf)
+    }
+
     // Same fix, applied to "Warn my family" (owner directive, 2026-07-22): the message names what
     // THIS conversation actually was, never a static generic template.
     val warnFamilyPrefixThisChat = header?.let {
@@ -207,10 +215,12 @@ fun ConversationScreen(
                     ConversationActionRow(R.drawable.ic_download, stringResource(R.string.chat_download_transcript), onClick = { onShareGeneric(vm.transcriptText()) })
                     ConversationActionRow(R.drawable.ic_file_text, stringResource(R.string.chat_report_this), onClick = ::reportThis)
                     ConversationActionRow(R.drawable.ic_bell, stringResource(R.string.chat_warn_family), onClick = ::warnFamilyThis)
+                    ConversationActionRow(R.drawable.ic_download, stringResource(R.string.help_export_pdf), onClick = ::exportThisPdf)
                 }
                 if (turns.isNotEmpty() && header == null) {
                     ConversationActionRow(R.drawable.ic_file_text, stringResource(R.string.chat_report_this), onClick = ::reportThis)
                     ConversationActionRow(R.drawable.ic_bell, stringResource(R.string.chat_warn_family), onClick = ::warnFamilyThis)
+                    ConversationActionRow(R.drawable.ic_download, stringResource(R.string.help_export_pdf), onClick = ::exportThisPdf)
                 }
                 if (turns.isEmpty() && header == null) {
                     Spacer(Modifier.height(if (topic != null) VSpace.lg else VSpace.xxl))

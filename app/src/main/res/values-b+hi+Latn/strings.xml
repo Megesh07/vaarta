@@ -15,13 +15,20 @@
     <string name="home_action_live_title">Call pe meri help karo</string>
     <string name="home_action_live_subtitle">VAARTA speaker pe sunkar aapko live guide karta hai</string>
     <string name="home_action_ask">VAARTA se poocho</string>
-    <string name="home_action_recording">Recording check karo</string>
+    <string name="home_action_ask_subtitle">Ek sawaal poocho, ya screenshot/recording attach karo</string>
     <string name="home_feed_title">India mein trending scams</string>
     <string name="home_feed_origin_live">Web se live</string>
     <string name="home_feed_origin_cached">Aapke last refresh se</string>
     <string name="home_feed_origin_seed">Built-in guide — online hone par update hogi</string>
     <string name="home_feed_empty">Online hone par yahan scam-awareness stories aayengi.</string>
     <string name="home_feed_seen_in">%1$s mein dekha gaya</string>
+    <string name="home_feed_refresh">Refresh karo</string>
+
+    <!-- Live-article view (live-news feed redesign 2026-07-21). -->
+    <string name="article_open_browser">Browser mein kholo</string>
+    <string name="article_reader_error">Yahan article load nahi ho saka.</string>
+    <string name="article_related">Related scams</string>
+    <string name="article_loading">Article load ho raha hai…</string>
 
     <!-- Panic sheet — SAFETY-CRITICAL, needs native review. -->
     <string name="panic_heading">Abhi yeh karo</string>
@@ -31,6 +38,9 @@
     <string name="panic_step_4">1930 pe call karo (government cyber-crime helpline).</string>
     <string name="panic_call_1930">Abhi 1930 pe call karo</string>
     <string name="panic_get_live_help">VAARTA se live help lo →</string>
+    <string name="panic_personalizing">Aapki situation check ho rahi hai…</string>
+    <string name="panic_tailored_label">Aapki situation ke hisaab se</string>
+    <string name="panic_general_label">General safety steps</string>
 
     <!-- Live v2 -->
     <string name="live_title">Live protection</string>
@@ -41,6 +51,9 @@
     <string name="live_float">Apni call pe float karo</string>
     <string name="live_watch_demo">Dekho yeh kaise kaam karta hai</string>
     <string name="live_ai_consent_compact">AI live coach — opt-in, caller ke words Google ko bhejta hai. Off = fully on-device.</string>
+    <!-- Live intelligence status (no toggle; always on when online) — 2026-07-21. -->
+    <string name="live_ai_online">AI active hai — live guide kar raha hai</string>
+    <string name="live_ai_offline">Offline — sirf on-device protection</string>
     <string name="live_saved">Aapki conversations mein save ho gaya</string>
     <string name="live_done">Done</string>
     <string name="live_start_again">Phir se start karo</string>
@@ -83,6 +96,14 @@
     <string name="chat_mic_a11y">Bolo</string>
     <string name="chat_attach_a11y">Attach karo</string>
     <string name="chat_send_a11y">Send karo</string>
+
+    <!-- Ask-about-an-article chat (live-news feed, 2026-07-21). -->
+    <string name="chat_about_article_title">Is article ke baare mein poocho</string>
+    <string name="chat_topic_eyebrow">Is article ke baare mein poochh rahe ho</string>
+    <string name="chat_empty_article_title">Is article ke baare mein mujhse kuch bhi poocho</string>
+    <string name="chat_article_starter_1">Is article ka summary do</string>
+    <string name="chat_article_starter_2">Yeh scam kaise kaam karta hai?</string>
+    <string name="chat_article_starter_3">Main khud ko aur apne family ko kaise bachaun?</string>
 
     <!-- Article -->
     <string name="article_reading">VAARTA isme latest padh raha hai…</string>
@@ -127,16 +148,6 @@
     <string name="live_tap_another_question">Doosre question ke liye tap karo</string>
     <string name="live_share_via">Iske through share karo</string>
     <string name="live_share_complaint_pdf">Complaint PDF share karo</string>
-
-    <!-- Analyze-a-recording screen -->
-    <string name="analyze_title">Recording check karo</string>
-    <string name="analyze_intro">Ek recorded call pick karo — VAARTA usse transcribe karega, known scam patterns se check karega, aur aapko verdict dega.</string>
-    <string name="analyze_pick_recording">Recording pick karo</string>
-    <string name="analyze_transcribing">Recording transcribe aur check ho rahi hai…</string>
-    <string name="analyze_transcribing_sub">Lambi clip ke liye ismein ek minute tak lag sakta hai.</string>
-    <string name="analyze_disclaimer">Ek recording se analyze kiya gaya. Risk score transcript se on-device hi nikala jaata hai; AI ne isse transcribe aur classify karne mein madad ki.</string>
-    <string name="analyze_share_warning">Yeh warning share karo</string>
-    <string name="analyze_share_warning_message">VAARTA: Maine ek call recording analyze ki aur yeh scam lag raha hai (%1$s).</string>
 
     <!-- Risk states + chat bubbles -->
     <string name="state_observing">Sun rahe hain aur check kar rahe hain</string>
@@ -202,6 +213,8 @@
     <string name="chat_warn_family_generic_kind">scam</string>
     <string name="chat_thinking">VAARTA soch raha hai…</string>
     <string name="chat_remove_a11y">Hatao</string>
+    <!-- Recording-in-chat result card (A1: recording analysis merged into Ask VAARTA). -->
+    <string name="chat_audio_verdict">Verdict: %1$s · risk %2$d/100</string>
 
     <!-- Bottom nav -->
     <string name="nav_home">Home</string>
@@ -246,5 +259,6 @@
     <string name="overlay_notif_text">Scam signs ke liye sun rahe hain. Kholne ke liye tap karo.</string>
     <string name="overlay_notif_stop">Roko</string>
     <string name="overlay_hide">Hide karo</string>
+    <string name="overlay_open_app">App mein kholo</string>
     <string name="overlay_listening_coach">Sun rahe hain — main bataunga kya kehna hai.</string>
 </resources>

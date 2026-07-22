@@ -14,13 +14,20 @@
     <string name="home_action_live_title">कॉल पर मेरी मदद करें</string>
     <string name="home_action_live_subtitle">VAARTA स्पीकर पर सुनकर आपको लाइव मार्गदर्शन देता है</string>
     <string name="home_action_ask">VAARTA से पूछें</string>
-    <string name="home_action_recording">रिकॉर्डिंग जांचें</string>
+    <string name="home_action_ask_subtitle">सवाल पूछें, या स्क्रीनशॉट/रिकॉर्डिंग अटैच करें</string>
     <string name="home_feed_title">भारत में चर्चित स्कैम</string>
     <string name="home_feed_origin_live">वेब से लाइव</string>
     <string name="home_feed_origin_cached">आपके पिछले रिफ्रेश से</string>
     <string name="home_feed_origin_seed">बिल्ट-इन गाइड — ऑनलाइन होने पर अपडेट होगी</string>
     <string name="home_feed_empty">ऑनलाइन होने पर यहां स्कैम-जागरूकता की कहानियां दिखेंगी।</string>
     <string name="home_feed_seen_in">%1$s में देखा गया</string>
+    <string name="home_feed_refresh">रिफ्रेश करें</string>
+
+    <!-- Live-article view (live-news feed redesign 2026-07-21). -->
+    <string name="article_open_browser">ब्राउज़र में खोलें</string>
+    <string name="article_reader_error">यहां आर्टिकल लोड नहीं हो सका।</string>
+    <string name="article_related">संबंधित स्कैम</string>
+    <string name="article_loading">आर्टिकल लोड हो रहा है…</string>
 
     <!-- Panic sheet — SAFETY-CRITICAL, needs native review. -->
     <string name="panic_heading">अभी यह करें</string>
@@ -30,6 +37,9 @@
     <string name="panic_step_4">1930 पर कॉल करें (सरकारी साइबर-क्राइम हेल्पलाइन)।</string>
     <string name="panic_call_1930">अभी 1930 पर कॉल करें</string>
     <string name="panic_get_live_help">VAARTA से लाइव मदद लें →</string>
+    <string name="panic_personalizing">आपकी स्थिति जांची जा रही है…</string>
+    <string name="panic_tailored_label">आपकी स्थिति के अनुसार</string>
+    <string name="panic_general_label">सामान्य सुरक्षा कदम</string>
 
     <!-- Live v2 -->
     <string name="live_title">लाइव सुरक्षा</string>
@@ -40,6 +50,9 @@
     <string name="live_float">अपनी कॉल पर फ्लोट करें</string>
     <string name="live_watch_demo">देखें यह कैसे काम करता है</string>
     <string name="live_ai_consent_compact">AI लाइव कोच — ऑप्ट-इन, कॉलर के शब्द Google को भेजता है। बंद = पूरी तरह डिवाइस पर।</string>
+    <!-- Live intelligence status (no toggle; always on when online) — 2026-07-21. -->
+    <string name="live_ai_online">AI सक्रिय — लाइव मार्गदर्शन दे रहा है</string>
+    <string name="live_ai_offline">ऑफ़लाइन — सिर्फ़ डिवाइस पर सुरक्षा</string>
     <string name="live_saved">आपकी बातचीत में सेव हो गया</string>
     <string name="live_done">हो गया</string>
     <string name="live_start_again">फिर से शुरू करें</string>
@@ -82,6 +95,14 @@
     <string name="chat_mic_a11y">बोलें</string>
     <string name="chat_attach_a11y">अटैच करें</string>
     <string name="chat_send_a11y">भेजें</string>
+
+    <!-- Ask-about-an-article chat (live-news feed, 2026-07-21). -->
+    <string name="chat_about_article_title">इस आर्टिकल के बारे में पूछें</string>
+    <string name="chat_topic_eyebrow">इस आर्टिकल के बारे में पूछ रहे हैं</string>
+    <string name="chat_empty_article_title">इस आर्टिकल के बारे में मुझसे कुछ भी पूछें</string>
+    <string name="chat_article_starter_1">इस आर्टिकल का सार बताएं</string>
+    <string name="chat_article_starter_2">यह स्कैम कैसे काम करता है?</string>
+    <string name="chat_article_starter_3">मैं खुद को और अपने परिवार को कैसे बचाऊं?</string>
 
     <!-- Article -->
     <string name="article_reading">VAARTA इस पर नई जानकारी पढ़ रहा है…</string>
@@ -126,16 +147,6 @@
     <string name="live_tap_another_question">दूसरे सवाल के लिए टैप करें</string>
     <string name="live_share_via">इसके ज़रिए शेयर करें</string>
     <string name="live_share_complaint_pdf">शिकायत PDF शेयर करें</string>
-
-    <!-- Analyze-a-recording screen -->
-    <string name="analyze_title">रिकॉर्डिंग जांचें</string>
-    <string name="analyze_intro">एक रिकॉर्ड की गई कॉल चुनें — VAARTA उसे ट्रांसक्राइब करेगा, जाने-पहचाने स्कैम पैटर्न से जांचेगा, और आपको नतीजा देगा।</string>
-    <string name="analyze_pick_recording">रिकॉर्डिंग चुनें</string>
-    <string name="analyze_transcribing">रिकॉर्डिंग को ट्रांसक्राइब और जांच रहे हैं…</string>
-    <string name="analyze_transcribing_sub">लंबी क्लिप के लिए इसमें एक मिनट तक लग सकता है।</string>
-    <string name="analyze_disclaimer">एक रिकॉर्डिंग से जांचा गया। जोखिम स्कोर ट्रांसक्रिप्ट से डिवाइस पर ही निकाला जाता है; AI ने इसे ट्रांसक्राइब करने और पहचानने में मदद की।</string>
-    <string name="analyze_share_warning">यह चेतावनी शेयर करें</string>
-    <string name="analyze_share_warning_message">VAARTA: मैंने एक कॉल रिकॉर्डिंग जांची और यह स्कैम लग रहा है (%1$s)।</string>
 
     <!-- Risk states + chat bubbles -->
     <string name="state_observing">सुन रहे हैं और जांच रहे हैं</string>
@@ -201,6 +212,8 @@
     <string name="chat_warn_family_generic_kind">स्कैम</string>
     <string name="chat_thinking">VAARTA सोच रहा है…</string>
     <string name="chat_remove_a11y">हटाएं</string>
+    <!-- Recording-in-chat result card (A1: recording analysis merged into Ask VAARTA). -->
+    <string name="chat_audio_verdict">फैसला: %1$s · जोखिम %2$d/100</string>
 
     <!-- Bottom nav -->
     <string name="nav_home">होम</string>
@@ -245,5 +258,6 @@
     <string name="overlay_notif_text">स्कैम के संकेतों के लिए सुन रहे हैं। खोलने के लिए टैप करें।</string>
     <string name="overlay_notif_stop">रोकें</string>
     <string name="overlay_hide">छुपाएं</string>
+    <string name="overlay_open_app">ऐप में खोलें</string>
     <string name="overlay_listening_coach">सुन रहे हैं — मैं बताऊंगा क्या कहना है।</string>
 </resources>
