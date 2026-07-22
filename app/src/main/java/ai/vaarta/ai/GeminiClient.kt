@@ -374,6 +374,13 @@ object GeminiClient {
      * Answers a free-form chat message. [context] is an optional situation summary (null for a blank
      * chat); [history] is the prior user/VAARTA turns; [userText] the new message. Returns prose +
      * any cited sources, or null on failure.
+     *
+     * Language mismatch guard (owner-reported, 2026-07-22: typed English, got Hindi back): the prompt
+     * already tells the model to mirror the user's script even if search grounding is in another
+     * language, but grounding results are inserted by Gemini's own tool-call loop AFTER our system
+     * instruction, and can still drag the reply into Hindi. Devanagari is the one script mismatch we
+     * can detect cheaply and unambiguously (Latin-script input — English or Hinglish — must never come
+     * back in Devanagari), so on that specific mismatch this retries once with a corrective directive.
      */
     fun chat(
         context: String?,
@@ -389,7 +396,20 @@ object GeminiClient {
         return try {
             val response = post("$ENDPOINT?key=$key", buildChatRequestBody(context, history, userText, attachments), CHAT_TIMEOUT_MS) ?: return null
             val text = extractText(response)?.trim().orEmpty()
-            if (text.isEmpty()) null else ChatAnswer(text, extractSources(response))
+            if (text.isEmpty()) return null
+            if (hasDevanagari(text) && !hasDevanagari(userText)) {
+                Log.w("GeminiClient", "chat: Devanagari reply to non-Devanagari input, retrying once")
+                val retryResponse = post(
+                    "$ENDPOINT?key=$key",
+                    buildChatRequestBody(context, history, userText, attachments, correctToUserScript = true),
+                    CHAT_TIMEOUT_MS,
+                )
+                if (retryResponse != null) {
+                    val retryText = extractText(retryResponse)?.trim()
+                    if (!retryText.isNullOrEmpty()) return ChatAnswer(retryText, extractSources(retryResponse))
+                }
+            }
+            ChatAnswer(text, extractSources(response))
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or the user's words.
             Log.w("GeminiClient", "chat failed: ${e.javaClass.simpleName}: ${e.message}")
@@ -397,11 +417,14 @@ object GeminiClient {
         }
     }
 
+    private fun hasDevanagari(text: String): Boolean = text.any { it.code in 0x0900..0x097F }
+
     private fun buildChatRequestBody(
         context: String?,
         history: List<ChatMessage>,
         userText: String,
         attachments: List<ChatAttachment>,
+        correctToUserScript: Boolean = false,
     ): String = buildJsonObject {
         putJsonObject("system_instruction") {
             val withContext = if (context.isNullOrBlank()) {
@@ -412,7 +435,13 @@ object GeminiClient {
                 ChatPrompt.INSTRUCTION + "\n\nThe user is asking about this (untrusted) context:\n" + context
             }
             // Language directive goes LAST (after any context) so recency pins the reply language.
-            val instruction = withContext + "\n\n" + ChatPrompt.languageReminder(AppLanguage.current())
+            var instruction = withContext + "\n\n" + ChatPrompt.languageReminder(AppLanguage.current())
+            if (correctToUserScript) {
+                instruction += "\n\nCORRECTION: your previous reply used Devanagari (Hindi script), but " +
+                    "the user's message did not — that was wrong. Reply in Latin script this time " +
+                    "(English or Hinglish, matching the user's message), even if your search results " +
+                    "are in Hindi. Do not use Devanagari."
+            }
             putJsonArray("parts") { addJsonObject { put("text", instruction) } }
         }
         putJsonArray("contents") {
