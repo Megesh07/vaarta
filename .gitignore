@@ -34,3 +34,13 @@ captures/
 
 # Model packs (fetched on demand per docs/CONTRIBUTING.md §2, not checked into git)
 /models/
+
+# Internal working docs (specs, ADRs, plans, process notes, task logs) — kept locally for ongoing
+# development, deliberately not part of the public submission repo. README.md is the public-facing
+# doc; the architecture diagram lives in /architecture/, outside this folder, so it stays tracked.
+/docs/
+/PROJECT_STATUS.md
+/CODE_OF_CONDUCT.md
+/SECURITY.md
+/.superpowers/
+/.claude/
