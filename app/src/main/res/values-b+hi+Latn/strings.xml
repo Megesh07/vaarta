@@ -59,10 +59,16 @@
     <string name="help_report_cybercrime">cybercrime.gov.in — complaint file karo</string>
     <string name="help_report_chakshu">Sanchar Saathi (Chakshu) — fraud number/SMS report karo</string>
     <string name="help_tools_title">Tools</string>
-    <string name="help_tools_complaint">Complaint draft banao</string>
-    <string name="help_tools_complaint_sub">VAARTA ne jo detect kiya usse ready-to-file draft mein badlo</string>
+    <string name="help_tools_complaint">Quick complaint draft (sirf text/PDF)</string>
+    <string name="help_tools_complaint_sub">Ek simple text draft jise tum copy ya export kar sakte ho — koi guided steps nahi</string>
     <string name="help_tools_warn_family">Apne family ko warn karo</string>
     <string name="help_tools_warn_family_sub">Ek chhota warning message bhejo — ek message scam rok sakta hai</string>
+    <string name="help_tools_warn_family_sub_direct">Seedha %1$s ko jaata hai — ek message scam rok sakta hai</string>
+    <string name="help_open_settings">Settings</string>
+
+    <!-- Complaint co-pilot IA (Task 10/12). -->
+    <string name="complaint_report_title">Scam report karo</string>
+    <string name="complaint_report_sub">Hum tumhe step-by-step file karne mein help karenge</string>
 
     <!-- Chat v2 -->
     <string name="chat_title">VAARTA se poocho</string>
@@ -210,6 +216,16 @@
     <string name="guardian_row_title">Guardian contact</string>
     <string name="guardian_not_set">Set nahi hai — choose karne ke liye tap karo</string>
     <string name="guardian_clear">Guardian hatao</string>
+
+    <!-- Settings screen (Task 10/12). -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_guardian_desc">Taaki "Apne family ko warn karo" share sheet kholne ke bajaye seedha unhe bhej sake.</string>
+    <string name="settings_your_details">Your filing details</string>
+    <string name="settings_your_details_sub">Is device pe ek baar save hoti hai, har complaint mein reuse hoti hai</string>
+    <string name="settings_your_details_add">Apni details ek baar add karo</string>
+    <string name="settings_your_details_edit">Edit</string>
+    <string name="settings_your_details_clear">Clear</string>
+    <string name="settings_privacy_title">Privacy</string>
 
     <!-- Confirmation dialogs for destructive actions (Task 4). -->
     <string name="action_cancel">Cancel karo</string>

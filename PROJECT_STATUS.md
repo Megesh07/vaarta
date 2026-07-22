@@ -539,6 +539,9 @@ tag, not a ticket in an external system.
     - [ ] `link_warning_malicious` (both `values-hi` and `values-b+hi+Latn`) — the scam-link checker's inline chat warning (Task 3)
     - [ ] `action_cancel`, `confirm_delete_all_title`, `confirm_delete_all_body`, `confirm_clear_voice_title`, `confirm_clear_voice_body` (both `values-hi` and `values-b+hi+Latn`) — confirmation dialog strings for destructive actions (Task 4)
     - [ ] `guardian_row_title`, `guardian_not_set`, `guardian_clear` (both `values-hi` and `values-b+hi+Latn`) — the guardian contact picker settings row (Task 5)
+    - [ ] `help_tools_complaint`, `help_tools_complaint_sub` (both `values-hi` and `values-b+hi+Latn`) — re-translated after the English wording changed to "quick draft, no guided steps" (Task 12)
+    - [ ] `help_tools_warn_family_sub_direct`, `help_open_settings`, `complaint_report_title`, `complaint_report_sub` (both `values-hi` and `values-b+hi+Latn`) — the Help IA restructure's new rows (Task 12)
+    - [ ] `settings_title`, `settings_guardian_desc`, `settings_your_details`, `settings_your_details_sub`, `settings_your_details_add`, `settings_your_details_edit`, `settings_your_details_clear`, `settings_privacy_title` (both `values-hi` and `values-b+hi+Latn`) — the new Settings screen (Task 12)
   - **Known deferred gaps** (noted, not silently gapped): the bundled seed feed (~8 cards) stays
     English-only until a native speaker translates it; numbers/dates (`relativeTimeLabel` in
     core:reasoning) still format as `en-IN` regardless of UI language (edge case 9 — a pure-JVM
