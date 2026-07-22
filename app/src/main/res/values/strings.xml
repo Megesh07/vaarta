@@ -202,6 +202,7 @@
     <string name="chat_speech_prompt">Speak your question</string>
     <string name="chat_about_call_title">About this call</string>
     <string name="chat_download_transcript">Download transcript</string>
+    <string name="chat_report_this">Report this</string>
     <string name="chat_thinking">VAARTA is thinking…</string>
     <string name="chat_remove_a11y">Remove</string>
     <!-- Recording-in-chat result card (A1: recording analysis merged into Ask VAARTA). -->

@@ -194,6 +194,7 @@
     <string name="chat_speech_prompt">अपना सवाल बोलें</string>
     <string name="chat_about_call_title">इस कॉल के बारे में</string>
     <string name="chat_download_transcript">ट्रांसक्रिप्ट डाउनलोड करें</string>
+    <string name="chat_report_this">इसकी रिपोर्ट करें</string>
     <string name="chat_thinking">VAARTA सोच रहा है…</string>
     <string name="chat_remove_a11y">हटाएं</string>
 

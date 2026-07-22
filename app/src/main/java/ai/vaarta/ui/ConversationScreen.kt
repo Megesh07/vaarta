@@ -5,6 +5,7 @@ import ai.vaarta.R
 import ai.vaarta.StatusBanner
 import ai.vaarta.ai.ChatAttachment
 import ai.vaarta.conversation.ConversationViewModel
+import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.i18n.AppLanguage
 import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.theme.VSpace
@@ -79,6 +80,7 @@ fun ConversationScreen(
     onOpenUrl: (String) -> Unit,
     onShare: (String) -> Unit,
     onShareGeneric: (String) -> Unit,
+    onReport: (ComplaintDraft) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     androidx.activity.compose.BackHandler(onBack = onBack) // system back == the back bar (spec §8.2)
@@ -138,6 +140,13 @@ fun ConversationScreen(
         pending = emptyList()
     }
 
+    // Report a scam FROM this specific conversation's own transcript/verdict — never a generic,
+    // app-wide action, since each call/recording/chat is a different incident (owner directive,
+    // 2026-07-22).
+    fun reportThis() {
+        vm.buildComplaintDraft()?.let(onReport)
+    }
+
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             VaartaBackBar(
@@ -190,6 +199,24 @@ fun ConversationScreen(
                     ) {
                         VaartaIcon(R.drawable.ic_download, contentDescription = null, tint = c.indigo, size = 16.dp)
                         Text(stringResource(R.string.chat_download_transcript), style = MaterialTheme.typography.bodySmall, color = c.indigo)
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+                        modifier = Modifier.vaartaPressable(::reportThis).padding(vertical = VSpace.xs),
+                    ) {
+                        VaartaIcon(R.drawable.ic_file_text, contentDescription = null, tint = c.indigo, size = 16.dp)
+                        Text(stringResource(R.string.chat_report_this), style = MaterialTheme.typography.bodySmall, color = c.indigo)
+                    }
+                }
+                if (turns.isNotEmpty() && header == null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(VSpace.sm),
+                        modifier = Modifier.vaartaPressable(::reportThis).padding(vertical = VSpace.xs),
+                    ) {
+                        VaartaIcon(R.drawable.ic_file_text, contentDescription = null, tint = c.indigo, size = 16.dp)
+                        Text(stringResource(R.string.chat_report_this), style = MaterialTheme.typography.bodySmall, color = c.indigo)
                     }
                 }
                 if (turns.isEmpty() && header == null) {

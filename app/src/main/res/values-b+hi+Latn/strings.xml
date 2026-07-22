@@ -195,6 +195,7 @@
     <string name="chat_speech_prompt">Apna question bolo</string>
     <string name="chat_about_call_title">Is call ke baare mein</string>
     <string name="chat_download_transcript">Transcript download karo</string>
+    <string name="chat_report_this">Isko report karo</string>
     <string name="chat_thinking">VAARTA soch raha hai…</string>
     <string name="chat_remove_a11y">Hatao</string>
 

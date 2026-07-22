@@ -2,7 +2,6 @@ package ai.vaarta.ui
 
 import ai.vaarta.R
 import ai.vaarta.SessionViewModel
-import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.guardian.Guardian
 import ai.vaarta.guardian.GuardianStore
 import ai.vaarta.i18n.AppLanguage
@@ -12,7 +11,6 @@ import ai.vaarta.ui.components.LinkRow
 import ai.vaarta.ui.components.PanicSheet
 import ai.vaarta.ui.components.TextLinkRow
 import ai.vaarta.ui.components.VaartaButton
-import ai.vaarta.ui.components.VaartaSecondaryButton
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import androidx.compose.foundation.BorderStroke
@@ -66,18 +64,18 @@ private val SCAMMED_STEP_IDS = listOf(
 /**
  * The social-good pillar (spec §4.3): how and where to get help and report a scam, always reachable.
  * Task 10 trimmed this to actions only — language, guardian management, and clear-voice-data moved
- * to [SettingsScreen], reached via the "Settings" row at the bottom.
- * The complaint draft (reused from the deterministic engine) lives here now, off the live screen.
+ * to [SettingsScreen], reached via the "Settings" row at the bottom. Complaint generation is NOT a
+ * generic app-wide action here (owner directive, 2026-07-22: every call/recording/chat is a distinct
+ * incident with its own context, so "Report this" lives per-conversation in [ConversationScreen]
+ * instead, reached via History) — this screen only keeps the two direct portal links for someone who
+ * doesn't have a saved conversation yet and just wants to file manually.
  */
 @Composable
 fun HelpScreen(
     vm: SessionViewModel,
     onShare: (String) -> Unit,
-    onShareGeneric: (String) -> Unit,
-    onExportPdf: (ComplaintDraft) -> Unit,
     onOpenUrl: (String) -> Unit,
     onStartLive: () -> Unit,
-    onReport: () -> Unit,
     onOpenSettings: () -> Unit,
     panicVm: PanicViewModel,
     liveScamType: String?,
@@ -88,8 +86,6 @@ fun HelpScreen(
 ) {
     val c = VaartaTheme.colors
     val scroll = rememberScrollState()
-    val complaint by vm.session.complaint.collectAsState()
-    val complaintDraft by vm.session.complaintDraft.collectAsState()
     var showPanic by remember { mutableStateOf(false) }
     val panicState by panicVm.state.collectAsState()
     var showAllSteps by remember { mutableStateOf(false) }
@@ -168,15 +164,6 @@ fun HelpScreen(
             }
 
             HelpSection(title = stringResource(R.string.help_report_title)) {
-                // Primary action (Task 10): the guided complaint co-pilot (Tasks 7–9) — picks the
-                // right destination, walks Prepare → Review → File, and fills the real portal.
-                LinkRow(
-                    icon = R.drawable.ic_file_text,
-                    title = stringResource(R.string.complaint_report_title),
-                    subtitle = stringResource(R.string.complaint_report_sub),
-                    onClick = onReport,
-                )
-                Spacer(Modifier.height(VSpace.xs))
                 LinkRow(
                     icon = R.drawable.ic_globe,
                     title = stringResource(R.string.help_report_cybercrime),
@@ -195,37 +182,6 @@ fun HelpScreen(
             }
 
             HelpSection(title = stringResource(R.string.help_tools_title)) {
-                LinkRow(
-                    icon = R.drawable.ic_file_text,
-                    title = stringResource(R.string.help_tools_complaint),
-                    subtitle = stringResource(R.string.help_tools_complaint_sub),
-                    onClick = { vm.session.generateComplaint() },
-                )
-                complaint?.let { text ->
-                    Spacer(Modifier.height(VSpace.sm))
-                    Card(colors = CardDefaults.cardColors(containerColor = c.panel)) {
-                        Column(Modifier.padding(VSpace.md)) {
-                            // Edge case 1 (spec §3B.3): the complaint filing itself stays English —
-                            // cybercrime.gov.in is English-first — but the reason why is localized.
-                            if (currentLanguage != AppLanguage.ENGLISH) {
-                                Text(
-                                    stringResource(R.string.help_complaint_english_note),
-                                    style = MaterialTheme.typography.bodySmall, color = c.muted,
-                                )
-                                Spacer(Modifier.height(VSpace.sm))
-                            }
-                            Text(text, style = MaterialTheme.typography.bodySmall, color = c.ink)
-                            Spacer(Modifier.height(VSpace.md))
-                            Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm)) {
-                                VaartaButton(text = stringResource(R.string.help_share_as_text), onClick = { onShareGeneric(text) })
-                                complaintDraft?.let { draft ->
-                                    VaartaSecondaryButton(text = stringResource(R.string.help_export_pdf), onClick = { onExportPdf(draft) })
-                                }
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(VSpace.sm))
-                }
                 val warnFamilyMessage = stringResource(R.string.help_warn_family_message)
                 val warnFamilySubtitle = guardian?.let { g ->
                     stringResource(R.string.help_tools_warn_family_sub_direct, g.name)

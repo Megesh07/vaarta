@@ -103,7 +103,6 @@ fun VaartaNav(
     // else the most recently SAVED call/recording/chat — [PanicContextSelector] picks between them.
     val liveScamType by vm.session.scamType.collectAsState()
     val liveRiskLevel by vm.session.displayedLevel.collectAsState()
-    val complaintDraft by vm.session.complaintDraft.collectAsState()
     val recentCalls by historyVm.sessions.collectAsState()
     val recentScamType = recentCalls.firstOrNull()?.scamType
     val recentRiskLevel = recentCalls.firstOrNull()?.finalLevel
@@ -135,6 +134,10 @@ fun VaartaNav(
                     onOpenUrl = onOpenUrl,
                     onShare = onShare,
                     onShareGeneric = onShareGeneric,
+                    onReport = { draft ->
+                        complaintVm.open(draft = draft, scamCode = null, moneyLost = false)
+                        sub = SubScreen.Complaint
+                    },
                 )
                 is SubScreen.Article -> ArticleScreen(
                     card = currentSub.card,
@@ -183,19 +186,8 @@ fun VaartaNav(
             VaartaTab.HELP -> HelpScreen(
                 vm = vm,
                 onShare = onShare,
-                onShareGeneric = onShareGeneric,
-                onExportPdf = onExportPdf,
                 onOpenUrl = onOpenUrl,
                 onStartLive = { sub = SubScreen.Live },
-                onReport = {
-                    if (complaintDraft == null) vm.session.generateComplaint()
-                    complaintVm.open(
-                        draft = vm.session.complaintDraft.value,
-                        scamCode = vm.session.complaintDraft.value?.classification?.scamCode,
-                        moneyLost = false,
-                    )
-                    sub = SubScreen.Complaint
-                },
                 onOpenSettings = { sub = SubScreen.Settings },
                 panicVm = panicVm,
                 liveScamType = liveScamType,
