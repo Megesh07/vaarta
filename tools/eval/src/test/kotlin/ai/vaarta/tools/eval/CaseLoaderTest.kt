@@ -15,8 +15,12 @@ class CaseLoaderTest {
         assertTrue(scam.groundTruth.isScam)
         assertEquals(Concern.SCAM_PATTERN, scam.groundTruth.concern)
         assertEquals("digital-arrest", scam.groundTruth.variant)
+        assertEquals(Difficulty.BLATANT, scam.groundTruth.difficulty)
+        assertEquals(Provenance.SYNTHETIC, scam.provenance)
         val benign = cases.first { it.id == "benign-001" }
         assertEquals(false, benign.groundTruth.isScam)
         assertEquals(Concern.OBSERVING, benign.groundTruth.concern)
+        assertEquals(Difficulty.BLATANT, benign.groundTruth.difficulty)
+        assertEquals(Provenance.SYNTHETIC, benign.provenance)
     }
 }
