@@ -22,6 +22,17 @@ data class Report(
     val p95LatencyMs: Long,
 )
 
+/** Per-stratum breakdown of [overall] (spec §9 anti-inflation guardrail): a model must clear the
+ *  bar on [Stratum.HARD_SUBTLE_SCAM] and [Stratum.HARD_SUBTLE_BENIGN] specifically, not just on
+ *  average. [blatantScamMisses] is the zero-partial-credit check: any [Stratum.BLATANT_SCAM] case
+ *  missed is named by ID here, never just folded into [overall]'s rate. */
+data class StratifiedReport(
+    val judgeId: String,
+    val overall: Report,
+    val byStratum: Map<Stratum, Report>,
+    val blatantScamMisses: List<String>,
+)
+
 object Scorer {
     /**
      * A verdict counts as flagging a scam if it explicitly says so or rates the risk high.
@@ -68,4 +79,24 @@ object Scorer {
             p95LatencyMs = percentile(0.95),
         )
     }
+
+    fun scoreStratified(judgeId: String, pairs: List<Pair<TranscriptCase, Verdict>>): StratifiedReport {
+        val byStratum = pairs
+            .groupBy { (c, _) -> c.groundTruth.stratum() }
+            .mapValues { (_, groupPairs) -> score(judgeId, groupPairs) }
+        return StratifiedReport(
+            judgeId = judgeId,
+            overall = score(judgeId, pairs),
+            byStratum = byStratum,
+            blatantScamMisses = blatantScamMisses(pairs),
+        )
+    }
+
+    /** Every BLATANT_SCAM case the judge did NOT flag as scam-positive, by case ID. This must be
+     *  checked directly by the report — a missed blatant scam is never acceptable to average away. */
+    fun blatantScamMisses(pairs: List<Pair<TranscriptCase, Verdict>>): List<String> =
+        pairs
+            .filter { (c, _) -> c.groundTruth.stratum() == Stratum.BLATANT_SCAM }
+            .filter { (_, v) -> !isScamPositive(v) }
+            .map { (c, _) -> c.id }
 }

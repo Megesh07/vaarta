@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 
 class ScorerTest {
-    private fun scamCase(id: String, variant: String) =
-        TranscriptCase(id, "t", "en", GroundTruth(true, variant, Concern.SCAM_PATTERN), "s")
-    private fun benignCase(id: String) =
-        TranscriptCase(id, "t", "en", GroundTruth(false, "", Concern.OBSERVING), "s")
+    private fun scamCase(id: String, variant: String, difficulty: Difficulty = Difficulty.BLATANT) =
+        TranscriptCase(id, "t", "en", GroundTruth(true, variant, Concern.SCAM_PATTERN, difficulty), "s", Provenance.SYNTHETIC)
+    private fun benignCase(id: String, difficulty: Difficulty = Difficulty.BLATANT) =
+        TranscriptCase(id, "t", "en", GroundTruth(false, "", Concern.OBSERVING, difficulty), "s", Provenance.SYNTHETIC)
     private fun verdict(isScam: Boolean?, concern: Concern?, variant: String, latency: Long, error: String? = null) =
         Verdict("j", isScam, concern, variant, 0.9, latency, "{}", error)
 
