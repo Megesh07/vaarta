@@ -1,8 +1,18 @@
 package ai.vaarta.core.reasoning
 
 /**
- * System instruction for the grounded classification call (ADR-0003, Call A). Moved here from :app so
- * both the app and the tools:eval benchmark reference the exact same production prompt (no drift).
+ * System instruction for the grounded classification call (ADR-0003, Call A). Shared by :app (via
+ * [ai.vaarta.ai.GroundedClassifyPrompt]) and tools:eval benchmark so both reference the exact same
+ * production prompt (no drift). This is the call that gives VAARTA reach BEYOND its static intel pack:
+ * it uses live Google Search to check the CURRENT, real digital-fraud patterns circulating in India
+ * (which evolve far faster than any bundled list or government campaign) and names the variant the
+ * caller appears to be running.
+ *
+ * It runs on `gemini-2.5-flash` with the `google_search` tool and NO responseSchema (that model can't
+ * combine grounding with structured output — probed 2026-07-08), so the output is JSON-in-text parsed
+ * tolerantly by `CoachingWireParser.parseGroundedAssessment`. Its result is ADVISORY only: it can
+ * raise the displayed alert, never lower it, and any scamType/benign claim is honoured only when
+ * backed by a cited source (enforced by `HybridAlert`).
  */
 object GroundedClassifyPrompt {
     val INSTRUCTION = """
