@@ -17,9 +17,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 class StratifiedPipelineIntegrationTest {
 
     // Realistic, hand-written cases (not the placeholder single-BLATANT-pair fixture used
-    // elsewhere) spanning three distinct strata via four cases: a caught BLATANT_SCAM, a MISSED
-    // BLATANT_SCAM (the NOT READY trigger), a caught HARD_SUBTLE_SCAM, and a HARD_SUBTLE_BENIGN
-    // false-alarm trap that must NOT be flagged.
+    // elsewhere) spanning all four distinct strata via five cases: a caught BLATANT_SCAM, a MISSED
+    // BLATANT_SCAM (the NOT READY trigger), a BLATANT_BENIGN ordinary call, a caught HARD_SUBTLE_SCAM,
+    // and a HARD_SUBTLE_BENIGN false-alarm trap that must NOT be flagged.
     private val casesJson = """
         [
           {
@@ -37,6 +37,14 @@ class StratifiedPipelineIntegrationTest {
             "source": "synthetic-integration-blatant-scam",
             "provenance": "SYNTHETIC",
             "groundTruth": { "isScam": true, "variant": "digital-arrest", "concern": "SCAM_PATTERN", "difficulty": "BLATANT" }
+          },
+          {
+            "id": "int-blatant-benign-ok",
+            "transcript": "Caller: Hi, this is Priya from the electricity board. Just confirming — did you already pay this month's bill online, or should I note it as pending? No action needed if you've already paid.",
+            "language": "en",
+            "source": "synthetic-integration-benign-ordinary",
+            "provenance": "SYNTHETIC",
+            "groundTruth": { "isScam": false, "variant": "", "concern": "OBSERVING", "difficulty": "BLATANT" }
           },
           {
             "id": "int-subtle-scam-caught",
@@ -67,6 +75,9 @@ class StratifiedPipelineIntegrationTest {
         // that must surface in blatantScamMisses and trigger the NOT READY callout.
         "int-blatant-scam-missed" ->
             Verdict("integration-judge", false, Concern.OBSERVING, "", 0.4, 90, "{}", null)
+        // Correctly passed: judge correctly flags an ordinary benign utility-company call as not a scam.
+        "int-blatant-benign-ok" ->
+            Verdict("integration-judge", false, Concern.OBSERVING, "", 0.1, 60, "{}", null)
         // Caught: judge correctly flags the subtle OTP-phishing call despite no trigger words.
         "int-subtle-scam-caught" ->
             Verdict("integration-judge", true, Concern.HIGH_RISK, "otp-phishing", 0.8, 150, "{}", null)
@@ -82,14 +93,14 @@ class StratifiedPipelineIntegrationTest {
 
     @Test
     fun `real JSON scored by the real scorer renders every present stratum and the NOT READY callout in markdown`() {
-        assertEquals(4, cases.size)
+        assertEquals(5, cases.size)
 
         val md = ReportWriter.toMarkdownStratified(listOf(report))
 
         // Every stratum actually present in the real, scored data must show up in the render —
         // not a hand-built StratifiedReport that only ever contained what the test author typed.
         val strataPresent = pairs.map { (c, _) -> c.groundTruth.stratum() }.distinct()
-        assertEquals(setOf(Stratum.BLATANT_SCAM, Stratum.HARD_SUBTLE_SCAM, Stratum.HARD_SUBTLE_BENIGN), strataPresent.toSet())
+        assertEquals(setOf(Stratum.BLATANT_SCAM, Stratum.BLATANT_BENIGN, Stratum.HARD_SUBTLE_SCAM, Stratum.HARD_SUBTLE_BENIGN), strataPresent.toSet())
         for (stratum in strataPresent) {
             assertTrue(md.contains(stratum.name), "markdown missing stratum $stratum")
         }
