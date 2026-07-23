@@ -10,7 +10,7 @@ fun main() {
 
     val casesText = System.getProperty("cases.file")
         ?.let { File(it).readText() }
-        ?: object {}.javaClass.getResource("/foundation-cases.json")!!.readText()
+        ?: object {}.javaClass.getResource("/vaarta-eval-cases.json")!!.readText()
     val cases = CaseLoader.load(casesText)
 
     val cacheDir = File(System.getProperty("cache.dir") ?: "tools/eval/.cache")
