@@ -3,6 +3,7 @@ package ai.vaarta.tools.eval
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 
 class GeminiClassifyParseTest {
     // Mimics the real generateContent shape: JSON-in-text inside candidates[0].content.parts[0].text.
@@ -25,5 +26,19 @@ class GeminiClassifyParseTest {
         val v = parseClassifyVerdict("gemini-classify", "not json", 10)
         assertFalse(v.error == null)
         assertEquals(null, v.isScam)
+    }
+
+    @Test
+    fun `prompt fingerprint changes when the prompt text changes`() {
+        val a = promptFingerprint("You are VAARTA...")
+        val b = promptFingerprint("You are VAARTA... (edited)")
+        assertNotEquals(a, b)
+    }
+
+    @Test
+    fun `prompt fingerprint is stable for identical text`() {
+        val a = promptFingerprint("same text")
+        val b = promptFingerprint("same text")
+        assertEquals(a, b)
     }
 }

@@ -19,6 +19,14 @@ import java.util.concurrent.TimeUnit
 
 private val JSON = Json { ignoreUnknownKeys = true }
 
+/** Short stable fingerprint of a prompt's text, so any edit to the prompt automatically changes the
+ *  cache key — no hand-maintained version bump required, and stale cached responses can never survive
+ *  a prompt change. */
+internal fun promptFingerprint(text: String): String {
+    val digest = java.security.MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8))
+    return digest.joinToString("") { "%02x".format(it) }.take(8)
+}
+
 /** Pure: turn a raw generateContent body into a Verdict. Fail closed — any parse failure => error verdict. */
 internal fun parseClassifyVerdict(judgeId: String, responseBody: String, latencyMs: Long): Verdict {
     return try {
@@ -63,7 +71,7 @@ class GeminiClassifyJudge(
         .callTimeout(30, TimeUnit.SECONDS).build(),
 ) : ScamJudge {
     override val id: String = "gemini-classify:$model"
-    override val promptVersion: String = "grounded-classify-v1"
+    override val promptVersion: String = "grounded-classify-v1:" + promptFingerprint(GroundedClassifyPrompt.INSTRUCTION)
 
     private val endpoint =
         "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent"
