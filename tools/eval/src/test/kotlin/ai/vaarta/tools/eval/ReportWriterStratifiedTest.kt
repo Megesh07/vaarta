@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
 
 class ReportWriterStratifiedTest {
-    private fun report(stratum: Stratum, r: Report) = stratum to r
     private val flat = Report("j", 1, 1, 0, 0, 0.0, 0, 0.0, 1.0, 1.0, 100, 100)
 
     private val cleanReport = StratifiedReport(
