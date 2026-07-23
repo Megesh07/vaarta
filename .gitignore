@@ -35,6 +35,11 @@ captures/
 # Model packs (fetched on demand per docs/CONTRIBUTING.md §2, not checked into git)
 /models/
 
+# tools:eval benchmark artifacts — raw model responses and generated reports must never be
+# committed; re-running the harness must never depend on committed state.
+tools/eval/.cache/
+tools/eval/out/
+
 # Internal working docs (specs, ADRs, plans, process notes, task logs) — kept locally for ongoing
 # development, deliberately not part of the public submission repo. README.md is the public-facing
 # doc; the architecture diagram lives in /architecture/, outside this folder, so it stays tracked.
