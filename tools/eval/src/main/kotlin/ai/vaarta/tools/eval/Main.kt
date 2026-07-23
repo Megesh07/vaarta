@@ -29,10 +29,10 @@ fun main() {
         println("  ${c.id}: scam=${v.isScam} concern=${v.concern} variant='${v.variant}' ${v.latencyMs}ms ${v.error ?: ""}")
         c to v
     }
-    val report = Scorer.score(judge.id, pairs)
+    val report = Scorer.scoreStratified(judge.id, pairs)
 
-    File(outDir, "report.md").writeText(ReportWriter.toMarkdown(listOf(report)))
-    File(outDir, "report.csv").writeText(ReportWriter.toCsv(listOf(report)))
-    println("\n" + ReportWriter.toMarkdown(listOf(report)))
+    File(outDir, "report.md").writeText(ReportWriter.toMarkdownStratified(listOf(report)))
+    File(outDir, "report.csv").writeText(ReportWriter.toCsvStratified(listOf(report)))
+    println("\n" + ReportWriter.toMarkdownStratified(listOf(report)))
     println("Wrote ${outDir}/report.md and report.csv")
 }
