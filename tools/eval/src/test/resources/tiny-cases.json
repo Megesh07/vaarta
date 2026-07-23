@@ -1,0 +1,16 @@
+[
+  {
+    "id": "da-001",
+    "transcript": "Caller: This is Inspector Sharma, CBI. A parcel in your name has drugs. You are under digital arrest. Do not disconnect or tell anyone. Transfer 50,000 to this account for verification.",
+    "language": "en",
+    "source": "synthetic-from-I4C-advisory",
+    "groundTruth": { "isScam": true, "variant": "digital-arrest", "concern": "SCAM_PATTERN" }
+  },
+  {
+    "id": "benign-001",
+    "transcript": "Caller: Hi, this is Ravi from BlueDart. I have a parcel for you but the address flat number is unclear. Can you confirm the flat number so the courier can deliver today?",
+    "language": "en",
+    "source": "synthetic-benign-trap",
+    "groundTruth": { "isScam": false, "variant": "", "concern": "OBSERVING" }
+  }
+]
