@@ -61,46 +61,77 @@ internal fun parseClassifyVerdict(judgeId: String, responseBody: String, latency
 }
 
 /** Replicates the production classify() request: GroundedClassifyPrompt + google_search + lenient parse.
- *  Caches raw responses and throttles to respect the free-tier RPM. Fails closed on any HTTP/network error. */
+ *  Caches raw responses and throttles to respect the free-tier RPM. Fails closed on any HTTP/network error.
+ *
+ *  Each Gemini free-tier key is capped at 20 requests/day/model (confirmed via the API's own
+ *  RESOURCE_EXHAUSTED response, not the documented RPM figure — that cap is far more binding than
+ *  the RPM throttle for a 184-case run). apiKeys lets several independently-quota'd keys
+ *  (separate AI Studio projects) be round-robined: on an HTTP 429 the judge marks that key
+ *  exhausted for the rest of this run and retries the same case on the next key, so one key's
+ *  daily wall doesn't stop the whole benchmark. */
 class GeminiClassifyJudge(
-    private val apiKey: String,
+    private val apiKeys: List<String>,
     private val model: String = "gemini-2.5-flash",
     private val throttle: Throttle,
     private val cache: ResponseCache,
     private val http: OkHttpClient = OkHttpClient.Builder()
         .callTimeout(30, TimeUnit.SECONDS).build(),
+    private val endpoint: String =
+        "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent",
 ) : ScamJudge {
+    init { require(apiKeys.isNotEmpty()) { "GeminiClassifyJudge needs at least one API key" } }
+
     override val id: String = "gemini-classify:$model"
     override val promptVersion: String = "grounded-classify-v1:" + promptFingerprint(GroundedClassifyPrompt.INSTRUCTION)
 
-    private val endpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent"
+    // Persists across assess() calls within one run: once a key 429s it stays marked exhausted,
+    // so later cases skip straight past it instead of re-spending a throttle wait on a dead key.
+    private var nextKeyIndex = 0
+    private val exhaustedKeyIndices = mutableSetOf<Int>()
 
     override fun assess(case: TranscriptCase): Verdict {
         val key = cacheKey(id, promptVersion, case.id, case.transcript)
         cache.get(key)?.let { return parseClassifyVerdict(id, it, 0) }  // cached: zero calls, latency N/A
 
-        throttle.acquire()
         val body = buildBody(case.transcript)
-        val req = Request.Builder()
-            .url("$endpoint?key=$apiKey")
-            .post(body.toRequestBody("application/json".toMediaType()))
-            .build()
+        var lastVerdict: Verdict? = null
 
-        val started = System.currentTimeMillis()
-        return try {
-            http.newCall(req).execute().use { resp ->
-                val respBody = resp.body?.string().orEmpty()
-                val latency = System.currentTimeMillis() - started
-                if (!resp.isSuccessful) {
-                    return Verdict(id, null, null, "", null, latency, respBody, "http ${resp.code}")
+        repeat(apiKeys.size) {
+            val keyIndex = nextKeyIndex
+            nextKeyIndex = (nextKeyIndex + 1) % apiKeys.size
+            if (keyIndex in exhaustedKeyIndices) return@repeat
+
+            throttle.acquire()
+            val req = Request.Builder()
+                .url("$endpoint?key=${apiKeys[keyIndex]}")
+                .post(body.toRequestBody("application/json".toMediaType()))
+                .build()
+
+            val started = System.currentTimeMillis()
+            val verdict = try {
+                http.newCall(req).execute().use { resp ->
+                    val respBody = resp.body?.string().orEmpty()
+                    val latency = System.currentTimeMillis() - started
+                    if (resp.isSuccessful) {
+                        cache.put(key, respBody)
+                        parseClassifyVerdict(id, respBody, latency)
+                    } else {
+                        Verdict(id, null, null, "", null, latency, respBody, "http ${resp.code}")
+                    }
                 }
-                cache.put(key, respBody)
-                parseClassifyVerdict(id, respBody, latency)
+            } catch (e: Exception) {
+                Verdict(id, null, null, "", null, System.currentTimeMillis() - started, "", "net: ${e.javaClass.simpleName}")
             }
-        } catch (e: Exception) {
-            Verdict(id, null, null, "", null, System.currentTimeMillis() - started, "", "net: ${e.javaClass.simpleName}")
+
+            lastVerdict = verdict
+            if (verdict.error == "http 429") {
+                exhaustedKeyIndices += keyIndex
+                // fall through to the next key in this repeat loop
+            } else {
+                return verdict  // success or a genuine non-429 failure — don't rotate keys for it
+            }
         }
+        return lastVerdict ?: Verdict(id, null, null, "", null, 0, "", "http 429")  // every key exhausted
     }
 
     private fun buildBody(transcript: String): String = buildJsonObject {

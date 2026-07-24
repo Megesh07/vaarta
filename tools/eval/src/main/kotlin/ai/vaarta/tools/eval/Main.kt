@@ -5,8 +5,9 @@ import java.io.File
 /** Runs every configured judge over the case set, writes report.md + report.csv.
  *  Key + paths come from system properties (set by the runBench Gradle task). */
 fun main() {
-    val apiKey = System.getProperty("gemini.key").orEmpty()
-    require(apiKey.isNotBlank()) { "gemini.key is blank — set GEMINI_API_KEY in secrets.properties" }
+    val apiKeys = System.getProperty("gemini.keys").orEmpty()
+        .split(",").map { it.trim() }.filter { it.isNotBlank() }
+    require(apiKeys.isNotEmpty()) { "gemini.keys is blank — set GEMINI_API_KEY in secrets.properties" }
 
     val casesText = System.getProperty("cases.file")
         ?.let { File(it).readText() }
@@ -18,12 +19,12 @@ fun main() {
 
     // 15 RPM free tier -> 4000 ms min interval (comfortably under the ceiling). (spec §10)
     val judge = GeminiClassifyJudge(
-        apiKey = apiKey,
+        apiKeys = apiKeys,
         throttle = Throttle(minIntervalMs = 4000),
         cache = ResponseCache(cacheDir),
     )
 
-    println("Running ${judge.id} over ${cases.size} cases...")
+    println("Running ${judge.id} over ${cases.size} cases with ${apiKeys.size} key(s)...")
     val pairs = cases.map { c ->
         val v = judge.assess(c)
         println("  ${c.id}: scam=${v.isScam} concern=${v.concern} variant='${v.variant}' ${v.latencyMs}ms ${v.error ?: ""}")

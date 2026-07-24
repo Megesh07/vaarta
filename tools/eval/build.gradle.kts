@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.okhttp.mockwebserver)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
@@ -27,10 +28,19 @@ tasks.test {
     useJUnitPlatform()
 }
 
-val geminiKey: String = Properties().apply {
+// One or more free-tier keys (GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3, ...) — each is a
+// separate AI Studio project with its own independent 20-requests/day/model quota, round-robined by
+// GeminiClassifyJudge so the benchmark isn't bottlenecked by a single key's daily cap.
+val geminiKeys: List<String> = Properties().apply {
     val f = rootProject.file("secrets.properties")
     if (f.exists()) f.inputStream().use { load(it) }
-}.getProperty("GEMINI_API_KEY", "")
+}.let { props ->
+    props.stringPropertyNames()
+        .filter { it == "GEMINI_API_KEY" || it.matches(Regex("GEMINI_API_KEY_\\d+")) }
+        .sorted()
+        .map { props.getProperty(it) }
+        .filter { it.isNotBlank() }
+}
 
 tasks.register<JavaExec>("runBench") {
     group = "verification"
@@ -41,6 +51,6 @@ tasks.register<JavaExec>("runBench") {
     // paths ("tools/eval/.cache", "tools/eval/out") are repo-root-relative, so pin it explicitly
     // — otherwise output lands nested at tools/eval/tools/eval/out.
     workingDir = rootProject.projectDir
-    systemProperty("gemini.key", geminiKey)
+    systemProperty("gemini.keys", geminiKeys.joinToString(","))
     project.findProperty("casesFile")?.let { systemProperty("cases.file", it) }
 }
