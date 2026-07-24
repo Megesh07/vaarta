@@ -339,7 +339,7 @@ object GeminiClient {
         }
     }
 
-    private fun buildClassifyRequestBody(callerContext: String): String = buildJsonObject {
+    internal fun buildClassifyRequestBody(callerContext: String): String = buildJsonObject {
         putJsonObject("system_instruction") {
             putJsonArray("parts") { addJsonObject { put("text", GroundedClassifyPrompt.INSTRUCTION) } }
         }
@@ -361,6 +361,12 @@ object GeminiClient {
             // for one grounded sentence before the JSON (which is what makes Gemini attach citation
             // chunks) — 300 truncated the JSON mid-object (probed 2026-07-08).
             put("maxOutputTokens", 1024)
+            // OFF, matching every other call site (ADR-0002): without this, the model's internal
+            // "thinking" tokens share the same maxOutputTokens budget and can consume all of it
+            // before the mandatory trailing JSON block — measured directly via the tools:eval
+            // harness (2026-07-24): thoughtsTokenCount alone hit 1235 in one real response,
+            // already over the 1024 cap, so classify() silently returned null for that call.
+            putJsonObject("thinkingConfig") { put("thinkingBudget", 0) }
         }
     }.toString()
 

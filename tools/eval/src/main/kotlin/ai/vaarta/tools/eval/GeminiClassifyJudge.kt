@@ -113,8 +113,12 @@ class GeminiClassifyJudge(
                     val respBody = resp.body?.string().orEmpty()
                     val latency = System.currentTimeMillis() - started
                     if (resp.isSuccessful) {
-                        cache.put(key, respBody)
-                        parseClassifyVerdict(id, respBody, latency)
+                        val parsed = parseClassifyVerdict(id, respBody, latency)
+                        // Only cache a genuinely usable answer — caching an unparseable body would
+                        // permanently poison this case (a future run replays the same broken text
+                        // forever instead of getting a fresh, possibly-fixed-by-config generation).
+                        if (parsed.error == null) cache.put(key, respBody)
+                        parsed
                     } else {
                         Verdict(id, null, null, "", null, latency, respBody, "http ${resp.code}")
                     }
@@ -150,6 +154,11 @@ class GeminiClassifyJudge(
         putJsonObject("generationConfig") {
             put("temperature", 0.2)
             put("maxOutputTokens", 1024)
+            // OFF: without this, the model's internal "thinking" tokens can consume the whole
+            // maxOutputTokens budget before it ever reaches the mandatory trailing JSON block —
+            // measured directly (2026-07-24): thoughtsTokenCount alone hit 1235 in one real
+            // response, exceeding the 1024 cap and leaving zero room for the parseable footer.
+            putJsonObject("thinkingConfig") { put("thinkingBudget", 0) }
         }
     }.toString()
 }

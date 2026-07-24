@@ -1,5 +1,9 @@
 package ai.vaarta.tools.eval
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
@@ -19,6 +23,10 @@ class GeminiClassifyJudgeTest {
         """{"candidates":[{"content":{"parts":[{"text":"Recent advisories describe CBI calls.\n{\"scamType\":\"digital-arrest\",\"concern\":\"SCAM_PATTERN\",\"benign\":false}"}]}}]}"""
     private val quotaExceededBody =
         """{"error":{"code":429,"status":"RESOURCE_EXHAUSTED","message":"quota exceeded"}}"""
+    // Real shape captured 2026-07-24: STOP with no {...} anywhere — the model's "thinking" ate the
+    // whole output budget before ever reaching the mandatory JSON footer.
+    private val noJsonFooterBody =
+        """{"candidates":[{"content":{"parts":[{"text":"Recent advisories describe CBI calls demanding transfers."}],"role":"model"},"finishReason":"STOP"}]}"""
 
     @BeforeEach
     fun start() = server.start()
@@ -107,5 +115,34 @@ class GeminiClassifyJudgeTest {
 
         assertTrue(v.error == null && v.isScam == true)
         assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `outgoing request disables thinking so the JSON footer is never crowded out`(@TempDir tmp: File) {
+        server.enqueue(MockResponse().setResponseCode(200).setBody(cannedScamBody))
+
+        judge(listOf("only-key"), tmp).assess(case("c-1"))
+
+        val sentBody = server.takeRequest().body.readUtf8()
+        val config = Json.parseToJsonElement(sentBody).jsonObject["generationConfig"]!!.jsonObject
+        assertEquals(0, config["thinkingConfig"]!!.jsonObject["thinkingBudget"]!!.jsonPrimitive.int)
+    }
+
+    @Test
+    fun `a 200 with no parseable JSON footer is never cached, so it can be retried later`(@TempDir tmp: File) {
+        server.enqueue(MockResponse().setResponseCode(200).setBody(noJsonFooterBody))
+
+        val cacheDir = tmp
+        val v = judge(listOf("only-key"), cacheDir).assess(case("c-1"))
+
+        assertTrue(v.error?.startsWith("parse:") == true)
+        assertNull(v.isScam)
+        val key = cacheKey(
+            "gemini-classify:gemini-2.5-flash",
+            "grounded-classify-v1:" + promptFingerprint(ai.vaarta.core.reasoning.GroundedClassifyPrompt.INSTRUCTION),
+            "c-1",
+            "Caller: this is a test transcript.",
+        )
+        assertNull(ResponseCache(cacheDir).get(key))  // never poisons the cache with a broken body
     }
 }
