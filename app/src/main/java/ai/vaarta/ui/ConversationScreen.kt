@@ -4,6 +4,7 @@ import ai.vaarta.ChatThread
 import ai.vaarta.R
 import ai.vaarta.StatusBanner
 import ai.vaarta.ai.ChatAttachment
+import ai.vaarta.ai.GeminiClient
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.i18n.AppLanguage
@@ -12,12 +13,13 @@ import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import ai.vaarta.ui.theme.vaartaPressable
-import android.app.Activity
-import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
 import android.net.Uri
-import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,13 +65,14 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 private val CHAT_STARTERS = listOf(R.string.chat_starter_1, R.string.chat_starter_2, R.string.chat_starter_3)
 private val ARTICLE_STARTERS = listOf(R.string.chat_article_starter_1, R.string.chat_article_starter_2, R.string.chat_article_starter_3)
 
 /**
  * A free-form "Ask VAARTA" conversation (v2, spec §6.7) — a ChatGPT-style chat with a multimodal
- * composer: type, speak (device speech-to-text), or attach a screenshot or a call clip. Full-screen
+ * composer: type, speak (API speech-to-text), or attach a screenshot or a call clip. Full-screen
  * sub-screen: back bar, the shared [ChatThread], pending-attachment chips, and the composer. AI
  * answers render through [MarkdownText] inside the thread, so no raw markup ever shows.
  */
@@ -96,6 +99,10 @@ fun ConversationScreen(
     var input by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<List<ChatAttachment>>(emptyList()) }
     var showAttachSheet by remember { mutableStateOf(false) }
+    var voiceRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
+    var voiceFile by remember { mutableStateOf<File?>(null) }
+    var isRecordingVoice by remember { mutableStateOf(false) }
+    var isTranscribingVoice by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
 
     LaunchedEffect(turns.size, sending) { scroll.animateScrollTo(scroll.maxValue) }
@@ -114,26 +121,57 @@ fun ConversationScreen(
 
     val pendingPhotoLabel = stringResource(R.string.chat_pending_photo)
     val pendingAudioLabel = stringResource(R.string.chat_pending_audio)
-    val speechPrompt = stringResource(R.string.chat_speech_prompt)
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         attach(uri, pendingPhotoLabel, "image/jpeg")
     }
     val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         attach(uri, pendingAudioLabel, "audio/mpeg")
     }
-    val voice = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val said = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            if (!said.isNullOrBlank()) input = if (input.isBlank()) said else "$input $said"
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            startVoiceRecording(ctx.cacheDir) { recorder, file ->
+                voiceRecorder = recorder
+                voiceFile = file
+                isRecordingVoice = true
+            }
         }
     }
+
     fun startVoice() {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, AppLanguage.current().speechLocaleTag())
-            putExtra(RecognizerIntent.EXTRA_PROMPT, speechPrompt)
+        if (isTranscribingVoice) return
+        if (isRecordingVoice) {
+            val recorder = voiceRecorder ?: return
+            val file = voiceFile ?: return
+            isRecordingVoice = false
+            voiceRecorder = null
+            voiceFile = null
+            runCatching { recorder.stop() }
+            recorder.release()
+            isTranscribingVoice = true
+            scope.launch {
+                val said = withContext(Dispatchers.IO) {
+                    val bytes = runCatching { file.readBytes() }.getOrNull() ?: ByteArray(0)
+                    runCatching { file.delete() }
+                    GeminiClient.transcribeAudio(
+                        bytes = bytes,
+                        mimeType = "audio/mp4",
+                        languageHint = AppLanguage.current().speechLocaleTag(),
+                    )
+                }
+                if (!said.isNullOrBlank()) input = if (input.isBlank()) said else "$input $said"
+                isTranscribingVoice = false
+            }
+            return
         }
-        runCatching { voice.launch(intent) }
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startVoiceRecording(ctx.cacheDir) { recorder, file ->
+                voiceRecorder = recorder
+                voiceFile = file
+                isRecordingVoice = true
+            }
+        } else {
+            micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
     }
 
     fun submit() {
@@ -299,7 +337,7 @@ fun ConversationScreen(
                             )
                             VaartaIcon(
                                 R.drawable.ic_mic, contentDescription = stringResource(R.string.chat_mic_a11y), tint = c.muted, size = 22.dp,
-                                modifier = Modifier.vaartaPressable({ startVoice() }).padding(8.dp),
+                                modifier = Modifier.vaartaPressable({ startVoice() }, enabled = !sending).padding(8.dp),
                             )
                             VaartaIcon(
                                 R.drawable.ic_plus, contentDescription = stringResource(R.string.chat_attach_a11y), tint = c.muted, size = 22.dp,
@@ -385,4 +423,18 @@ private fun AttachRow(icon: Int, text: String, onClick: () -> Unit) {
         VaartaIcon(icon, contentDescription = null, tint = c.indigo, size = 22.dp)
         Text(text, style = MaterialTheme.typography.titleMedium, color = c.ink)
     }
+}
+
+/** Starts an in-app mic recording for API-based speech-to-text. */
+private fun startVoiceRecording(cacheDir: File, onStarted: (MediaRecorder, File) -> Unit) {
+    val file = File.createTempFile("vaarta-voice-", ".m4a", cacheDir)
+    val recorder = MediaRecorder().apply {
+        setAudioSource(MediaRecorder.AudioSource.MIC)
+        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        setOutputFile(file.absolutePath)
+        prepare()
+        start()
+    }
+    onStarted(recorder, file)
 }
