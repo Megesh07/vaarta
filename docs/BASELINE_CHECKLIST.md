@@ -5,8 +5,8 @@ observed; it does not certify the app for production or prove behavior outside t
 
 ## Local evidence (2026-10-11)
 
-The verified `expert-brain-eval` candidate, based on revision `56f5be3` and including the current
-working-tree changes, completed these checks on Windows with JDK 17 and Android SDK 35:
+The verified `expert-brain-eval` source at revision `eb37f1d` completed these checks on Windows with
+JDK 17 and Android SDK 35:
 
 - [x] `gradlew.bat clean test lintDebug :app:assembleDebug` — build succeeded.
 - [x] JVM test reports: 320 tests, 0 failures, 0 errors, 4 skipped.
@@ -16,7 +16,7 @@ working-tree changes, completed these checks on Windows with JDK 17 and Android 
 - [x] Gradle 8.11.1 distribution checksum configured; wrapper JAR checksum matches the official
   Gradle reference.
 
-This is local evidence for the tested candidate, not a device/release certification. GitHub Actions,
+This is local evidence for that source revision, not a device/release certification. GitHub Actions,
 a real device/emulator run, and remote branch protection have not yet been verified.
 
 ## Local baseline
