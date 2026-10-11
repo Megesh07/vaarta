@@ -49,3 +49,11 @@ tools/eval/out/
 /SECURITY.md
 /.superpowers/
 /.claude/
+
+# Local Codex/agent working files and generated review artifacts
+/.codex-*/
+/.codex-*.log
+/output/
+/tmp/
+/*.pdf
+/*.docx
