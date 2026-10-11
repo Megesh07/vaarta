@@ -60,10 +60,12 @@ class GeminiClassifyJudgeTest {
         assertEquals(true, v.isScam)
         assertNull(v.error)
         assertEquals(2, server.requestCount)
-        val firstKey = server.takeRequest().requestUrl!!.queryParameter("key")
-        val secondKey = server.takeRequest().requestUrl!!.queryParameter("key")
-        assertEquals("key-1", firstKey)
-        assertEquals("key-2", secondKey)
+        val firstRequest = server.takeRequest()
+        val secondRequest = server.takeRequest()
+        assertEquals("key-1", firstRequest.getHeader("x-goog-api-key"))
+        assertEquals("key-2", secondRequest.getHeader("x-goog-api-key"))
+        assertNull(firstRequest.requestUrl!!.queryParameter("key"))
+        assertNull(secondRequest.requestUrl!!.queryParameter("key"))
     }
 
     @Test
@@ -92,8 +94,9 @@ class GeminiClassifyJudgeTest {
         assertEquals(true, v2.isScam)
         assertEquals(1, server.requestCount - before)  // no wasted retry against the known-dead key-1
         server.takeRequest(); server.takeRequest()
-        val thirdRequestKey = server.takeRequest().requestUrl!!.queryParameter("key")
-        assertEquals("key-2", thirdRequestKey)
+        val thirdRequest = server.takeRequest()
+        assertEquals("key-2", thirdRequest.getHeader("x-goog-api-key"))
+        assertNull(thirdRequest.requestUrl!!.queryParameter("key"))
     }
 
     @Test

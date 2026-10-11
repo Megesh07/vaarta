@@ -103,7 +103,8 @@ class GeminiClassifyJudge(
 
             throttle.acquire()
             val req = Request.Builder()
-                .url("$endpoint?key=${apiKeys[keyIndex]}")
+                .url(endpoint)
+                .header("x-goog-api-key", apiKeys[keyIndex])
                 .post(body.toRequestBody("application/json".toMediaType()))
                 .build()
 

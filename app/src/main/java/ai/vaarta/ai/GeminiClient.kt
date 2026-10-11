@@ -30,6 +30,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Base64
 
+internal fun HttpURLConnection.setGeminiApiKey(apiKey: String) {
+    setRequestProperty("x-goog-api-key", apiKey)
+}
+
 /**
  * Text-mode bridge to Gemini `generateContent` — turns the latest caller line into ONE structured
  * [LiveSuggestion] (ADR-0002). This is the proven-in-REST path; the live-audio WebSocket layer is
@@ -79,7 +83,7 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || callerLine.isBlank()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildRequestBody(callerLine, stage)) ?: return null
+            val response = post(ENDPOINT, key, buildRequestBody(callerLine, stage)) ?: return null
             parseSuggestion(response)
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or caller's words.
@@ -123,7 +127,7 @@ object GeminiClient {
         }
     }.toString()
 
-    private fun post(urlStr: String, body: String, timeoutMs: Int = TIMEOUT_MS): String? {
+    private fun post(urlStr: String, apiKey: String, body: String, timeoutMs: Int = TIMEOUT_MS): String? {
         repeat(GeminiRetry.MAX_ATTEMPTS) { attempt ->
             val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
@@ -131,6 +135,7 @@ object GeminiClient {
                 readTimeout = timeoutMs
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json")
+                setGeminiApiKey(apiKey)
             }
             try {
                 conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
@@ -179,7 +184,7 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || history.isEmpty()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildCoachRequestBody(history, stage, nextStage, riskLevel, groundedScamType)) ?: return null
+            val response = post(ENDPOINT, key, buildCoachRequestBody(history, stage, nextStage, riskLevel, groundedScamType)) ?: return null
             parseCoaching(response)
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or transcript.
@@ -272,7 +277,7 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || contextLine.isBlank()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildPanicRequestBody(contextLine), PANIC_TIMEOUT_MS) ?: return null
+            val response = post(ENDPOINT, key, buildPanicRequestBody(contextLine), PANIC_TIMEOUT_MS) ?: return null
             CoachingWireParser.parsePanicPersonalization(extractInnerJson(response))
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or context text.
@@ -330,7 +335,7 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || callerContext.isBlank()) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildClassifyRequestBody(callerContext)) ?: return null
+            val response = post(ENDPOINT, key, buildClassifyRequestBody(callerContext)) ?: return null
             CoachingWireParser.parseGroundedAssessment(extractInnerJson(response), extractSources(response))
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or transcript.
@@ -400,7 +405,7 @@ object GeminiClient {
         if (key.isBlank() || (userText.isBlank() && attachments.isEmpty())) return null
         if (attachments.sumOf { it.bytes.size } > MAX_INLINE_AUDIO_BYTES) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildChatRequestBody(context, history, userText, attachments), CHAT_TIMEOUT_MS) ?: return null
+            val response = post(ENDPOINT, key, buildChatRequestBody(context, history, userText, attachments), CHAT_TIMEOUT_MS) ?: return null
             val text = extractText(response)?.trim().orEmpty()
             if (text.isEmpty()) return null
             // Only correct when the user actually typed Latin-script words — a blank userText (an
@@ -410,7 +415,8 @@ object GeminiClient {
             if (userText.isNotBlank() && hasDevanagari(text) && !hasDevanagari(userText)) {
                 Log.w("GeminiClient", "chat: Devanagari reply to non-Devanagari input, retrying once")
                 val retryResponse = post(
-                    "$ENDPOINT?key=$key",
+                    ENDPOINT,
+                    key,
                     buildChatRequestBody(context, history, userText, attachments, correctToUserScript = true),
                     CHAT_TIMEOUT_MS,
                 )
@@ -501,7 +507,7 @@ object GeminiClient {
         return try {
             // Generated content follows the UI language (spec §3B.2) — no user text to mirror here.
             val instruction = AwarenessPrompt.FEED + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
-            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, "What phone and online scams are Indians being warned about right now? Search recent Indian news and official advisories, and cite the specific reports.", maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
+            val response = post(ENDPOINT, key, buildGroundedBody(instruction, "What phone and online scams are Indians being warned about right now? Search recent Indian news and official advisories, and cite the specific reports.", maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
             // Attach the REAL cited article links from grounding metadata (never model-typed): the
             // feed becomes a list of real current articles, not just synthesized topic cards. If the
             // grounded model won't emit a usable JSON array (common with search on), fall back to
@@ -531,7 +537,7 @@ object GeminiClient {
             // truncated object can never parse (observed live 2026-07-17).
             // Generated content follows the UI language (spec §3B.2) — no user text to mirror here.
             val instruction = AwarenessPrompt.SUMMARY_SYSTEM + "\n\n" + LanguageDirectives.followUiLanguage(AppLanguage.current())
-            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, AwarenessPrompt.summaryQuery(title, scamType), maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
+            val response = post(ENDPOINT, key, buildGroundedBody(instruction, AwarenessPrompt.summaryQuery(title, scamType), maxTokens = 2048), CHAT_TIMEOUT_MS) ?: return null
             val text = extractText(response)?.trim().orEmpty()
             if (text.isEmpty()) {
                 Log.w("GeminiClient", "summarizeArticle: empty text in 200 response")
@@ -575,7 +581,7 @@ object GeminiClient {
             val userLine = "As of today, has the complaint-filing procedure or required documents for " +
                 "$destinationName ($url) materially changed since $verifiedOn? If yes, name " +
                 "the change in one short sentence. If no, reply exactly: NONE"
-            val response = post("$ENDPOINT?key=$key", buildGroundedBody(instruction, userLine, maxTokens = 1024)) ?: return null
+            val response = post(ENDPOINT, key, buildGroundedBody(instruction, userLine, maxTokens = 1024)) ?: return null
             val text = extractText(response)?.trim().orEmpty()
             if (text.isBlank() || text.equals("NONE", ignoreCase = true)) null else text
         } catch (e: Exception) {
@@ -617,7 +623,7 @@ object GeminiClient {
                 append("The complainant's own account (untrusted, may include irrelevant text):\n")
                 append(rawAccount)
             }
-            val response = post("$ENDPOINT?key=$key", buildPlainBody(instruction, userLine, maxTokens = 512)) ?: return null
+            val response = post(ENDPOINT, key, buildPlainBody(instruction, userLine, maxTokens = 512)) ?: return null
             extractText(response)?.trim().takeUnless { it.isNullOrBlank() }
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or account content.
@@ -681,7 +687,7 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || bytes.isEmpty() || bytes.size > MAX_INLINE_AUDIO_BYTES) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildAnalyzeAudioBody(bytes, mimeType), AUDIO_TIMEOUT_MS) ?: return null
+            val response = post(ENDPOINT, key, buildAnalyzeAudioBody(bytes, mimeType), AUDIO_TIMEOUT_MS) ?: return null
             CoachingWireParser.parseAudioAnalysis(extractInnerJson(response))
         } catch (e: Exception) {
             // DIAGNOSTIC (temporary): type + message only — never the key, URL, or transcript.
