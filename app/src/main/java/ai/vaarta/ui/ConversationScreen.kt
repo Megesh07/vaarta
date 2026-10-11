@@ -4,6 +4,7 @@ import ai.vaarta.ChatThread
 import ai.vaarta.R
 import ai.vaarta.StatusBanner
 import ai.vaarta.ai.ChatAttachment
+import ai.vaarta.ai.GeminiClient
 import ai.vaarta.conversation.ConversationViewModel
 import ai.vaarta.core.complaint.ComplaintDraft
 import ai.vaarta.i18n.AppLanguage
@@ -12,12 +13,14 @@ import ai.vaarta.ui.components.VaartaBackBar
 import ai.vaarta.ui.theme.VSpace
 import ai.vaarta.ui.theme.VaartaTheme
 import ai.vaarta.ui.theme.vaartaPressable
-import android.app.Activity
-import android.content.Intent
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
 import android.net.Uri
-import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +40,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -44,14 +48,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,16 +67,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 private val CHAT_STARTERS = listOf(R.string.chat_starter_1, R.string.chat_starter_2, R.string.chat_starter_3)
 private val ARTICLE_STARTERS = listOf(R.string.chat_article_starter_1, R.string.chat_article_starter_2, R.string.chat_article_starter_3)
 
+private enum class VoiceInputState { IDLE, RECORDING, TRANSCRIBING, FAILED }
+
 /**
  * A free-form "Ask VAARTA" conversation (v2, spec §6.7) — a ChatGPT-style chat with a multimodal
- * composer: type, speak (device speech-to-text), or attach a screenshot or a call clip. Full-screen
+ * composer: type, speak (API speech-to-text), or attach a screenshot or a call clip. Full-screen
  * sub-screen: back bar, the shared [ChatThread], pending-attachment chips, and the composer. AI
  * answers render through [MarkdownText] inside the thread, so no raw markup ever shows.
  */
@@ -96,7 +109,38 @@ fun ConversationScreen(
     var input by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf<List<ChatAttachment>>(emptyList()) }
     var showAttachSheet by remember { mutableStateOf(false) }
+    var showVoiceDisclosure by remember { mutableStateOf(false) }
+    var voiceRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
+    var voiceFile by remember { mutableStateOf<File?>(null) }
+    var voiceInputState by remember { mutableStateOf(VoiceInputState.IDLE) }
+    val currentVoiceRecorder by rememberUpdatedState(voiceRecorder)
+    val currentVoiceFile by rememberUpdatedState(voiceFile)
+    val lifecycleOwner = LocalLifecycleOwner.current
     val scroll = rememberScrollState()
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                currentVoiceRecorder?.let { recorder ->
+                    runCatching { recorder.stop() }
+                    runCatching { recorder.release() }
+                }
+                currentVoiceFile?.delete()
+                voiceRecorder = null
+                voiceFile = null
+                if (voiceInputState == VoiceInputState.RECORDING) voiceInputState = VoiceInputState.FAILED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            currentVoiceRecorder?.let { recorder ->
+                runCatching { recorder.stop() }
+                runCatching { recorder.release() }
+            }
+            currentVoiceFile?.delete()
+        }
+    }
 
     LaunchedEffect(turns.size, sending) { scroll.animateScrollTo(scroll.maxValue) }
 
@@ -114,26 +158,73 @@ fun ConversationScreen(
 
     val pendingPhotoLabel = stringResource(R.string.chat_pending_photo)
     val pendingAudioLabel = stringResource(R.string.chat_pending_audio)
-    val speechPrompt = stringResource(R.string.chat_speech_prompt)
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         attach(uri, pendingPhotoLabel, "image/jpeg")
     }
     val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         attach(uri, pendingAudioLabel, "audio/mpeg")
     }
-    val voice = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val said = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            if (!said.isNullOrBlank()) input = if (input.isBlank()) said else "$input $said"
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            val started = startVoiceRecording(ctx, ctx.cacheDir) { recorder, file ->
+                voiceRecorder = recorder
+                voiceFile = file
+                voiceInputState = VoiceInputState.RECORDING
+            }
+            if (!started) voiceInputState = VoiceInputState.FAILED
+        } else {
+            voiceInputState = VoiceInputState.FAILED
         }
     }
-    fun startVoice() {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, AppLanguage.current().speechLocaleTag())
-            putExtra(RecognizerIntent.EXTRA_PROMPT, speechPrompt)
+
+    fun beginVoiceRecording() {
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            val started = startVoiceRecording(ctx, ctx.cacheDir) { recorder, file ->
+                voiceRecorder = recorder
+                voiceFile = file
+                voiceInputState = VoiceInputState.RECORDING
+            }
+            if (!started) voiceInputState = VoiceInputState.FAILED
+        } else {
+            micPermission.launch(Manifest.permission.RECORD_AUDIO)
         }
-        runCatching { voice.launch(intent) }
+    }
+
+    fun startVoice() {
+        if (voiceInputState == VoiceInputState.TRANSCRIBING) return
+        if (voiceInputState == VoiceInputState.RECORDING) {
+            val recorder = voiceRecorder ?: run { voiceInputState = VoiceInputState.FAILED; return }
+            val file = voiceFile ?: run { voiceInputState = VoiceInputState.FAILED; return }
+            voiceRecorder = null
+            voiceFile = null
+            val recorded = runCatching { recorder.stop() }.isSuccess
+            runCatching { recorder.release() }
+            if (!recorded) {
+                file.delete()
+                voiceInputState = VoiceInputState.FAILED
+                return
+            }
+            voiceInputState = VoiceInputState.TRANSCRIBING
+            scope.launch {
+                val said = withContext(Dispatchers.IO) {
+                    try {
+                        val bytes = runCatching { file.readBytes() }.getOrNull() ?: ByteArray(0)
+                        file.delete()
+                        GeminiClient.transcribeAudio(
+                            bytes = bytes,
+                            mimeType = "audio/mp4",
+                            languageHint = AppLanguage.current().speechLocaleTag(),
+                        )
+                    } finally {
+                        file.delete()
+                    }
+                }
+                if (!said.isNullOrBlank()) input = if (input.isBlank()) said else "$input $said"
+                voiceInputState = if (said.isNullOrBlank()) VoiceInputState.FAILED else VoiceInputState.IDLE
+            }
+            return
+        }
+        showVoiceDisclosure = true
     }
 
     fun submit() {
@@ -256,6 +347,27 @@ fun ConversationScreen(
             }
 
             Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = VSpace.md, vertical = VSpace.sm)) {
+                when (voiceInputState) {
+                    VoiceInputState.RECORDING -> Text(
+                        stringResource(R.string.chat_speech_prompt),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.indigoInk,
+                        modifier = Modifier.padding(bottom = VSpace.xs),
+                    )
+                    VoiceInputState.TRANSCRIBING -> Text(
+                        stringResource(R.string.chat_voice_transcribing),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.muted,
+                        modifier = Modifier.padding(bottom = VSpace.xs),
+                    )
+                    VoiceInputState.FAILED -> Text(
+                        stringResource(R.string.chat_voice_failed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.scam,
+                        modifier = Modifier.padding(bottom = VSpace.xs),
+                    )
+                    VoiceInputState.IDLE -> Unit
+                }
                 // Pending attachment chips (removable).
                 if (pending.isNotEmpty()) {
                     Row(horizontalArrangement = Arrangement.spacedBy(VSpace.sm), modifier = Modifier.padding(bottom = VSpace.xs)) {
@@ -298,8 +410,17 @@ fun ConversationScreen(
                                 ),
                             )
                             VaartaIcon(
-                                R.drawable.ic_mic, contentDescription = stringResource(R.string.chat_mic_a11y), tint = c.muted, size = 22.dp,
-                                modifier = Modifier.vaartaPressable({ startVoice() }).padding(8.dp),
+                                R.drawable.ic_mic,
+                                contentDescription = stringResource(
+                                    if (voiceInputState == VoiceInputState.RECORDING) R.string.chat_mic_stop_a11y
+                                    else R.string.chat_mic_a11y,
+                                ),
+                                tint = if (voiceInputState == VoiceInputState.RECORDING) c.scam else c.muted,
+                                size = 22.dp,
+                                modifier = Modifier.vaartaPressable(
+                                    { startVoice() },
+                                    enabled = !sending && voiceInputState != VoiceInputState.TRANSCRIBING,
+                                ).padding(8.dp),
                             )
                             VaartaIcon(
                                 R.drawable.ic_plus, contentDescription = stringResource(R.string.chat_attach_a11y), tint = c.muted, size = 22.dp,
@@ -340,6 +461,27 @@ fun ConversationScreen(
                 }
             }
         }
+    }
+
+    if (showVoiceDisclosure) {
+        AlertDialog(
+            onDismissRequest = { showVoiceDisclosure = false },
+            title = { Text(stringResource(R.string.chat_voice_disclosure_title)) },
+            text = { Text(stringResource(R.string.chat_voice_disclosure_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showVoiceDisclosure = false
+                    beginVoiceRecording()
+                }) {
+                    Text(stringResource(R.string.chat_voice_disclosure_continue))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showVoiceDisclosure = false }) {
+                    Text(stringResource(R.string.chat_voice_disclosure_cancel))
+                }
+            },
+        )
     }
 }
 
@@ -384,5 +526,37 @@ private fun AttachRow(icon: Int, text: String, onClick: () -> Unit) {
     ) {
         VaartaIcon(icon, contentDescription = null, tint = c.indigo, size = 22.dp)
         Text(text, style = MaterialTheme.typography.titleMedium, color = c.ink)
+    }
+}
+
+/** Starts an in-app mic recording for API-based speech-to-text. */
+@Suppress("DEPRECATION") // Required for Android versions below API 31; API 31+ uses the Context constructor.
+private fun startVoiceRecording(context: Context, cacheDir: File, onStarted: (MediaRecorder, File) -> Unit): Boolean {
+    val file = runCatching { File.createTempFile("vaarta-voice-", ".m4a", cacheDir) }.getOrNull()
+        ?: return false
+    var recorder: MediaRecorder? = null
+    return try {
+        recorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            MediaRecorder(context)
+        } else {
+            MediaRecorder()
+        }
+        recorder.apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFile(file.absolutePath)
+            prepare()
+            start()
+        }
+        onStarted(recorder, file)
+        true
+    } catch (_: Exception) {
+        recorder?.let {
+            runCatching { it.stop() }
+            runCatching { it.release() }
+        }
+        file.delete()
+        false
     }
 }

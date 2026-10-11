@@ -97,7 +97,8 @@
     <string name="chat_attach_sheet_title">Attach</string>
     <string name="chat_attach_photo">Photo</string>
     <string name="chat_attach_audio">Audio clip</string>
-    <string name="chat_mic_a11y">Speak</string>
+    <string name="chat_mic_a11y">Record voice input; audio is sent to Google for transcription</string>
+    <string name="chat_mic_stop_a11y">Stop recording</string>
     <string name="chat_attach_a11y">Attach</string>
     <string name="chat_send_a11y">Send</string>
 
@@ -199,7 +200,13 @@
     <!-- Chat v2 remainder (ConversationScreen.kt). -->
     <string name="chat_pending_photo">📷 Photo</string>
     <string name="chat_pending_audio">🎧 Audio clip</string>
-    <string name="chat_speech_prompt">Speak your question</string>
+    <string name="chat_speech_prompt">Recording… Tap the mic to finish. Audio is sent to Google for transcription.</string>
+    <string name="chat_voice_transcribing">Transcribing your voice…</string>
+    <string name="chat_voice_failed">Voice input failed. Check microphone permission or network, then try again.</string>
+    <string name="chat_voice_disclosure_title">Voice input and privacy</string>
+    <string name="chat_voice_disclosure_body">After you tap Continue, VAARTA records microphone audio. When you stop, it sends the audio to Google for transcription. A temporary file is stored in app cache and deleted after processing. Do not record anything you do not want shared.</string>
+    <string name="chat_voice_disclosure_continue">Continue</string>
+    <string name="chat_voice_disclosure_cancel">Cancel</string>
     <string name="chat_about_call_title">About this call</string>
     <string name="chat_download_transcript">Download transcript</string>
     <string name="chat_report_this">Report this</string>

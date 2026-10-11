@@ -696,6 +696,50 @@ object GeminiClient {
         }
     }
 
+    /**
+     * Transcribes a short in-app voice note for the chat composer. This replaces Android's system
+     * speech recognizer, so tapping the mic does not launch Google Assistant/voice typing.
+     */
+    fun transcribeAudio(bytes: ByteArray, mimeType: String, languageHint: String): String? {
+        val key = BuildConfig.GEMINI_API_KEY
+        if (key.isBlank() || bytes.isEmpty() || bytes.size > MAX_INLINE_AUDIO_BYTES) return null
+        return try {
+            val response = post(ENDPOINT, key, buildTranscribeAudioBody(bytes, mimeType, languageHint), AUDIO_TIMEOUT_MS) ?: return null
+            extractText(response)?.trim()?.takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            Log.w("GeminiClient", "transcribeAudio failed: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+    }
+
+    private fun buildTranscribeAudioBody(bytes: ByteArray, mimeType: String, languageHint: String): String = buildJsonObject {
+        putJsonArray("contents") {
+            addJsonObject {
+                put("role", "user")
+                putJsonArray("parts") {
+                    addJsonObject {
+                        put(
+                            "text",
+                            "Transcribe this short voice input exactly. Language hint: $languageHint. " +
+                                "Return only the spoken words, with no explanation.",
+                        )
+                    }
+                    addJsonObject {
+                        putJsonObject("inline_data") {
+                            put("mime_type", mimeType)
+                            put("data", Base64.getEncoder().encodeToString(bytes))
+                        }
+                    }
+                }
+            }
+        }
+        putJsonObject("generationConfig") {
+            put("temperature", 0.0)
+            put("maxOutputTokens", 512)
+            putJsonObject("thinkingConfig") { put("thinkingBudget", 0) }
+        }
+    }.toString()
+
     private fun buildAnalyzeAudioBody(bytes: ByteArray, mimeType: String): String = buildJsonObject {
         putJsonObject("system_instruction") {
             putJsonArray("parts") { addJsonObject { put("text", AudioAnalyzePrompt.INSTRUCTION) } }

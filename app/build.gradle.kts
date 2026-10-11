@@ -13,15 +13,18 @@ val secretsFile = rootProject.file("secrets.properties")
 val secretsProps = Properties().apply {
     if (secretsFile.exists()) secretsFile.inputStream().use { load(it) }
 }
-val geminiApiKey: String = secretsProps.getProperty("GEMINI_API_KEY", "")
+fun Properties.secret(name: String): String =
+    getProperty(name) ?: getProperty("\uFEFF$name") ?: ""
+
+val geminiApiKey: String = secretsProps.secret("GEMINI_API_KEY")
 
 // Safe Browsing v4 (free, non-commercial tier) — same fail-closed contract as the Gemini key:
 // absent file/property -> empty string, and LinkChecker's Safe Browsing lookup is skipped (UNKNOWN).
-val safeBrowsingApiKey: String = secretsProps.getProperty("SAFE_BROWSING_API_KEY", "")
+val safeBrowsingApiKey: String = secretsProps.secret("SAFE_BROWSING_API_KEY")
 
 // URLhaus (abuse.ch) Auth-Key — same fail-closed contract: absent file/property -> empty string,
 // and LinkChecker's URLhaus lookup is skipped (UNKNOWN).
-val urlhausAuthKey: String = secretsProps.getProperty("URLHAUS_AUTH_KEY", "")
+val urlhausAuthKey: String = secretsProps.secret("URLHAUS_AUTH_KEY")
 
 android {
     namespace = "ai.vaarta"

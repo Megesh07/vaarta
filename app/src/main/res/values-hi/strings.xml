@@ -92,7 +92,8 @@
     <string name="chat_attach_sheet_title">अटैच करें</string>
     <string name="chat_attach_photo">फोटो</string>
     <string name="chat_attach_audio">ऑडियो क्लिप</string>
-    <string name="chat_mic_a11y">बोलें</string>
+    <string name="chat_mic_a11y">आवाज़ रिकॉर्ड करें; ट्रांसक्रिप्शन के लिए ऑडियो Google को भेजा जाएगा</string>
+    <string name="chat_mic_stop_a11y">रिकॉर्डिंग रोकें</string>
     <string name="chat_attach_a11y">अटैच करें</string>
     <string name="chat_send_a11y">भेजें</string>
 
@@ -202,7 +203,13 @@
     <!-- Chat v2 remainder -->
     <string name="chat_pending_photo">📷 फोटो</string>
     <string name="chat_pending_audio">🎧 ऑडियो क्लिप</string>
-    <string name="chat_speech_prompt">अपना सवाल बोलें</string>
+    <string name="chat_speech_prompt">रिकॉर्डिंग चालू है… रोकने के लिए माइक दबाएँ। ऑडियो ट्रांसक्रिप्शन के लिए Google को भेजा जाएगा।</string>
+    <string name="chat_voice_transcribing">आपकी आवाज़ का ट्रांसक्रिप्शन हो रहा है…</string>
+    <string name="chat_voice_failed">आवाज़ इनपुट विफल हुआ। माइक्रोफ़ोन अनुमति या नेटवर्क जाँचें और फिर प्रयास करें।</string>
+    <string name="chat_voice_disclosure_title">आवाज़ इनपुट और गोपनीयता</string>
+    <string name="chat_voice_disclosure_body">जारी रखें दबाने के बाद VAARTA माइक्रोफ़ोन से आवाज़ रिकॉर्ड करेगा। रिकॉर्डिंग रोकने पर ट्रांसक्रिप्शन के लिए ऑडियो Google को भेजा जाएगा। अस्थायी फ़ाइल ऐप कैश में रखी जाएगी और प्रक्रिया के बाद मिटा दी जाएगी। ऐसी कोई बात रिकॉर्ड न करें जिसे आप साझा नहीं करना चाहते।</string>
+    <string name="chat_voice_disclosure_continue">जारी रखें</string>
+    <string name="chat_voice_disclosure_cancel">रद्द करें</string>
     <string name="chat_about_call_title">इस कॉल के बारे में</string>
     <string name="chat_download_transcript">ट्रांसक्रिप्ट डाउनलोड करें</string>
     <string name="chat_report_this">इसकी रिपोर्ट करें</string>
