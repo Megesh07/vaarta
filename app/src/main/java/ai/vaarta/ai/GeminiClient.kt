@@ -704,7 +704,7 @@ object GeminiClient {
         val key = BuildConfig.GEMINI_API_KEY
         if (key.isBlank() || bytes.isEmpty() || bytes.size > MAX_INLINE_AUDIO_BYTES) return null
         return try {
-            val response = post("$ENDPOINT?key=$key", buildTranscribeAudioBody(bytes, mimeType, languageHint), AUDIO_TIMEOUT_MS) ?: return null
+            val response = post(ENDPOINT, key, buildTranscribeAudioBody(bytes, mimeType, languageHint), AUDIO_TIMEOUT_MS) ?: return null
             extractText(response)?.trim()?.takeIf { it.isNotBlank() }
         } catch (e: Exception) {
             Log.w("GeminiClient", "transcribeAudio failed: ${e.javaClass.simpleName}: ${e.message}")
