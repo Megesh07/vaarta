@@ -63,13 +63,14 @@ fun main() {
         }}
     """.trimIndent().replace("\n", "")
 
-    val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$key"
+    val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     val conn = (URL(url).openConnection() as HttpURLConnection).apply {
         requestMethod = "POST"
         connectTimeout = 60_000
         readTimeout = 60_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        setRequestProperty("x-goog-api-key", key)
     }
     val started = System.nanoTime()
     conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
