@@ -1,0 +1,2394 @@
+[
+  {
+    "id": "da-blatant-en-001",
+    "transcript": "Caller: Good morning, this is Inspector Rakesh Malhotra calling from CBI headquarters. A parcel booked in your name from Mumbai to Taiwan has been intercepted — it contains 200 grams of MDMA and five fake passports. Your Aadhaar number is linked to this consignment. You are under digital arrest until this is cleared. Do not disconnect this call, do not contact anyone including your family, and stay visible on video until our verification is complete.",
+    "language": "en",
+    "source": "REAL_DERIVED: composite of I4C 'digital arrest' advisory pattern (CBI/parcel-narcotics opener, isolation demand) — https://www.tribuneindia.com/news/india/beware-of-digital-arrests-indian-cyber-crime-coordination-centre-issues-fresh-advisory/",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-002",
+    "transcript": "Caller: Ma'am, I am calling from the Enforcement Directorate, Delhi office. A case has been registered against you under the Prevention of Money Laundering Act — your savings account has received funds from a hawala racket. This is a very serious matter. I am transferring this call to our senior officer who will conduct your digital arrest procedure over video. Please keep your camera on at all times and do not switch off your phone.",
+    "language": "en",
+    "source": "REAL_DERIVED: ED impersonation pattern cited in I4C/MHA advisories — https://vajiramandravi.com/current-affairs/digital-arrest-scams-ed-charge-sheet-i4c-advisory-to-protect-citizens/",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-003",
+    "transcript": "Caller: This is Customs Officer Ahuja from Mumbai International Airport. We have seized a package addressed to you containing illegal foreign currency and narcotics. Under Section 132 of the Customs Act, you are required to cooperate with a digital arrest procedure. I am connecting you now to a police officer over video call. You must not tell any family member about this call — this is a matter of national security and secrecy is mandatory.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, customs-impersonation variant described in general 2026 digital-arrest coverage",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-004",
+    "transcript": "Caller: Sir, this is regarding an RBI notice — your bank account has been flagged for suspicious transactions linked to a money laundering investigation in Hyderabad. As per RBI protocol you must complete a 'digital verification' with our investigation officer over video call right now, and you must transfer the balance in your account to a 'safe RBI holding account' so it cannot be misused during the probe. Refusal will result in immediate arrest.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, RBI-impersonation + 'safe account' transfer demand, a widely reported digital-arrest variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-005",
+    "transcript": "Caller: This is Sub-Inspector Verma, Cyber Crime Cell, Bengaluru. Your mobile SIM was used to send threatening messages to a central minister last week. This is treated as a terrorism-adjacent offence. I am putting you under digital arrest right now — stay on this video call, share your live location, and do not move from where you are sitting until our senior officer arrives on screen.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, SIM-misuse/terrorism-framing escalation variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-006",
+    "transcript": "Caller: This is a call from the office of the Chief Judicial Magistrate. An arrest warrant has been issued in your name for tax evasion under the Income Tax Act. I am showing you the warrant document on screen right now — you can see the court seal. To avoid immediate physical arrest, you must remain on this video call and pay the pending amount of 4,80,000 rupees to the account I am sending you within the next two hours.",
+    "language": "en",
+    "source": "REAL_DERIVED: fake court-warrant document shown on screen, an escalation tactic named in multiple I4C-linked news reports (e.g. legalserviceindia.com coverage)",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-007",
+    "transcript": "Caller: Good evening sir, TRAI head office calling. Your Aadhaar-linked mobile number has been used to activate nine SIM cards in Jammu and Kashmir, one of which was used in an anti-national activity. This is extremely serious. A cyber crime officer will now join this call and place you under digital arrest for the next few hours until your identity is cleared. Please do not end this call under any circumstances.",
+    "language": "en",
+    "source": "REAL_DERIVED: TRAI/SIM-fraud framing, a documented digital-arrest opener pattern — https://www.orfonline.org/expert-speak/digital-arrest-scams-and-the-limits-of-domestic-enforcement",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-008",
+    "transcript": "Caller: This is Narcotics Control Bureau. We have arrested a courier boy who confirms a package addressed to your residence contains 2 kilograms of charas. Your bank statements are being pulled right now to check for drug-money links. You will remain under digital arrest on this video call, camera on, until our team physically verifies your address in the next 3 hours. Do not leave your house.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, NCB-impersonation + confinement-threat variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-009",
+    "transcript": "Caller: Ma'am, this is the CBI Mumbai cyber cell. We have your Aadhaar and PAN details linked to a money-laundering ring run out of Dubai worth 40 crore rupees. A senior IPS officer is joining this call now over Skype. You are required to stay on video, share the OTP that will come to your phone for 'identity verification', and remain silent about this call to protect the ongoing investigation.",
+    "language": "en",
+    "source": "REAL_DERIVED: Aadhaar/PAN-linked-to-crime + OTP-under-'verification' framing, matches I4C advisory language",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-010",
+    "transcript": "Caller: Sir, I am calling from Delhi Police cyber crime cell regarding an FIR filed against you for cheating a company of 12 lakh rupees. Video call dekhiye — main aapko warrant dikha raha hoon [showing you the warrant]. Agar aap turant is call se disconnect karte hain toh aapko physically arrest kar liya jayega [if you disconnect this call you will be physically arrested]. Stay on the call and transfer the settlement amount now to close the case.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, code-switched Delhi-Police-impersonation opener with settlement-demand escalation",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-011",
+    "transcript": "Caller: This is Officer Priya Nair from the Cybercrime Investigation Wing. We have intercepted a courier from Nepal booked with your name and phone number — it contains fake currency notes worth 15 lakh rupees. This makes you a prime suspect in an economic offence. You are hereby placed under digital arrest — remain on video, do not contact any lawyer, and cooperate with our verification officer who will join shortly.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, fake-currency-courier variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-012",
+    "transcript": "Caller: Respected sir, this is a call from the Reserve Bank of India fraud monitoring cell. Your account has been used to launder proceeds from a Ponzi scheme. As part of RBI protocol, you must move to a video call immediately, keep your camera on, and transfer your entire savings to an 'RBI escrow account' for 24 hours so the funds cannot be seized by the fraud ring. This is standard procedure and completely reversible.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, RBI-impersonation + 'reversible escrow transfer' reassurance tactic. (Downgraded from REAL_DERIVED: the previously-cited rbl.bank.in URL did not hold up as a genuine citation on review; the underlying pattern is still a widely reported digital-arrest variant, but no specific verifiable source is claimed here.)",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-013",
+    "transcript": "Caller: This is Inspector Farooq from the Anti-Terrorism Squad. Your bank account received a transfer from a number under ATS surveillance related to a terror-funding case. I am required to place you under digital arrest for the next 6 hours. You must remain visible on this video call, and you must not inform your family — doing so will be treated as obstruction of a national security investigation.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, ATS/terror-funding escalation variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-014",
+    "transcript": "Caller: Good afternoon, this is a call from the office of the Commissioner of Police. Your identity documents were used to open a fraudulent company account that has cheated over 200 people. This is a cognizable, non-bailable offence. To prove your innocence, you must remain on this video call under digital arrest, and pay a refundable 'investigation bond' of 3 lakh rupees which will be returned once you are cleared.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'refundable investigation bond' variant, a commonly reported digital-arrest monetization tactic",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-015",
+    "transcript": "Caller: This is Sub-Inspector Kavita Rao. We have credible information that your Aadhaar was used to procure a fake passport for illegal immigration to the Gulf. A senior officer will now conduct your digital arrest interview on video. You are not permitted to end this call, mute your microphone, or leave the frame of the camera until the interview concludes.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, fake-passport/illegal-immigration escalation variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-016",
+    "transcript": "Caller: Sir, this is the CBI Economic Offences Wing. Your name has come up in a chargesheet related to a 200 crore rupee bank fraud case involving a shell company. I am connecting you to our senior investigating officer over video right now. You are under digital arrest — no calls, no messages to anyone, camera must remain on, until the officer confirms your statement has been recorded.",
+    "language": "en",
+    "source": "REAL_DERIVED: CBI Economic Offences Wing framing, cited in ED-charge-sheet-adjacent digital-arrest reporting — https://vajiramandravi.com/current-affairs/digital-arrest-scams-ed-charge-sheet-i4c-advisory-to-protect-citizens/",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-017",
+    "transcript": "Caller: This is a fraud alert call from your bank's nodal cyber officer, working jointly with the RBI and local police. Your account is the destination of laundered funds from a cryptocurrency scam. You must join a video call with our joint investigation team immediately, and until you are cleared you are under digital arrest — you cannot switch off your phone, and you cannot leave your home.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, joint bank+RBI+police 'task force' framing variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-018",
+    "transcript": "Caller: Hello, I am calling from the Directorate of Revenue Intelligence. A shipment under your name and Aadhaar number was seized at Chennai port containing counterfeit branded goods worth 60 lakh rupees. This is smuggling under the Customs Act. You are under digital arrest effective immediately — stay on camera, and our officer will explain the settlement amount required to close this case without a formal FIR.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, DRI/counterfeit-goods-smuggling variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-019",
+    "transcript": "Caller: Sir, this is Officer Deshmukh from the Special Task Force. Your elderly father's bank account was used two days ago to receive money from a cyber-fraud victim in Pune. He is now a suspect. To avoid his physical arrest today, you as the account nominee must complete a digital arrest video verification right now and transfer the disputed amount back through the link I am sending.",
+    "language": "en",
+    "source": "REAL_DERIVED: elderly-relative-targeted variant, matches the elderly-victim pattern widely reported in 2026 digital-arrest cases (e.g. the Mangaluru and Delhi elderly-victim cases) — https://www.newsonair.gov.in/delhi-police-busts-digital-arrest-scam-recovers-₹2-crore-duped-from-92-year-old",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-020",
+    "transcript": "Caller: This is the National Investigation Agency, cyber wing. Your WhatsApp number was found in a group chat that was planning a cyber-attack on a government portal. This is an extremely serious national security matter. I am placing you under digital arrest — camera on, no third party in the room, and you must answer only to the senior officer who will join in two minutes. Do not attempt to record this call.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, NIA/national-security escalation + 'no recording' control tactic",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-en-021",
+    "transcript": "Caller: Good morning, this call is from the Income Tax Department Investigation Wing. Our records show undisclosed foreign income of 85 lakh rupees linked to your PAN, routed through a Dubai-based shell company. A warrant for your arrest is ready to be executed today. To pause the process while we verify your explanation, you must join this video call under digital arrest and remain visible until instructed otherwise.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, Income Tax/undisclosed-foreign-income variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-subtle-en-001",
+    "transcript": "Caller: Hello, am I speaking with the account holder? This is a routine verification call from the bank's fraud prevention desk — nothing to worry about at this stage. We just noticed an unusual courier booked under your KYC details recently and want to rule out identity misuse before it becomes a bigger issue. Could you stay on the line for a couple of minutes while I connect you to our verification officer? It's much easier to sort this out now than later.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, calm 'routine verification' opener that is actually the softening stage of a digital-arrest script before escalation to isolation demands",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-002",
+    "transcript": "Caller: I'm calling on behalf of the cyber cell, purely as a courtesy — your number came up as a contact for someone flagged in an ongoing enquiry. It's likely nothing on your end, but we're required to do a quick video verification to close the file cleanly. It would help if you're somewhere private for the next few minutes so we don't have to redo this later.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, minimized-stakes opener that pre-frames isolation ('somewhere private') without naming arrest yet",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-003",
+    "transcript": "Caller: This is regarding your PAN card — it seems to have been used alongside another application somewhere, possibly a data entry error on our end, possibly something else. I don't want to alarm you, this happens sometimes. Just to be safe, can you confirm you're alone right now? Family members sometimes get worried unnecessarily before we've even confirmed there's an issue, so let's keep this between us until we know more.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, PAN-misuse opener with an early, softly-worded isolation nudge ('keep this between us') before any threat is stated",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-004",
+    "transcript": "Caller: Good afternoon. I'm following up on a case reference that came through our system with your registered mobile number attached. At this stage it's just a documentation mismatch we need to clear — nothing serious yet. Could you switch to video so I can share the reference number on screen? It's easier to explain visually than over voice.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, bureaucratic 'documentation mismatch' framing used to normalize the video-call transition before the arrest reveal",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-005",
+    "transcript": "Caller: Sir, I want to be upfront — this call is being made from a government helpline regarding a parcel-tracking mismatch linked to your address. In most cases this turns out to be nothing, a courier company error. We do need about ten minutes of your time on video to confirm a few details though, and I'd recommend doing it now rather than getting a follow-up notice later which can complicate things.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, reassurance-first + mild urgency nudge ('do it now rather than later') without naming any specific agency or crime yet",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-006",
+    "transcript": "Caller: This is a courtesy call before an official notice is generated on your Aadhaar-linked profile. There's a small discrepancy flagged in a routine audit — could genuinely be nothing. To avoid it escalating into paperwork you'll need to run around for later, we can clear it right now over a short video call. Do you have five minutes and a quiet room?",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'avoid future hassle' framing that trades on convenience rather than fear at the opening stage",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-007",
+    "transcript": "Caller: Hello, this is Inspector Sen. I want to be clear this is a preliminary enquiry only, not an accusation of anything — your bank flagged a transaction pattern that sometimes indicates identity theft, and we're required to rule you out as a victim, not a suspect. It works best over video so I can show you the transaction IDs. Are you free to talk properly for the next few minutes, away from background noise?",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'you're the victim, not a suspect' reassurance used to lower guard before the digital-arrest script escalates",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-008",
+    "transcript": "Caller: This call concerns a compliance flag on your bank account — again, very likely a false positive from an automated system, these happen constantly. To close it out today rather than have it sit open for weeks, I'll need you on video for a short identity confirmation. It's a formality, but I do need you to be undisturbed for it — is now a good time or should I call back in ten minutes?",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'automated false positive' minimization + polite scheduling that masks the isolation requirement as ordinary courtesy",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-009",
+    "transcript": "Caller: I'm calling from a verification desk that handles cases referred by the cyber helpline — think of it like a filtering step before anything reaches an actual officer. Your case reference showed up this morning, probably a mismatch in KYC records across two banks. Nothing alarming, but I'll need to walk you through a quick screen-share so you can see exactly what's flagged and we can correct it together.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'filtering step before a real officer' framing that pre-normalizes escalation while requesting a screen-share",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-010",
+    "transcript": "Caller: Good evening, this is with reference to a courier that was returned undelivered and flagged for manual review — sometimes this happens with high-value shipments and it's routine, but I do need to confirm a couple of details with you directly rather than over SMS since the system requires a recorded verification. Would you be able to do a short video call in the next half hour?",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, courier-review framing that stays entirely non-threatening at the opening turn, deferring any pressure to a later stage",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-011",
+    "transcript": "Caller: This is a call regarding an SMS you may have received about SIM re-verification — I know these can look like spam, but this one is genuine and tied to a wider exercise the telecom department is running with law enforcement this month. It won't take long, I just need you on video with your ID visible, ideally somewhere quiet so the audio comes through clearly for our records.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, pre-emptively addresses 'this might look like spam' to disarm suspicion, a documented digital-arrest social-engineering technique",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-012",
+    "transcript": "Caller: Hello, calling regarding a case file that's been forwarded to this desk for preliminary review — your name appears as a witness contact, not a party under investigation, so please don't worry. We just need a short statement recorded on video for the file to be closed properly on our end. Is there somewhere private you can take this call for about fifteen minutes?",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'you are a witness, not a suspect' framing — a softer variant of the reassurance-then-escalate pattern",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-013",
+    "transcript": "Caller: I'm reaching out about a mismatch flagged between your Aadhaar and a recent SIM activation in another state — could be nothing, sometimes retailers make data-entry errors, but it needs to be formally cleared so it doesn't affect your credit profile down the line. If you're free now, a quick video call would sort this out faster than a written notice, which can take weeks to process.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, credit-profile-impact framing used as low-key urgency instead of an explicit legal threat",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-014",
+    "transcript": "Caller: This is a follow-up on a support ticket that was auto-generated from a bank alert — nothing has been decided yet, we're at the stage of gathering facts. I'd like to do this over video just so both of us have a clear record, and if you could be somewhere without background noise that would help the recording quality. Shouldn't take more than ten minutes.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'auto-generated ticket, gathering facts' bureaucratic framing that keeps tone neutral while requesting isolation and video",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-015",
+    "transcript": "Caller: Hello, I'm calling about an entry that appeared under your name in a database we cross-check periodically — I want to stress this is a preliminary flag, not a finding of any wrongdoing. To rule it out quickly, I'll need to see a government ID on video and confirm a few personal details. It's more for our internal audit trail than anything you should be worried about.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'internal audit trail' framing that requests ID-on-video without stating any agency name or crime",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-016",
+    "transcript": "Caller: Good morning, this is with regard to an insurance claim that was filed using details similar to yours — likely just an overlap in records, we see this often with common names. I need to confirm you did NOT file this claim, which we can do quickly over video. If it turns out to be a genuine overlap, there's nothing further needed from your side after this call.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, insurance-fraud-adjacent framing (a newer digital-arrest variant reported alongside the more common bank/parcel openers), reassures with a clear 'nothing further needed' close to lower guard",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-017",
+    "transcript": "Caller: I'm calling from a coordination desk that handles referrals between banks and the cyber cell — your case reference is still at the 'information gathering' stage, well before anything formal. Video works better than voice for this because I need to show you a screenshot of the flagged transaction. If you're at home and can spare ten minutes now, we can likely close this out today.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, explicit staging language ('information gathering stage, well before anything formal') designed to pre-empt suspicion of an arrest threat",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-018",
+    "transcript": "Caller: Hello, this call is about a bank locker registration that seems to have used your details — nothing you need to panic about, these mix-ups happen with shared surnames. We just need a short video verification so the branch can update its records correctly. Would ten minutes now work, ideally somewhere you won't be interrupted?",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, locker-registration-mismatch framing, a low-alarm opener requesting isolation ('won't be interrupted') before any threat surfaces",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-019",
+    "transcript": "Caller: This is regarding a compliance notice that's been queued for your PAN but hasn't actually been issued yet — I'm calling precisely so it doesn't need to be issued formally, which would take much longer to resolve. A short video verification now, where I can see your documents clearly, should be enough to close this at the pre-notice stage.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'notice hasn't been issued yet, let's resolve it before it is' framing — offers convenience as the hook instead of fear",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-020",
+    "transcript": "Caller: Good afternoon, calling on behalf of a joint bank-and-cyber-cell desk that handles low-priority flags before they're escalated to a named officer. Your account showed up on this morning's list, most likely tied to a shared IFSC code error at another branch. If you can do a five-minute video call now, I can probably clear it at this desk without it ever reaching the officer stage.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'clear it before it reaches an officer' framing designed to make cooperation feel like it AVOIDS escalation, not causes it",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-021",
+    "transcript": "Caller: Hello, this is a callback regarding a missed notice about a parcel held at customs — it's flagged for manual clearance because the declared value looked slightly off, nothing more sinister than that in most cases. To release it without further delay, I'd like to verify a few things over video, ideally now since the holding window closes today.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, mild time-pressure ('holding window closes today') without naming any crime, agency officer, or arrest — the softest possible version of the customs-parcel opener",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-blatant-hi-001",
+    "transcript": "Caller: नमस्ते, मैं CBI मुंबई से इंस्पेक्टर शर्मा बोल रहा हूं। आपके नाम से एक पार्सल पकड़ा गया है जिसमें ड्रग्स मिली हैं। आप डिजिटल अरेस्ट में हैं — यह कॉल मत काटिए, किसी को भी इसके बारे में मत बताइए, और कैमरा ऑन रखिए जब तक हमारी टीम वेरिफिकेशन पूरी नहीं कर लेती।",
+    "language": "hi",
+    "source": "REAL_DERIVED: I4C advisory pattern, CBI/parcel-drugs opener translated to natural Devanagari Hindi",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hi-002",
+    "transcript": "Caller: सर, यह कॉल एनफोर्समेंट डायरेक्टोरेट दिल्ली से है। आपके बैंक अकाउंट में मनी लॉन्ड्रिंग से जुड़ा पैसा आया है। यह बहुत गंभीर मामला है। मैं आपको सीनियर अफसर से जोड़ रहा हूं जो वीडियो कॉल पर आपका डिजिटल अरेस्ट प्रोसीजर करेंगे। कैमरा हमेशा ऑन रखिए और फोन बंद मत कीजिए।",
+    "language": "hi",
+    "source": "REAL_DERIVED: ED-impersonation pattern per I4C/MHA advisories, rendered in Devanagari Hindi",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hi-003",
+    "transcript": "Caller: यह कॉल कस्टम्स ऑफिसर की तरफ से है, मुंबई एयरपोर्ट। आपके नाम एक पार्सल जब्त हुआ है जिसमें विदेशी करेंसी और नशीला पदार्थ मिला है। कस्टम्स एक्ट के तहत आपको डिजिटल अरेस्ट प्रोसीजर में सहयोग करना होगा। मैं अभी आपको एक पुलिस अफसर से वीडियो कॉल पर जोड़ रहा हूं। परिवार को कुछ मत बताइए, यह राष्ट्रीय सुरक्षा का मामला है।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, customs-impersonation variant in Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hi-004",
+    "transcript": "Caller: यह RBI की फ्रॉड मॉनिटरिंग सेल से कॉल है। आपका अकाउंट एक पोंजी स्कीम की मनी लॉन्ड्रिंग में इस्तेमाल हुआ है। RBI प्रोटोकॉल के तहत आपको तुरंत वीडियो कॉल पर आना होगा, कैमरा ऑन रखना होगा, और अपनी पूरी सेविंग्स एक सेफ RBI होल्डिंग अकाउंट में ट्रांसफर करनी होगी ताकि जांच के दौरान वह फ्रॉड गैंग द्वारा जब्त न हो सके। यह वापस मिल जाएगी।",
+    "language": "hi",
+    "source": "REAL_DERIVED: RBI-impersonation + 'reversible escrow transfer' pattern, matches RBI's own fraud-alert warnings, rendered in Devanagari Hindi",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hi-005",
+    "transcript": "Caller: यह दिल्ली पुलिस साइबर क्राइम सेल से कॉल है। आपके खिलाफ 12 लाख रुपये की धोखाधड़ी का FIR दर्ज हुआ है। मैं आपको वारंट दिखा रहा हूं, वीडियो में देखिए। अगर आपने अभी कॉल काटी तो आपकी फिजिकल गिरफ्तारी हो जाएगी। कॉल पर बने रहिए और केस बंद करने के लिए अभी सेटलमेंट अमाउंट ट्रांसफर कीजिए।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, Delhi-Police-impersonation + fake-warrant-on-screen escalation, rendered in Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hinglish-001",
+    "transcript": "Caller: Sir main NCB se officer bol raha hoon. Aapke address pe jo parcel aaya hai usme 2 kilo charas mili hai. Aap abhi digital arrest mein hain — camera on rakhiye, ghar se bahar mat nikaliye, jab tak hamari team address verify nahi kar leti tab tak yeh video call disconnect mat kijiye.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, NCB-impersonation + confinement-threat variant, romanized Hinglish as commonly transcribed in real calls",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hinglish-002",
+    "transcript": "Caller: Madam yeh CBI Mumbai cyber cell se call hai. Aapka Aadhaar aur PAN Dubai wale ek money-laundering ring se link hue hain, 40 crore ka case hai. Ek senior IPS officer abhi Skype pe join kar rahe hain. Aapko video pe rehna hoga, jo OTP aayega wo verification ke liye share karna hoga, aur is call ke baare mein kisi ko bhi mat batana, investigation compromise ho jayegi.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: Aadhaar/PAN-linked-to-crime + OTP-under-verification framing, matches I4C advisory pattern, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hinglish-003",
+    "transcript": "Caller: Yeh TRAI head office se call hai sir. Aapke Aadhaar-linked number se Jammu-Kashmir mein nau SIM activate hue hain, ek anti-national activity mein use hua hai. Yeh bahut serious matter hai. Ek cyber crime officer abhi is call mein join karenge aur aapko kuch ghanton ke liye digital arrest kiya jayega. Kisi bhi surat mein yeh call disconnect mat kijiyega.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: TRAI/SIM-fraud framing, documented digital-arrest opener, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-blatant-hinglish-004",
+    "transcript": "Caller: Sir yeh Income Tax Department Investigation Wing se call hai. Aapke PAN se 85 lakh ki undisclosed foreign income link hui hai, Dubai wali shell company ke through. Aapke arrest ka warrant ready hai. Isse rokne ke liye aapko abhi video call pe aana hoga, digital arrest ke tehat, aur jab tak instruction na mile tab tak visible rehna hoga.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, Income Tax/undisclosed-foreign-income variant, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "da-subtle-hi-001",
+    "transcript": "Caller: नमस्ते, यह बैंक की फ्रॉड प्रिवेंशन डेस्क से एक रूटीन वेरिफिकेशन कॉल है, घबराने की कोई बात नहीं। बस आपके KYC डिटेल्स से जुड़ा एक कूरियर बुक हुआ है, हम पहचान का गलत इस्तेमाल तो नहीं हुआ यह पक्का करना चाहते हैं। थोड़ी देर लाइन पर रहिए, मैं आपको वेरिफिकेशन ऑफिसर से जोड़ता हूं। अभी सुलझा लेना बाद में ज्यादा आसान रहेगा।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, calm 'routine verification' opener (softening stage before escalation), Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hi-002",
+    "transcript": "Caller: यह कॉल एक सामान्य पूछताछ के लिए है, कृपया चिंता मत कीजिए। आपका पैन कार्ड शायद किसी और एप्लिकेशन में भी दिख गया है, हो सकता है डेटा एंट्री की गलती हो। पक्का करने के लिए, क्या आप अभी अकेले हैं? कई बार परिवार वाले बेवजह परेशान हो जाते हैं जब तक हमें पूरी बात पता न चले, तो फिलहाल यह हमारे बीच ही रहे।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, PAN-misuse opener with soft isolation nudge before any threat, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hi-003",
+    "transcript": "Caller: नमस्ते, आपके आधार से जुड़ी एक जानकारी हमारे रूटीन ऑडिट में सामने आई है — शायद कुछ भी गंभीर न हो। इसे बाद में नोटिस बनने से पहले अभी ही सुलझा लेना बेहतर रहेगा, एक छोटी वीडियो कॉल से। क्या आपके पास पांच मिनट हैं, और कोई शांत जगह?",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, 'avoid future notice' convenience framing, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hi-004",
+    "transcript": "Caller: सर, मैं यह बताना चाहूंगा कि यह कॉल एक प्रारंभिक जांच के लिए है, कोई आरोप नहीं है। आपके बैंक ने एक ट्रांजैक्शन पैटर्न फ्लैग किया है जो कई बार आइडेंटिटी थेफ्ट का संकेत होता है — हमें यह पक्का करना है कि आप पीड़ित हैं, आरोपी नहीं। वीडियो पर यह बेहतर समझाया जा सकता है। क्या आप अभी शांत माहौल में बात कर सकते हैं?",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, 'you are the victim, not a suspect' reassurance before escalation, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hinglish-001",
+    "transcript": "Caller: Hello sir, yeh bank ki fraud prevention desk se ek routine verification call hai, koi ghabraane ki baat nahi. Bas aapke KYC details se juda ek courier book hua hai, hum identity misuse to nahi hua yeh confirm karna chahte hain. Thodi der line pe rahiye, main aapko verification officer se connect karta hoon. Abhi sort ho jaaye toh baad mein aasaan rahega.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, calm 'routine verification' opener (softening stage), romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hinglish-002",
+    "transcript": "Caller: Main cyber cell ki taraf se ek courtesy call kar raha hoon — aapka number kisi enquiry mein contact ke roop mein aaya hai. Aapki taraf se kuch nahi lagta, but hume file close karne ke liye ek quick video verification karni padegi. Agle kuch minute ke liye kahin private jagah pe reh sakte hain kya, taaki dobara na karna pade?",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, minimized-stakes opener that pre-frames isolation without naming arrest yet, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hinglish-003",
+    "transcript": "Caller: Namaste sir, yeh ek preliminary enquiry ke silsile mein call hai, koi ilzaam nahi hai abhi. Bank ne ek transaction pattern flag kiya hai jo kabhi kabhi identity theft ka sanket hota hai — hume confirm karna hai ki aap victim hain, suspect nahi. Video pe yeh better samjha ja sakta hai. Kya aap abhi shaant mahol mein baat kar sakte hain?",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, 'you are the victim, not a suspect' reassurance before escalation, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hinglish-004",
+    "transcript": "Caller: Yeh call ek case reference ke baare mein hai jo is desk pe preliminary review ke liye aaya hai — aapka naam witness contact ke roop mein hai, party under investigation nahi. Bas file properly close karne ke liye ek short statement video pe record karna hai. Kahin private jagah hai kya jaha aap pandrah minute baat kar sakein?",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, 'you are a witness, not a suspect' framing, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hinglish-005",
+    "transcript": "Caller: Sir yeh customs se related ek missed notice ka callback hai — parcel hold hua hai manual clearance ke liye kyunki declared value thodi off lag rahi thi, aksar aisa hota hai kuch bhi serious nahi. Bina aur delay ke release karne ke liye, main kuch cheezein video pe verify karna chahunga, ideally abhi kyunki holding window aaj band ho rahi hai.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, mild time-pressure without naming any crime or officer — softest customs-parcel opener, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "upi-blatant-en-001",
+    "transcript": "Caller: Hi, I saw your number on OLX for the sofa you're selling. I'd like to buy it — I'll pay you the advance right now. I'm sending a UPI request for 500 rupees, just approve it on your phone and the money will come to your account immediately.",
+    "language": "en",
+    "source": "REAL_DERIVED: OLX/marketplace UPI collect-request fraud — 'approve this to receive money' pattern — https://www.tribuneindia.com/news/india/10-dangerous-digital-payment-scams-you-must-know-in-2026/",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-blatant-en-002",
+    "transcript": "Caller: Congratulations! You have won a cashback reward of 5,000 rupees from your bank's loyalty program. To claim it, just accept the payment request that will appear on your UPI app in the next minute and enter your UPI PIN to confirm receipt.",
+    "language": "en",
+    "source": "REAL_DERIVED: fake cashback/reward UPI collect-request pattern, widely reported bank-loyalty-program impersonation",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-blatant-en-003",
+    "transcript": "Caller: Sir this is regarding your electricity bill refund of 1,200 rupees due to overbilling last month. I am sending you a UPI request right now — please accept it and enter your PIN, the refund will be credited instantly.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, electricity-refund UPI collect-request variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-blatant-en-004",
+    "transcript": "Caller: Hello, I'm interested in the bike you listed on Facebook Marketplace. I want to book it today itself with a token advance. I'll send a UPI collect request for 2,000 rupees — just approve it, that's how the advance will be transferred to you.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, buyer-side collect-request fraud for a marketplace listing",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-subtle-en-001",
+    "transcript": "Caller: Hi, thanks for confirming the parcel is ready for pickup. Before our delivery partner comes, there's a small pending COD adjustment from your last order — I've sent a request to your UPI to settle it, should just take a second to approve so pickup isn't delayed.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, courier/COD-adjustment framing for a UPI collect-request, disguised as routine logistics rather than a 'prize' or 'refund'",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "upi-subtle-en-002",
+    "transcript": "Caller: I run the building's maintenance office — we're reconciling a small discrepancy in last quarter's charges, seems you were slightly overcharged. I've raised a UPI request that will settle it in your favour once you confirm on your end; take your time, no rush, just wanted to flag it before the next billing cycle closes.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, low-pressure 'building maintenance reconciliation' framing for a UPI collect-request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "screenshare-blatant-en-001",
+    "transcript": "Caller: Sir, this is your bank's customer care. Your KYC is expiring today and your account will be blocked by midnight. To update it instantly, please install AnyDesk from the Play Store, open it, and read out the nine-digit code that appears on your screen so our executive can complete the update for you.",
+    "language": "en",
+    "source": "REAL_DERIVED: AnyDesk/KYC-expiring screen-sharing fraud, matches the Pune ₹3.2 lakh incident pattern — https://the420.in/this-is-how-scammers-are-stealing-your-money-using-anydesk-teamviewer-quicksupport-know-all-about-the-latest-fraud/",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "screenshare-blatant-en-002",
+    "transcript": "Caller: This is technical support for your mobile wallet. We've detected an unauthorized login attempt from Bangkok. To secure your account right now, download TeamViewer QuickSupport, share the ID and password shown on your screen, and stay on the line while I fix this from my end.",
+    "language": "en",
+    "source": "REAL_DERIVED: TeamViewer 'unauthorized login' screen-sharing fraud pattern — https://cybersecureindia.in/beware-fraud-use-teamviewer-anydesk/",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "screenshare-blatant-en-003",
+    "transcript": "Caller: Sir, this is from the SBI helpdesk, your credit card reward points of 15,000 are about to expire. To redeem them for cash, please install the AnyDesk app, give me the access code shown, and I'll process the redemption directly into your account.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, reward-points-redemption screen-sharing fraud variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "screenshare-blatant-en-004",
+    "transcript": "Caller: This is from your internet service provider's billing department. Your broadband will be disconnected tomorrow due to a payment gateway error on our side, not yours. To fix it quickly, install AnyDesk and share the nine-digit code — I'll correct the billing record while we're on the call.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, ISP-billing-error screen-sharing fraud variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "screenshare-subtle-en-001",
+    "transcript": "Caller: Hi, calling from the app support team — nothing urgent, just following up on a support ticket you may not remember raising last week about slow loading. If it's still happening, the quickest fix is a quick remote session so I can see exactly what's lagging on your end; entirely optional, only if it's still bothering you.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, low-pressure 'optional remote session' framing that still requests screen-sharing access",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "screenshare-subtle-en-002",
+    "transcript": "Caller: This is a courtesy call from the device warranty team — we noticed your phone model had a software update issue reported by a few users, nothing alarming. If you'd like, I can walk you through a quick screen-share to check if your device is affected; totally your call, we're just being proactive before it becomes a bigger issue.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'proactive warranty check' framing that normalizes a screen-share request as a courtesy, not an emergency",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "courier-blatant-en-001",
+    "transcript": "Caller: This is from the courier company. We have a parcel for you but the delivery failed because the OTP verification code you'll receive by SMS wasn't shared with our agent. Please read out the six-digit OTP you just received so we can confirm delivery and reattempt today.",
+    "language": "en",
+    "source": "REAL_DERIVED: courier-OTP-phishing pattern, matches widely reported OTP-for-delivery-verification scam scripts",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "courier-blatant-en-002",
+    "transcript": "Caller: Ma'am, your international parcel is stuck at customs and needs a small clearance fee of 250 rupees. I'm sending a payment link over SMS — click it, enter your card details and the OTP that comes, and the parcel will be released for delivery today.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, customs-clearance-fee courier phishing link variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "courier-blatant-en-003",
+    "transcript": "Caller: This is DHL delivery support. Your package could not be delivered because the address verification OTP expired. A new OTP has just been sent to you — please share it now so we can update the delivery attempt before the parcel is returned to sender.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, courier-brand-impersonation OTP phishing variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "courier-subtle-en-001",
+    "transcript": "Caller: Hi, just calling to confirm the delivery slot for tomorrow since the address on file looked slightly incomplete. Once you confirm, our system will send a verification code to your number automatically — you can just read it back to me so the slot gets locked in properly, otherwise it might auto-cancel.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, courier-OTP-phishing dressed as routine delivery-slot confirmation, framed to sound procedural rather than urgent",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "courier-subtle-en-002",
+    "transcript": "Caller: Good afternoon, this is regarding a parcel that's on hold pending an address confirmation — nothing to worry about, common with apartment complexes. You should get a short code by SMS shortly; if you could share that with me, it'll save you a second failed delivery attempt tomorrow.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, courier-OTP-phishing framed around avoiding a 'second failed attempt' rather than an emergency",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "job-blatant-en-001",
+    "transcript": "Caller: Congratulations, you've been shortlisted for a work-from-home data entry job paying 25,000 rupees a month, just 2 hours of work a day. To confirm your slot and get your starter kit, please pay a one-time registration fee of 999 rupees via the UPI link I'm sending now.",
+    "language": "en",
+    "source": "REAL_DERIVED: work-from-home job-registration-fee scam, a widely reported 2026 pattern using UPI upfront fees",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "job-blatant-en-002",
+    "transcript": "Caller: Sir, I'm from a wealth advisory firm — we're running an exclusive mutual fund scheme guaranteeing 30% monthly returns, only for the next 48 hours. To lock in your slot, deposit a minimum of 10,000 rupees to the account I'll share, and your first payout will come within a week.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, guaranteed-high-return investment-scheme fraud with an artificial deadline",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "job-blatant-en-003",
+    "transcript": "Caller: Hi, this is regarding your application for our part-time YouTube like-and-subscribe task job — you'll earn 500 rupees per 100 tasks completed. To activate your task dashboard and get your first batch, please pay a refundable security deposit of 1,500 rupees today.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, task-based gig-job scam with a 'refundable' upfront deposit hook",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "job-blatant-en-004",
+    "transcript": "Caller: Sir, based on your resume you've been selected for a data annotation job with a foreign AI company, salary 60,000 a month remote. To process your offer letter and background verification, please transfer the 2,000 rupee processing fee through the link sent to your email.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, foreign-employer remote-job scam with a 'processing fee' hook",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "job-subtle-en-001",
+    "transcript": "Caller: Hi, thanks for your interest in the part-time opportunity — no pressure at all, take your time deciding. If you do want to proceed, there's a small one-time onboarding cost that most companies charge for background verification these days; totally standard, and it's adjusted against your first payout, so it's not really an extra cost to you.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, low-pressure job-fee framing that normalizes the upfront payment as 'standard' and 'not really extra'",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "job-subtle-en-002",
+    "transcript": "Caller: I wanted to share this opportunity with you since you mentioned looking for ways to grow your savings — a colleague of mine started with a small amount in a fund I'm part of and has seen steady, modest growth, nothing flashy, just consistent. If you're curious, I can walk you through starting with whatever amount feels comfortable, even a small test amount first.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, soft-sell 'invite a friend, start small' framing for an investment scheme, avoiding any guaranteed-return red flag language",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "job-subtle-en-003",
+    "transcript": "Caller: Just following up after your interview — the panel liked your profile. Before we send the formal offer, HR needs a small verification fee processed through our vendor portal, it's refunded along with your first salary. It's a routine step for all our remote hires this year, nothing specific to you.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, post-interview 'routine verification fee' framing that borrows legitimacy from a fake hiring process",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "lottery-blatant-en-001",
+    "transcript": "Caller: Sir, congratulations! Your mobile number has won 25 lakh rupees in the KBC lucky draw lottery. To claim your prize, you need to pay a processing tax of 15,000 rupees to the account we send you, and your winning amount will be transferred within 24 hours.",
+    "language": "en",
+    "source": "REAL_DERIVED: classic KBC-lottery-impersonation prize scam, one of the most widely reported lottery fraud patterns in India",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "lottery-cashback-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "lottery-blatant-en-002",
+    "transcript": "Caller: This is Amazon's lucky customer rewards team. Your number has been randomly selected to win an iPhone 17 and 50,000 rupees cash. To confirm the delivery and prize transfer, please click the link sent to your WhatsApp and pay a small delivery charge of 199 rupees.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, e-commerce-brand-impersonation lottery/prize scam with a small 'delivery charge' hook",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "lottery-cashback-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "lottery-blatant-en-003",
+    "transcript": "Caller: Congratulations, your PhonePe wallet has been selected for a festival cashback bonus of 10,000 rupees! To receive it instantly, just click the link we've sent by SMS and enter your UPI PIN to verify your account for the credit.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, wallet-cashback-bonus scam requesting UPI PIN 'verification'",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "lottery-cashback-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "lottery-subtle-en-001",
+    "transcript": "Caller: Hey, hope you're doing well — I'm calling from customer loyalty, nothing to claim urgently, just wanted to let you know your account has accumulated some reward points from regular usage over the past year. Whenever it's convenient, you can redeem them through the link I'll send; absolutely no rush, and no cost involved on your side for the redemption process itself.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, low-key 'loyalty points, no rush' framing for what is actually a lottery/cashback phishing link, avoiding the classic urgency red flag",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "lottery-cashback-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "loanapp-blatant-en-001",
+    "transcript": "Caller: This is recovery agent Suresh calling about your 5,000 rupee loan from QuickCash app, due yesterday. If you don't pay by tonight, we will send morphed photos from your gallery to every contact in your phone, including your employer and family. Pay now through the link or face the consequences.",
+    "language": "en",
+    "source": "REAL_DERIVED: fake loan-app recovery-agent morphed-photo harassment, matches documented Bengaluru cases — https://www.deccanherald.com/amp/story/india%2Fkarnataka%2Fbengaluru%2Floan-app-agents-harass-woman-with-her-and-daughter-s-morphed-pics-2890306",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "loanapp-blatant-hinglish-001",
+    "transcript": "Caller: Madam, aapka 2,000 rupee ka loan default ho gaya hai, iska interest ab 50,000 ho chuka hai. Agar aaj payment nahi kiya toh hum aapki morphed photos aapke office group mein bhej denge aur aapke pados walon ko bhi call karenge. Abhi is number pe payment kijiye.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: fake loan-app inflated-interest + morphed-photo + neighbor-shaming threat, matches widely reported loan-app harassment pattern, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "loanapp-blatant-en-003",
+    "transcript": "Caller: This is the legal recovery cell for InstaLoan app. Your 3,000 rupee loan has ballooned to 40,000 with penalties. If not paid within 2 hours, we will file a criminal case against you and inform your employer that you are a loan defaulter and a fraud.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, fake 'legal recovery cell' + employer-shaming threat variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "loanapp-subtle-en-001",
+    "transcript": "Caller: Hi, just a friendly reminder about your pending installment — no pressure, we understand things come up. If it helps, we can restructure the payment into smaller amounts, but I'll need you to confirm today so I can update it on our system before the automated reminder cycle kicks in and starts notifying your listed contacts as per our standard policy.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'friendly reminder' framing that still contains a veiled threat (contacts being notified) stated as routine policy rather than an explicit threat",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "loanapp-subtle-en-002",
+    "transcript": "Caller: This is a courtesy call from our customer support, not collections — just letting you know your account status changed slightly after a missed payment. Nothing has happened yet, but I'd recommend clearing it soon since our system automatically escalates unpaid accounts to a different, less flexible team after 48 hours.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'not collections' framing with a soft escalation-timer threat, avoiding explicit harassment language",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "upi-blatant-en-005",
+    "transcript": "Caller: I'm calling about the dining table you posted on Facebook Marketplace, I'll take it. Sending you the advance right now via UPI collect request for 1500 rupees, please approve it on your end to confirm.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, buyer-side marketplace UPI collect-request fraud",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-blatant-en-006",
+    "transcript": "Caller: Sir this is your gas agency calling — you're due a subsidy refund of 300 rupees for last quarter. I've sent a UPI request to your registered number, just accept it and enter your PIN to receive the amount.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, gas-subsidy-refund UPI collect-request variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-blatant-en-007",
+    "transcript": "Caller: Hello, this is regarding the puppy you listed for adoption online, I'd like to take her today. As a booking confirmation, I'm sending a small UPI request — please accept it so I know the booking is locked before I travel to pick her up.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, pet-adoption-listing UPI collect-request fraud variant",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "screenshare-subtle-en-003",
+    "transcript": "Caller: Hi, this is a routine device-health check we run for premium account holders — you're not obligated to do this at all, but if you'd like to make sure everything is running smoothly before the year-end update rolls out, I can guide you through checking it via a short remote session. Entirely your choice.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'premium account courtesy check' framing that presents the remote-access request as an optional perk rather than urgent",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "courier-blatant-en-004",
+    "transcript": "Caller: This is Bluedart support. Your parcel delivery failed twice because the OTP wasn't confirmed in time. This is the final attempt — please share the OTP that just arrived on your phone right now or the parcel will be returned to the sender permanently.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, courier-brand-impersonation OTP phishing with a 'final attempt' urgency framing",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "job-subtle-en-004",
+    "transcript": "Caller: Hi, this is just a heads-up before the formal offer goes out — your background verification vendor charges a nominal fee that most candidates pay directly rather than waiting for the company to route it, since that can take a couple of weeks longer. Entirely optional route, just faster if you'd rather not wait.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'optional faster route' framing for a job-verification fee, avoiding any explicit demand language",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "lottery-subtle-en-002",
+    "transcript": "Caller: Good morning, this is a wrap-up call for our annual customer appreciation program — nothing you need to act on urgently, but your number was in the pool for a modest gift voucher this quarter. Whenever you get a chance, there's a short form to fill to receive it; no cost, just a couple of details to confirm.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'annual appreciation program, no urgency' framing for a lottery/voucher phishing link",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "lottery-cashback-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "loanapp-subtle-en-003",
+    "transcript": "Caller: This is regarding your loan account — I want to be clear this is not a threat, just information: our system automatically shares repayment status with the contacts you listed during application if a payment is missed twice. You've missed it once so far, so there's still time to sort it out before that happens.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, 'not a threat, just information' framing that discloses the actual harassment mechanism as a neutral system feature",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "job-blatant-en-005",
+    "transcript": "Caller: Sir, you've been selected for a hotel review job — get paid 800 rupees per review, work from your phone. To unlock your first review task and get access to the payout dashboard, please pay a one-time activation fee of 499 rupees through the QR code sent on WhatsApp.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, review-writing task-job scam with a QR-code activation fee",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-blatant-hinglish-001",
+    "transcript": "Caller: Bhai OLX pe jo sofa dala hai na, wo chahiye mujhe. Abhi advance bhej raha hoon, UPI request aayega 500 rupaye ka, bas approve kar dena, paisa turant aa jayega.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: OLX/marketplace UPI collect-request fraud pattern, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-blatant-hi-001",
+    "transcript": "Caller: बधाई हो! आपके फोनपे वॉलेट को त्योहार कैशबैक बोनस के लिए चुना गया है, 10,000 रुपये का। इसे तुरंत पाने के लिए, हमने SMS पर भेजा हुआ लिंक खोलिए और खाता वेरिफाई करने के लिए अपना UPI पिन डालिए।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, wallet-cashback-bonus scam requesting UPI PIN 'verification', Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "upi-subtle-hinglish-001",
+    "transcript": "Caller: Hi, parcel pickup ke liye ready hone ki confirmation ke liye thanks. Delivery partner aane se pehle, aapke last order ka ek chhota COD adjustment pending hai — maine aapke UPI pe request bheji hai, bas ek second mein approve kar dena taaki pickup delay na ho.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, courier/COD-adjustment framing for a UPI collect-request, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "upi-collect-request-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "screenshare-blatant-hi-001",
+    "transcript": "Caller: सर, यह आपके बैंक की कस्टमर केयर से कॉल है। आपकी KYC आज रात एक्सपायर हो रही है और आपका अकाउंट ब्लॉक हो जाएगा। इसे तुरंत अपडेट करने के लिए, प्ले स्टोर से AnyDesk इंस्टॉल कीजिए और स्क्रीन पर आने वाला नौ अंकों का कोड पढ़कर बताइए।",
+    "language": "hi",
+    "source": "REAL_DERIVED: AnyDesk/KYC-expiring screen-sharing fraud, matches documented incident pattern, Devanagari Hindi",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "screenshare-blatant-hinglish-001",
+    "transcript": "Caller: Sir yeh aapke mobile wallet ki technical support team se call hai. Bangkok se ek unauthorized login attempt detect hua hai. Abhi apna account secure karne ke liye, TeamViewer QuickSupport download kijiye, screen pe jo ID aur password dikhega wo share kijiye, aur line pe bane rahiye jab tak main isse fix karta hoon.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: TeamViewer 'unauthorized login' screen-sharing fraud pattern, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "screenshare-subtle-hinglish-001",
+    "transcript": "Caller: Hi, app support team se call kar raha hoon — kuch urgent nahi hai, bas pichle hafte aapne jo support ticket raise kiya tha uska follow-up kar raha hoon. Agar abhi bhi slow loading ho raha hai, toh sabse tez fix ek quick remote session hai taaki main dekh sakoon exactly kya lag ho raha hai — bilkul optional hai, sirf agar abhi tak pareshani ho rahi ho.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, low-pressure 'optional remote session' framing, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "courier-blatant-hinglish-001",
+    "transcript": "Caller: Yeh courier company se call hai. Aapke liye ek parcel hai lekin delivery fail ho gayi kyunki jo OTP verification code SMS pe aaya tha wo hamare agent ko share nahi hua. Please jo six-digit OTP abhi aaya hai wo bata dijiye taaki hum delivery confirm karke aaj hi dobara try kar sakein.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: courier-OTP-phishing pattern, widely reported OTP-for-delivery-verification scam, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "courier-blatant-hi-001",
+    "transcript": "Caller: मैडम, आपका इंटरनेशनल पार्सल कस्टम्स में अटका हुआ है और इसे छुड़ाने के लिए 250 रुपये की एक छोटी क्लियरेंस फीस लगेगी। मैं आपको SMS पर एक पेमेंट लिंक भेज रहा हूं — उसे क्लिक करके कार्ड डिटेल्स और जो OTP आएगा वो डालिए, पार्सल आज ही डिलीवरी के लिए रिलीज़ हो जाएगा।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, customs-clearance-fee courier phishing link variant, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "courier-subtle-hinglish-001",
+    "transcript": "Caller: Hi, bas kal ke delivery slot confirm karne ke liye call kiya hai kyunki address thoda incomplete lag raha tha file mein. Confirm karne ke baad, hamara system automatically ek verification code aapke number pe bhej dega — aap bas wo mujhe padh kar bata dijiye taaki slot properly lock ho jaaye, warna auto-cancel ho sakta hai.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, courier-OTP-phishing dressed as routine delivery-slot confirmation, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "courier-otp-phishing",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "job-blatant-hinglish-001",
+    "transcript": "Caller: Badhai ho, aapko work-from-home data entry job ke liye shortlist kiya gaya hai, 25,000 rupaye mahina, sirf 2 ghante roz ka kaam. Apna slot confirm karne aur starter kit paane ke liye, please 999 rupaye ki ek-baar registration fee bhejiye jo UPI link main abhi bhej raha hoon.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: work-from-home job-registration-fee scam, widely reported 2026 pattern, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "job-blatant-hi-001",
+    "transcript": "Caller: सर, मैं एक वेल्थ एडवाइज़री फर्म से हूं — हम एक खास म्यूचुअल फंड स्कीम चला रहे हैं जो हर महीने 30% रिटर्न की गारंटी देती है, सिर्फ अगले 48 घंटों के लिए। अपनी सीट पक्की करने के लिए, कम से कम 10,000 रुपये जमा कीजिए जिस अकाउंट में मैं बताऊंगा, और आपका पहला पेआउट एक हफ्ते में आ जाएगा।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, guaranteed-high-return investment-scheme fraud with an artificial deadline, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "job-subtle-hinglish-001",
+    "transcript": "Caller: Hi, aapka interest dikhane ke liye shukriya part-time opportunity mein — koi pressure nahi hai, apna time lijiye decide karne ke liye. Agar aap aage badhna chahte hain, toh ek chhoti si one-time onboarding cost hoti hai jo aajkal zyada companies background verification ke liye leti hain, bilkul standard hai, aur yeh aapke pehle payout mein adjust ho jaati hai.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, low-pressure job-fee framing that normalizes the upfront payment as 'standard', romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "lottery-blatant-hinglish-001",
+    "transcript": "Caller: Sir, badhai ho! Aapka mobile number KBC lucky draw lottery mein 25 lakh rupaye jeet gaya hai. Apna prize claim karne ke liye, aapko 15,000 rupaye ki processing tax pay karni hogi jis account pe hum batayenge, aur aapki jeeti hui rakam 24 ghante mein transfer ho jaayegi.",
+    "language": "hi-Latn",
+    "source": "REAL_DERIVED: classic KBC-lottery-impersonation prize scam, one of the most widely reported patterns in India, romanized Hinglish",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "lottery-cashback-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "lottery-subtle-hi-001",
+    "transcript": "Caller: नमस्ते, उम्मीद है आप ठीक होंगे — मैं कस्टमर लॉयल्टी टीम से बोल रहा हूं, कुछ भी अर्जेंट क्लेम करने की बात नहीं है, बस बताना चाहता था कि पिछले साल के इस्तेमाल की वजह से आपके अकाउंट में कुछ रिवॉर्ड पॉइंट्स जमा हो गए हैं। जब भी सुविधा हो, आप लिंक के ज़रिए इसे रिडीम कर सकते हैं — बिल्कुल जल्दी नहीं है, और रिडीम करने में कोई खर्चा भी नहीं है।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, low-key 'loyalty points, no rush' framing for a lottery/cashback phishing link, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "lottery-cashback-scam",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "loanapp-blatant-hi-001",
+    "transcript": "Caller: यह लीगल रिकवरी सेल से कॉल है, इंस्टालोन ऐप की तरफ से। आपका 3,000 रुपये का लोन पेनल्टी के साथ 40,000 हो चुका है। अगर 2 घंटे के अंदर पेमेंट नहीं हुआ, तो हम आपके खिलाफ क्रिमिनल केस दर्ज करेंगे और आपके ऑफिस को बताएंगे कि आप एक फ्रॉड और लोन डिफॉल्टर हैं।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, fake 'legal recovery cell' + employer-shaming threat variant, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "loanapp-subtle-hinglish-001",
+    "transcript": "Caller: Hi, bas aapke pending installment ke baare mein ek friendly reminder — koi pressure nahi, hum samajhte hain kabhi kabhi cheezein ho jaati hain. Agar madad ho toh hum payment ko chhote amounts mein restructure kar sakte hain, but mujhe aaj hi confirm chahiye taaki system update ho jaaye us se pehle jo automated reminder cycle aapke diye gaye contacts ko notify karna shuru kar dega, hamari standard policy ke hisaab se.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, 'friendly reminder' framing with a veiled contacts-notification threat stated as routine policy, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "job-blatant-hi-002",
+    "transcript": "Caller: सर, आपके रिज्यूमे के आधार पर आपको एक विदेशी AI कंपनी के लिए डेटा एनोटेशन जॉब के लिए चुना गया है, 60,000 महीना, रिमोट काम। अपना ऑफर लेटर और बैकग्राउंड वेरिफिकेशन प्रोसेस करने के लिए, कृपया ईमेल पर भेजे गए लिंक से 2,000 रुपये की प्रोसेसिंग फीस ट्रांसफर कीजिए।",
+    "language": "hi",
+    "source": "SYNTHETIC: composite pattern, foreign-employer remote-job scam with a 'processing fee' hook, Devanagari Hindi",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "job-investment-fee-scam",
+      "concern": "SCAM_PATTERN",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-001",
+    "transcript": "Caller: Hi, this is Priya calling from the electricity board. Just confirming — did you already pay this month's bill online, or should I note it as pending? No action needed from your side if you've already paid, this is just a records check on our end.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary utility records-check call, no OTP/PIN/money request, no urgency",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-002",
+    "transcript": "Caller: Good afternoon, this is Ravi from BlueDart. I have a parcel for you but the flat number on the address is smudged — could you confirm your flat number so the courier can deliver it today between 3 and 6 pm?",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary courier address-confirmation call, no OTP/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-003",
+    "transcript": "Caller: Hi, this is Anjali from HR at Meridian Tech. Thanks for applying — we'd like to schedule your first-round interview for Thursday at 2 pm over Google Meet. Does that work for you, or would a different time be better?",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary HR interview-scheduling call, no fee/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-004",
+    "transcript": "Caller: Hey, it's Mom. Just calling to check if you've eaten dinner yet and to remind you your cousin's engagement is this Saturday, don't forget to buy a gift before then.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary family call, no financial or personal-data request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-005",
+    "transcript": "Caller: Good morning, this is a reminder call from City Dental Clinic — your appointment with Dr. Kapoor is tomorrow at 11 am. Please let us know if you need to reschedule.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary appointment-reminder call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-006",
+    "transcript": "Caller: Hi, this is Airtel customer support following up on the complaint you raised yesterday about slow internet speed. Our technician visited this morning and confirmed the issue was a loose cable connection at the junction box, which has now been fixed. Is your connection working fine now?",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary telecom support follow-up on a genuine complaint the user raised, no OTP/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-007",
+    "transcript": "Caller: Hello, this is Meera from a market research agency. We're conducting a short, anonymous survey about grocery shopping habits — it takes about five minutes and there's no cost or personal financial information involved. Would you be willing to participate?",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary anonymous market-research survey call, explicitly no financial data involved",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-008",
+    "transcript": "Caller: Hi, this is your relationship manager from HDFC Bank calling to check in on your fixed deposit that's maturing next month. Would you like to renew it, or should we credit the amount to your savings account as usual? No urgency, just let us know whenever convenient.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary bank relationship-manager courtesy call about a maturing FD, no OTP/PIN request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-009",
+    "transcript": "Caller: This is a reminder from Greenwood School regarding the term fee due at the end of this month. You can pay it through the parent portal or at the school office; no late fee applies until the 5th of next month.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary school fee-reminder call, no threat, no phone-based payment demand",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-010",
+    "transcript": "Caller: Hi, calling from the gym to remind you your membership renewal is coming up next week. Would you like to renew for another year, or switch to the quarterly plan this time?",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary gym membership-renewal reminder call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-011",
+    "transcript": "Caller: Hello, this is from Amazon delivery — your order is out for delivery today and should arrive between 1 and 4 pm. Please make sure someone is available at the address to receive it.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary e-commerce delivery-notification call, no OTP/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-012",
+    "transcript": "Caller: Hi, this is Suresh from the housing society office. Just calling to confirm your maintenance payment for this quarter went through — our records show it, just double-checking before we close the books. Thanks for your time.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary RWA/society maintenance-confirmation call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-013",
+    "transcript": "Caller: Good evening, this is your car insurance agent. Your policy is up for renewal next month — I wanted to check if you'd like to add zero-depreciation cover this time, given it's a popular add-on. No pressure, just let me know whenever you decide.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary insurance-renewal advisory call, no urgency or threat",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-014",
+    "transcript": "Caller: Hey, it's Arjun from college. Are we still meeting at the library tomorrow at 10 to work on the project, or should we push it to the afternoon?",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary friend/classmate call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-015",
+    "transcript": "Caller: Hi, this is the pharmacy calling to let you know your monthly prescription refill is ready for pickup whenever it's convenient for you this week.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary pharmacy pickup-ready notification call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-016",
+    "transcript": "Caller: Hello, this is your building's plumber — just confirming the appointment for the leaking pipe repair tomorrow morning around 9. I'll bring the parts we discussed.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary service-appointment confirmation call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-017",
+    "transcript": "Caller: Hi, this is the airline calling about your flight tomorrow — there's a minor schedule change, departure has moved 40 minutes earlier to 6:20 am instead of 7. Please plan to reach the airport accordingly.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary airline flight-schedule-change notification call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-018",
+    "transcript": "Caller: Good morning, calling from the water purifier service center — your annual maintenance visit is due this month. Would next Tuesday morning work for our technician to come by?",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary appliance annual-maintenance scheduling call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-019",
+    "transcript": "Caller: Hi, this is the local library — just a reminder that the two books you borrowed are due back this Friday. You can renew them online if you need more time.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary library due-date reminder call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-020",
+    "transcript": "Caller: Hello, this is a reminder call from the vaccination clinic — your child's next scheduled dose is due next week. Please bring the vaccination card along when you come in.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary clinic vaccination-reminder call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-en-021",
+    "transcript": "Caller: Hi, this is from the car service center. Your vehicle's scheduled service is complete and ready for pickup. We also noticed the rear brake pads are wearing thin and would recommend replacing them at your next visit — no rush, just flagging it for you.",
+    "language": "en",
+    "source": "SYNTHETIC: ordinary car-service completion + advisory call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hi-001",
+    "transcript": "Caller: नमस्ते, मैं बिजली विभाग से प्रिया बोल रही हूं। बस यह कन्फर्म करना था — क्या आपने इस महीने का बिल ऑनलाइन भर दिया है, या पेंडिंग नोट करूं? अगर आपने पहले ही भर दिया है तो कुछ करने की जरूरत नहीं, यह सिर्फ हमारे रिकॉर्ड्स चेक करने के लिए है।",
+    "language": "hi",
+    "source": "SYNTHETIC: ordinary utility records-check call, Devanagari Hindi, no OTP/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hi-002",
+    "transcript": "Caller: नमस्ते सर, यह HDFC बैंक से आपके रिलेशनशिप मैनेजर की कॉल है। अगले महीने आपकी फिक्स्ड डिपॉजिट मैच्योर हो रही है। क्या आप इसे रिन्यू करना चाहेंगे, या हमेशा की तरह सेविंग्स अकाउंट में क्रेडिट कर दें? कोई जल्दी नहीं है, जब सुविधा हो तब बता दीजिए।",
+    "language": "hi",
+    "source": "SYNTHETIC: ordinary bank relationship-manager courtesy call, Devanagari Hindi, no OTP/PIN request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hinglish-001",
+    "transcript": "Caller: Hi, main Ravi bol raha hoon BlueDart se. Aapke liye ek parcel hai lekin address mein flat number thoda unclear hai — please confirm kar dijiye taaki courier aaj 3 se 6 baje ke beech deliver kar sake.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: ordinary courier address-confirmation call, romanized Hinglish, no OTP/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hinglish-002",
+    "transcript": "Caller: Hi, main Anjali bol rahi hoon Meridian Tech ki HR se. Apply karne ke liye shukriya — hum aapka first-round interview Thursday ko 2 baje Google Meet pe rakhna chahte hain. Yeh time theek hai ya koi aur time better rahega?",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: ordinary HR interview-scheduling call, romanized Hinglish, no fee/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hinglish-003",
+    "transcript": "Caller: Hey, Mummy bol rahi hoon. Bas dinner kar liya kya yeh puchne ke liye call kiya, aur yaad dilana tha ki cousin ki engagement is Saturday hai, gift lena mat bhoolna.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: ordinary family call, romanized Hinglish, no financial or personal-data request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hinglish-004",
+    "transcript": "Caller: Namaste, yeh Airtel customer support se call hai, kal aapne jo slow internet speed ki complaint ki thi uska follow-up. Aaj subah technician gaya tha, junction box mein loose cable connection tha, wo fix kar diya hai. Ab connection theek se chal raha hai kya?",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: ordinary telecom support follow-up on a genuine complaint, romanized Hinglish, no OTP/payment request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hinglish-005",
+    "transcript": "Caller: Hello, main Greenwood School se call kar raha hoon, is mahine ke end mein term fee due hai iski reminder ke liye. Aap parent portal se ya school office mein pay kar sakte hain; agle mahine ki 5 tareekh tak koi late fee nahi lagegi.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: ordinary school fee-reminder call, romanized Hinglish, no threat or phone-based payment demand",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hinglish-006",
+    "transcript": "Caller: Hi, gym se call kar raha hoon, aapko yaad dilana tha ki agle hafte membership renewal aa raha hai. Poore saal ke liye renew karna chahenge, ya is baar quarterly plan try karenge?",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: ordinary gym membership-renewal reminder call, romanized Hinglish",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-blatant-hi-003",
+    "transcript": "Caller: शुभ संध्या, मैं आपका कार बीमा एजेंट बोल रहा हूं। अगले महीने आपकी पॉलिसी रिन्यू होनी है — क्या आप इस बार ज़ीरो-डेप्रिसिएशन कवर जुड़वाना चाहेंगे? कोई दबाव नहीं है, जब भी तय करें बता दीजिए।",
+    "language": "hi",
+    "source": "SYNTHETIC: ordinary insurance-renewal advisory call, Devanagari Hindi, no urgency or threat",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "OBSERVING",
+      "difficulty": "BLATANT"
+    }
+  },
+  {
+    "id": "benign-subtle-en-001",
+    "transcript": "Caller: Hi, this is your bank's fraud monitoring team. We noticed an attempted transaction of 45,000 rupees on your card at an electronics store in another city about ten minutes ago, and our system blocked it automatically since it looked unusual. Can you confirm whether you made this purchase yourself? If not, we've already frozen that specific transaction and no further action is needed from you right now — we'll send a new card if you'd like.",
+    "language": "en",
+    "source": "SYNTHETIC: a REAL bank fraud-alert callback pattern — genuinely never asks for OTP, PIN, password, or any money transfer; only asks a yes/no confirmation about a transaction the bank already blocked. This is exactly how legitimate bank fraud teams operate, and is the intended contrast case against screen-sharing/OTP-phishing scam scripts.",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-002",
+    "transcript": "Caller: Good afternoon, this is Constable Iyer from the local police station. You had filed a complaint last month about your stolen scooter — we've located it and need you to come to the station tomorrow to identify it and complete some paperwork.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine police follow-up call on a complaint the user THEMSELVES filed — no arrest threat, no isolation demand, no money request, just a routine in-person follow-up. Deliberately contrasts with digital-arrest scripts that fabricate a complaint AGAINST the victim. [diversification pass: explicit no-OTP/no-pay/no-contact disclaimer clause removed to avoid the hard-subtle stratum being solvable by a 'disclaimer=benign' surface heuristic; label/intent unchanged, still no scam action requested.]",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-003",
+    "transcript": "Caller: Hello, this is regarding your income tax return for this year — our system flagged a minor mismatch between your Form 26AS and the return you filed, most likely a simple entry error. You don't need to do anything urgently; just log into the official income tax e-filing portal with your own credentials whenever convenient and re-verify the return, or consult your CA if you use one.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine tax-department-style notice framing that correctly directs the user to the OFFICIAL PORTAL themselves, never asks for OTP/PIN over the phone, never threatens arrest — the legitimate contrast to digital-arrest tax-evasion scripts.",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-004",
+    "transcript": "Caller: Hi, this is calling from the bank's recovery department regarding your personal loan installment that's now 15 days overdue. I want to explain your options clearly — you can either pay the pending amount through the app, or call our helpline to discuss a revised repayment schedule if you're facing difficulty. There's no penalty beyond the standard late fee mentioned in your loan agreement.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine, professionally-conducted bank loan-recovery call — explicitly states no threats to contact other people, no morphed-photo/illegal-threat language, offers a legitimate restructuring option. The legitimate contrast to fake loan-app harassment scripts. [diversification pass: explicit no-OTP/no-pay/no-contact disclaimer clause removed to avoid the hard-subtle stratum being solvable by a 'disclaimer=benign' surface heuristic; label/intent unchanged, still no scam action requested.]",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-005",
+    "transcript": "Caller: Hi, this is the courier company again — the delivery attempt this morning failed because there was no one at the address and the building's gate code we had on file didn't work. Could you share the correct gate code or an alternate contact so we can try again this afternoon? We just need the address details, nothing else.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine courier re-delivery call that only asks for address/gate-code details — never asks for an OTP, contrasting with courier-OTP-phishing scripts that specifically request the SMS code.",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-006",
+    "transcript": "Caller: This is your uncle calling — I know it's late, but your grandmother has been taken to the hospital after a fall, she's stable now but the doctors want to keep her overnight for observation. Can you come to City Hospital when you get this, and let your parents know too?",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine family emergency call — urgent and alarming in tone, but explicitly NOT a financial or isolation-demanding scam script; no money, OTP, or secrecy requested. Included as a hard case that must not be mistakenly flagged just because it's urgent and distressing.",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-007",
+    "transcript": "Caller: Hello, this is an investor awareness call from SEBI's outreach program. We're reminding investors that no legitimate advisor guarantees fixed returns, and any scheme promising monthly guaranteed profits should be treated with caution. This is purely an informational call, we are not asking for any of your account or investment details, and there is nothing you need to do in response.",
+    "language": "en",
+    "source": "REAL_DERIVED: a genuine SEBI/RBI-style investor-education outreach call — explicitly informational, explicitly does not ask for any account details or money, the real-world contrast to investment-fraud scripts that impersonate exactly this kind of authority",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-008",
+    "transcript": "Caller: Hi, I'm calling from the background-verification agency handling your new employer's onboarding checks. I just need to confirm your last employer's name and your dates of employment there for our records — this is a standard verification step for their onboarding process.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine employment background-verification call that explicitly states no cost — the legitimate contrast to job-scam scripts that demand an upfront 'verification fee'. [diversification pass: explicit no-OTP/no-pay/no-contact disclaimer clause removed to avoid the hard-subtle stratum being solvable by a 'disclaimer=benign' surface heuristic; label/intent unchanged, still no scam action requested.]",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-009",
+    "transcript": "Caller: Good morning, this is your bank calling about the KYC update notice you may have received by post. To complete it, please visit your nearest branch with your Aadhaar and PAN card, or update it yourself through the official mobile banking app under the KYC section.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine bank KYC-update call that explicitly directs branch/app self-service and explicitly warns against sharing OTP/PIN — the deliberate, correct-procedure contrast to screen-sharing/KYC-expiry scam scripts. [diversification pass: explicit no-OTP/no-pay/no-contact disclaimer clause removed to avoid the hard-subtle stratum being solvable by a 'disclaimer=benign' surface heuristic; label/intent unchanged, still no scam action requested.]",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-010",
+    "transcript": "Caller: Hi, this is the society office again about last month's maintenance dues — I see a partial payment came through but it seems short by 400 rupees, possibly a bank processing difference. No penalty applies, just wanted to flag it so it's corrected in next month's statement whenever you get a chance to check.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine, low-stakes billing-discrepancy call from an actual known local authority (the RWA), explicitly low-pressure and non-threatening despite mentioning a shortfall",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-011",
+    "transcript": "Caller: This is a call from your credit card company's fraud team — we saw a login attempt to your online account from an unrecognized device this morning, which we blocked automatically. We just wanted to inform you and suggest you change your password when convenient using the official app.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine card-company fraud notification — explicitly states it needs no information from the user, directs self-service password change via the official app, the legitimate contrast to screen-sharing 'unauthorized login' scam scripts [diversification pass: explicit no-OTP/no-pay/no-contact disclaimer clause removed to avoid the hard-subtle stratum being solvable by a 'disclaimer=benign' surface heuristic; label/intent unchanged, still no scam action requested.]",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-012",
+    "transcript": "Caller: Hi, this is the fire department's annual inspection team calling to schedule a mandatory safety check for your building's fire extinguishers next week — required by the local municipal code, no cost involved, just need someone available for about twenty minutes.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine mandatory-but-routine municipal inspection call — alarming institutional framing ('mandatory', 'municipal code') but explicitly no cost, no threat, no urgency beyond scheduling",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-013",
+    "transcript": "Caller: Hi, calling from the passport office regarding your renewal application — there's a minor document discrepancy in your submitted address proof, most likely just a mismatch in formatting. You can resolve this by re-uploading a corrected document through the official Passport Seva portal, no phone-based payment or OTP sharing is needed for this.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine passport-office document-discrepancy notice that explicitly routes correction through the official portal, no OTP/payment over phone",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-014",
+    "transcript": "Caller: This is your health insurance provider — we're processing your recent hospital claim and need to verify one detail: could you confirm the exact date of admission as shown on your discharge summary? This is only for our internal claim processing records, we don't need any bank or card details for this call.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine insurance-claim verification call, explicitly limits itself to a factual detail and explicitly states no bank/card details are needed",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-015",
+    "transcript": "Caller: Hi, this is from the electricity board's technical team — we're doing planned maintenance in your area tomorrow between 10 am and 2 pm, so there will be a scheduled power cut. Just wanted to give you advance notice so you can plan around it; nothing needed from your end.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine utility maintenance-notice call, purely informational despite being an unplanned/unusual call",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hi-001",
+    "transcript": "Caller: नमस्ते, यह आपके बैंक की फ्रॉड मॉनिटरिंग टीम से कॉल है। लगभग दस मिनट पहले किसी और शहर के एक इलेक्ट्रॉनिक्स स्टोर में आपके कार्ड से 45,000 रुपये का ट्रांजैक्शन करने की कोशिश हुई, जो असामान्य लगने की वजह से हमारे सिस्टम ने अपने आप ब्लॉक कर दिया। क्या आप बता सकते हैं कि यह खरीदारी आपने खुद की थी? अगर नहीं, तो हमने पहले ही उस ट्रांजैक्शन को रोक दिया है, आपको अभी कुछ करने की जरूरत नहीं है।",
+    "language": "hi",
+    "source": "SYNTHETIC: a REAL bank fraud-alert callback pattern, Devanagari Hindi — never asks for OTP/PIN/password/money, only a yes/no confirmation about an already-blocked transaction",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hi-002",
+    "transcript": "Caller: नमस्ते, मैं कांस्टेबल अय्यर बोल रहा हूं, लोकल पुलिस स्टेशन से। पिछले महीने आपने अपनी चोरी हुई स्कूटर के बारे में शिकायत दर्ज की थी — हमने वो बरामद कर ली है, कल स्टेशन आकर पहचान और कुछ कागजी कार्रवाई पूरी कर दीजिए। कोई जल्दी नहीं है, और आपको कुछ भी पे या ट्रांसफर नहीं करना है।",
+    "language": "hi",
+    "source": "SYNTHETIC: a genuine police follow-up call on a complaint the user themselves filed, Devanagari Hindi — no arrest threat, no isolation demand, no money request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hi-003",
+    "transcript": "Caller: यह आपके इनकम टैक्स रिटर्न के बारे में है — हमारे सिस्टम ने आपके Form 26AS और भरे गए रिटर्न के बीच एक छोटा सा मिसमैच फ्लैग किया है, ज्यादातर एक साधारण एंट्री एरर होता है। अभी कुछ करने की जरूरत नहीं है; बस जब सुविधा हो, ऑफिशियल इनकम टैक्स ई-फाइलिंग पोर्टल पर अपने खुद के लॉगिन से रिटर्न फिर से वेरिफाई कर लीजिए, या अपने CA से सलाह लीजिए।",
+    "language": "hi",
+    "source": "SYNTHETIC: a genuine tax-department-style notice, Devanagari Hindi — directs the user to the official portal themselves, never asks for OTP/PIN, never threatens arrest",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hinglish-001",
+    "transcript": "Caller: Hi, main bank ki recovery department se bol raha hoon aapke personal loan installment ke baare mein jo ab 15 din se overdue hai. Main aapko options clearly samjhana chahta hoon — aap app ke through pending amount pay kar sakte hain, ya humari helpline pe call karke revised repayment schedule discuss kar sakte hain agar dikkat ho rahi hai. Loan agreement mein jo standard late fee likhi hai uske alawa koi penalty nahi hai, aur hum is baare mein kisi aur se contact nahi karenge.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: a genuine, professionally-conducted bank loan-recovery call, romanized Hinglish — explicitly no threats to contact others, offers legitimate restructuring, the contrast to fake loan-app harassment",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hinglish-002",
+    "transcript": "Caller: Hi, courier company se phir se call kar raha hoon — aaj subah delivery attempt fail ho gaya kyunki address pe koi nahi tha aur building ka gate code jo humare pass tha wo kaam nahi kiya. Kya aap sahi gate code ya koi alternate contact share kar sakte hain taaki hum aaj dopahar phir try karein? Bas address details chahiye, aur kuch nahi.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: a genuine courier re-delivery call, romanized Hinglish — only asks for address/gate-code, never an OTP",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hinglish-003",
+    "transcript": "Caller: Aapke chacha bol raha hoon — pata hai raat ho gayi hai, lekin dadi ko gir jaane ke baad hospital le kar aaye hain, abhi stable hain lekin doctors raat bhar observation ke liye rakhna chahte hain. Yeh message milte hi City Hospital aa sakte ho kya, aur mummy-papa ko bhi bata dena.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: a genuine family emergency call, romanized Hinglish — urgent and distressing but not a financial or isolation-demanding scam script",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hinglish-004",
+    "transcript": "Caller: Namaste, yeh aapke naye employer ke onboarding checks handle karne wali background-verification agency se call hai. Bas aapke pichle employer ka naam aur wahan kaam karne ki dates confirm karni hain hamare records ke liye — yeh ek standard, bina charge wala verification step hai, is call ke liye aapko kuch pay nahi karna.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: a genuine employment background-verification call, romanized Hinglish, explicitly no cost — the contrast to job-scam 'verification fee' demands",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hinglish-005",
+    "transcript": "Caller: Good morning, yeh aapke bank se call hai jo aapko post mein mile KYC update notice ke baare mein hai. Isse complete karne ke liye, please apni nearest branch mein Aadhaar aur PAN card le kar visit kijiye, ya official mobile banking app mein KYC section se khud update kar lijiye.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: a genuine bank KYC-update call, romanized Hinglish, explicitly directs branch/app self-service and warns against sharing OTP/PIN — the correct-procedure contrast to screen-sharing scam scripts [diversification pass: explicit no-OTP/no-pay/no-contact disclaimer clause removed to avoid the hard-subtle stratum being solvable by a 'disclaimer=benign' surface heuristic; label/intent unchanged, still no scam action requested.]",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-022",
+    "transcript": "Caller: Hello, I'm following up on a case reference that got linked to your registered mobile number in our system — there's an entry that needs to be corrected before it gets included in next month's report. Could you confirm your Aadhaar number so I can pull up the exact record and read out what needs fixing? It's a short call, shouldn't take more than a couple of minutes.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, an early-stage digital-arrest opener that requests Aadhaar for 'record correction' with NO video-call or privacy/isolation request at all — deliberately added to prevent the hard-subtle stratum from being solvable by a simple 'video + private room = scam' heuristic",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-023",
+    "transcript": "Caller: Sir, this is regarding a compliance flag on your account — nothing that needs to happen over the phone, actually. You'll need to visit our regional office by end of this week with your ID proof to complete a short in-person verification, otherwise the file gets escalated automatically to the next stage. I'll text you the office address.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, digital-arrest-adjacent opener that substitutes an in-person branch-visit demand for the usual video-call transition, with a soft deadline instead of explicit isolation language — no video, no camera, no privacy request",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-en-024",
+    "transcript": "Caller: Hi, quick heads-up — a notice with your name on it is being prepared regarding a discrepancy in a recent transaction, should be finalized and sent to your address in the next day or two. If you'd rather clear it before that formal notice goes out, you can call this number back today and we'll walk you through what's needed. Otherwise no action needed until the notice arrives.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, a deadline-only digital-arrest opener with zero mention of video, camera, or being alone — escalation pressure comes purely from a looming 'formal notice', not isolation demands",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "da-subtle-hinglish-006",
+    "transcript": "Caller: Sir yeh ek case reference ke baare mein hai jo aapke registered mobile number se link hua hai — humein bas kuch details confirm karni hain taaki record sahi se update ho sake agli report se pehle. Aapka Aadhaar number bata dijiye, main record nikal ke exact detail padh kar bata deta hoon. Bas do minute ka kaam hai.",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: composite pattern, early-stage digital-arrest opener requesting Aadhaar for 'record correction', romanized Hinglish, no video/privacy request at all",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "digital-arrest",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "screenshare-subtle-en-004",
+    "transcript": "Caller: Hi, this is the software team following up on the update notification you may have seen — a few users on your phone model reported the update getting stuck partway. If that happens to you, the fastest fix is a short remote session so we can restart it correctly from our end; happy to do this whenever suits you, this week or next, whatever's easier.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, screen-sharing fraud opener with genuinely no urgency and no 'be alone/quiet room' request at all — the pressure comes purely from a vague future inconvenience, not isolation",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "screen-sharing-fraud",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "loanapp-subtle-en-004",
+    "transcript": "Caller: Hi, this is about your loan installment that's a few days overdue now. I want to keep this simple: if it's paid within the week there's no issue at all, just the standard late fee already listed in your agreement. If it goes past that, our system does start notifying your listed references automatically, that part isn't something I can override, but you have time before that happens.",
+    "language": "en",
+    "source": "SYNTHETIC: composite pattern, loan-app harassment opener that discloses the actual escalation mechanism (contacting references) without any morphed-photo threat or explicit 'we will destroy your reputation' language — a softer, more procedural-sounding version designed to avoid the obvious harassment-script tell",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": true,
+      "variant": "loan-app-harassment",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-016",
+    "transcript": "Caller: Hi, this is Dr. Mehta's clinic calling for your follow-up on the rash you came in about last week — the doctor would like a quick video call to see how it's healing before deciding if the prescription needs adjusting. Would tomorrow evening work, or is there a better time this week?",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine telemedicine follow-up call requesting video for a real, specific medical reason — no money, no OTP, no urgency; deliberately included so a video-call request is not automatically treated as a scam signal",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-017",
+    "transcript": "Caller: Hi, this is your insurance company's surveyor regarding the claim you filed for the minor scratch on your car. To process it faster, I can do a quick video call so you can show me the damage directly instead of us scheduling an in-person visit, which usually takes longer to arrange. Entirely your choice which way you'd prefer.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine insurance-surveyor video-inspection call, standard industry practice for minor claims — no money transfer, no OTP, video requested purely for a documented, legitimate reason",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-018",
+    "transcript": "Caller: Hi, this is IT support — as announced in this morning's office email, we're rolling out the new expense-reporting software today. I'll walk you through it over a short screen-share so you can see exactly where the new fields are; should take about ten minutes whenever you're free this afternoon.",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine internal-employer IT-support screen-share call, pre-announced via an internal email, for legitimate onboarding to new company software — no bank/personal-account access requested, purely a work-tool walkthrough",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-019",
+    "transcript": "Caller: Hi, this is your bank's wealth management desk — since you're enrolled in our quarterly portfolio review service, I'd like to do a video call to walk you through this quarter's performance and any rebalancing you might want to consider. Would Thursday afternoon work, or would you prefer a different day?",
+    "language": "en",
+    "source": "SYNTHETIC: a genuine, pre-subscribed bank wealth-management video review call — no urgency, no request for OTP/PIN/transfer, video used purely for an existing service the user already opted into",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-en-020",
+    "transcript": "Caller: Hello, this is regarding the video KYC step for your new savings account — you can complete it anytime through the official app itself, it's a short in-app video call with a bank representative where you'll show your PAN card to the camera. It only takes about five minutes and can be done whenever it's convenient for you this week.",
+    "language": "en",
+    "source": "REAL_DERIVED: a genuine, RBI-permitted in-app Video KYC process — a real, officially sanctioned banking procedure done entirely within the bank's own official app, the deliberate legitimate contrast to a scammer's outside video-call 'digital arrest'/KYC-expiry script",
+    "provenance": "REAL_DERIVED",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  },
+  {
+    "id": "benign-subtle-hinglish-006",
+    "transcript": "Caller: Namaste, main Dr. Mehta ki clinic se bol raha hoon, pichle hafte aap jo rash dikhane aaye the uska follow-up. Doctor chahte hain ek chhota sa video call karke dekh lein ki healing kaisi ho rahi hai, us hisaab se prescription adjust karni hai ya nahi. Kal shaam theek rahega, ya is hafte koi aur time better hoga?",
+    "language": "hi-Latn",
+    "source": "SYNTHETIC: a genuine telemedicine follow-up call requesting video for a real medical reason, romanized Hinglish — no money, no OTP, no urgency",
+    "provenance": "SYNTHETIC",
+    "groundTruth": {
+      "isScam": false,
+      "variant": "",
+      "concern": "CAUTION",
+      "difficulty": "HARD_SUBTLE"
+    }
+  }
+]

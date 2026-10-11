@@ -111,6 +111,7 @@ dependencies {
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.okhttp.mockwebserver)
     // AGP's unit-test android.jar stubs org.json.* to throw "not mocked" at runtime. AutofillBridge
     // (and LinkChecker) use org.json for real, so pure-JVM tests need the actual JVM implementation
     // on the test classpath, ahead of the stub, to exercise real quote()/parsing behavior.

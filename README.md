@@ -1,11 +1,11 @@
 # VAARTA
 
-**Real-time, on-device protection against digital-arrest and phone scams for Indian citizens.**
+**An Android safety assistant for digital-arrest and phone scams in India.**
 
-VAARTA listens to a suspicious call live (on speaker), scores it as it escalates with a
-deterministic risk engine, coaches the caller's intended victim on exactly what to say back with
-an AI copilot, warns their family, and helps them file an auditable complaint with the real
-government cybercrime portals — end to end, on a single Android phone, at zero infrastructure cost.
+VAARTA can analyze speech captured by the phone microphone while a call is on speaker and score it
+with a deterministic on-device risk engine. Optional Gemini features provide live coaching,
+classification, and chat through Google's cloud API. The app also supports user-controlled family
+alerts and guided complaint preparation for government portals. VAARTA has no app-operated backend.
 
 Built for **Theme: AI for Digital Public Safety — Defeating Counterfeiting, Fraud & Digital Arrest
 Scams**, with deep, complete coverage of the *Digital Arrest Scam Detection & Alerting* and
@@ -23,19 +23,19 @@ protection *at the point of contact*, before a victim ever transfers a rupee.
 
 ## The solution
 
-VAARTA turns a phone into its own protector. A citizen puts a suspicious call on speaker; VAARTA
-listens, transcribes, and scores the conversation against a scam-progression model in real time —
-entirely on-device. If the pattern matches a known scam, the app tells the victim exactly what to
-say to break the scammer's script, offers to alert a trusted family member, and — if money has
-already moved — walks them through filing a real complaint with the correct government authority,
-autofilling the live portal so nothing gets lost in translation between panic and paperwork.
+VAARTA combines local deterministic scoring with optional remote AI assistance. For live call
+analysis, the user enables the microphone and places the call on speaker; the app does not capture
+the phone call audio directly. When Gemini is configured and an AI feature is used, related audio or
+text is sent to Google's service. The deterministic risk score stays on-device. The app can also
+prepare complaint information and guide the user through the selected portal; the user remains in
+control of submission.
 
 ## Screenshots
 
 <table>
 <tr>
 <td align="center" width="25%"><img src="screenshots/01-home.png" width="210"/><br/><sub><b>Home</b><br/>panic action, AI status, live scam-news feed</sub></td>
-<td align="center" width="25%"><img src="screenshots/02-live-scam-detected.png" width="210"/><br/><sub><b>Live protection</b><br/>a real scam call scored and coached in real time</sub></td>
+<td align="center" width="25%"><img src="screenshots/02-live-scam-detected.png" width="210"/><br/><sub><b>Live protection</b><br/>scam-detection flow example</sub></td>
 <td align="center" width="25%"><img src="screenshots/03-ask-vaarta-ai.png" width="210"/><br/><sub><b>Ask VAARTA</b><br/>grounded, cited AI answers</sub></td>
 <td align="center" width="25%"><img src="screenshots/04-conversations.png" width="210"/><br/><sub><b>Conversations</b><br/>encrypted history of every call, chat, and recording</sub></td>
 </tr>
@@ -59,7 +59,8 @@ autofilling the live portal so nothing gets lost in translation between panic an
   courier/parcel seizure, SIM-block threats, bank/RBI laundering accusations, investment/job/loan/
   lottery/electricity/UPI-refund lures, courier-COD OTP scams, bank KYC-expiry phishing, and
   family-emergency impersonation — 10 distinct scam families in total.
-- **Live AI copilot** (Gemini Live) — hears the call, understands tone and words, and coaches the
+- **Live AI copilot** (Gemini Live) — analyzes microphone audio while the user has a call on
+  speaker; audio is sent to Google's API when this feature is configured and used. It coaches the
   victim in real time with graded replies (ask a verifying question, refuse, or end the call) and
   a live-updating "why this is suspicious" breakdown, shown in-app or in a floating overlay that
   stays visible over the dialer.
@@ -82,32 +83,28 @@ autofilling the live portal so nothing gets lost in translation between panic an
   final Submit/OTP/CAPTCHA action — VAARTA never submits on a user's behalf.**
 - **Scam-link checker** — chat messages and shared links are checked against URLhaus and Google
   Safe Browsing before the user opens them.
-- **Encrypted on-device storage** — every saved conversation, the filing-details vault, and the
-  guardian contact are encrypted at rest (SQLCipher, key wrapped by Android Keystore). Nothing
-  leaves the device unless the user explicitly shares or exports it.
+- **Encrypted on-device storage** — saved conversations, filing details, and guardian data use
+  SQLCipher with a key wrapped by Android Keystore. Separately, optional AI and threat-intelligence
+  features make network requests; do not assume that all feature data stays on-device.
 - **हिन्दी + Hinglish**, first-class — an in-app language picker, every AI reply mirrors whatever
   script the user is typing in, and a dedicated safety filter checks AI output in English, Hindi,
   and Devanagari script alike before it ever reaches a frightened user.
-- **Polished, accessible interface** — full dark-mode support, TalkBack/screen-reader labels on
-  every interactive element, and layouts stress-tested at large font scales.
+- **Accessible interface** — includes screen-reader labels and large-font support; accessibility
+  still needs device-level verification for each release.
 
-Every AI surface is advisory-only, layered strictly on top of the deterministic engine: the AI can
-**raise** displayed concern, never lower it or set the score itself, and any AI failure fails closed
-to the deterministic-only experience — a network hiccup degrades gracefully, it never breaks safety.
-
-**284 automated tests, 0 failures, 0 lint errors** (fresh, reproducible count — clean rebuild,
-counted directly from JUnit XML, not asserted).
+Every AI surface is advisory-only: it cannot lower or set the deterministic score. AI features
+depend on a network connection and configured credentials; without them, those features are
+unavailable while local reasoning remains available. See the [team guide](docs/TEAM_GUIDE.md) and
+[current architecture](docs/ARCHITECTURE_CURRENT.md) for data boundaries and verification limits.
 
 ## Architecture
 
 ![VAARTA system architecture](architecture/vaarta-architecture.svg)
 
-A deterministic engine is the sole owner of the risk score; the AI copilot sits alongside it as an
-advisory layer that can only raise concern, never lower or set it, and every AI output passes a
-safety rail before reaching the user. Protective actions (coaching, guardian alert, complaint
-filing, link checking) and all persistence are on-device; the only network calls are opt-in calls
-to the AI provider, two URL-reputation services, and — only when the user chooses to file — the
-real government portals themselves.
+A deterministic engine is the sole owner of the risk score. AI coaching and classification use
+remote services when configured. Network access also supports threat-intelligence checks and
+user-directed government portal flows. Review each feature's data flow before treating it as
+offline or private-by-default.
 
 ## Tech stack
 
@@ -115,7 +112,7 @@ real government portals themselves.
 |---|---|
 | Platform | Native Android (Kotlin, Jetpack Compose, Material 3) |
 | Deterministic engine | Pure Kotlin/JVM (`core:reasoning`) — fully unit-tested, no Android dependency |
-| AI copilot | Google Gemini (live audio, chat, web-grounded classification) |
+| AI copilot | Optional Google Gemini API (remote live audio, chat, classification) |
 | Speaker attribution | On-device sherpa-onnx (CAM++ embedding model), zero-enrollment |
 | Persistence | Room + SQLCipher, key wrapped by Android Keystore |
 | Threat intel | URLhaus, Google Safe Browsing |
@@ -131,8 +128,11 @@ pointing at it. No Android Studio required — this project builds and tests ent
 git clone https://github.com/Megesh07/vaarta.git
 cd vaarta
 
-# Run every unit test (pure JVM + Room-instrumented where noted, no device needed for the JVM ones):
+# Run the JVM unit tests:
 ./gradlew test
+
+# Run Android lint:
+./gradlew lintDebug
 
 # Build the Android debug APK:
 ./gradlew :app:assembleDebug
@@ -154,8 +154,11 @@ scam-link checker are opt-in and need free keys:
    - `URLHAUS_AUTH_KEY` — free key at [auth.abuse.ch](https://auth.abuse.ch/).
    - Either key alone is enough to enable the scam-link checker; both together give it two
      independent threat-intel sources.
-2. Rebuild — `./gradlew :app:assembleDebug`. Leave a key blank and the corresponding feature is
-   simply absent from the UI; nothing else changes.
+2. Rebuild — `./gradlew :app:assembleDebug`.
+
+**Key safety:** configured keys are embedded in the APK and can be extracted. Use a restricted,
+low-quota development key, monitor usage, and never put privileged or production credentials in an
+Android client. Do not share keys between team members.
 
 ## Trying it out
 
@@ -173,14 +176,11 @@ family" button — the fastest way to see the full detection pipeline end to end
 
 ## Validation
 
-- **Deterministic engine:** the scam-vs-genuine-call asymmetry is pinned by full multi-turn
-  transcript tests for every supported scam family, not single-line assertions.
-- **End-to-end:** every user-facing flow — live coaching, the floating overlay, recorded-call
-  analysis, the encrypted conversation history, the guardian alert, and the complaint co-pilot's
-  live autofill against the real NCRP/Chakshu portals — has been driven and verified on an Android
-  emulator, screenshot by screenshot (the screenshots above are from a real, current build).
-- **AI safety:** the coaching safety filter has been red-teamed with a dedicated adversarial test
-  suite across both English/Hinglish and Devanagari script.
+Pull requests run JVM unit tests, Android lint, and a debug APK build in GitHub Actions. Instrumented
+tests require a device or emulator and are not covered by the JVM `test` task. Automated checks do
+not establish that all OEM, microphone, overlay, telephony, WebView, or external portal behavior
+works on a real device. See the [team baseline checklist](docs/BASELINE_CHECKLIST.md) for evidence
+that still needs device or GitHub-hosted verification.
 
 ## Scope
 
