@@ -5,8 +5,8 @@ observed; it does not certify the app for production or prove behavior outside t
 
 ## Local evidence (2026-10-11)
 
-The verified `expert-brain-eval` source at revision `eb37f1d` completed these checks on Windows with
-JDK 17 and Android SDK 35:
+The integrated `main` source at revision `bd8b4b7` (PR #2 head) completed these checks on Windows
+with JDK 17 and Android SDK 35:
 
 - [x] `gradlew.bat clean test lintDebug :app:assembleDebug` — build succeeded.
 - [x] JVM test reports: 320 tests, 0 failures, 0 errors, 4 skipped.
@@ -16,8 +16,8 @@ JDK 17 and Android SDK 35:
 - [x] Gradle 8.11.1 distribution checksum configured; wrapper JAR checksum matches the official
   Gradle reference.
 
-This is local evidence for that source revision, not a device/release certification. GitHub Actions,
-a real device/emulator run, and remote branch protection have not yet been verified.
+This is local evidence for that source revision, not a device/release certification. No real
+device/emulator run has been performed.
 
 ## Local baseline
 
@@ -25,14 +25,15 @@ a real device/emulator run, and remote branch protection have not yet been verif
 - [x] `./gradlew lintDebug` passes (86 warnings remain; see evidence above).
 - [x] `./gradlew :app:assembleDebug` passes.
 - [ ] Instrumented tests pass on a documented emulator/device for the affected Android flows.
-- [ ] No credentials, local SDK paths, private submissions, or generated evaluation responses are
+- [x] No credentials, local SDK paths, private submissions, or generated evaluation responses are
   tracked.
 
 ## GitHub baseline
 
-- [ ] CI runs on pull requests and the default branch.
-- [ ] Required status checks and review rules are enabled on the default branch.
-- [ ] The repo's actual default branch and contributor instructions agree.
+- [x] CI runs on pull requests and the default branch (PRs #2/#3 and main push verified).
+- [x] `main` requires the `Tests, lint, and debug build` check, one approval after the latest push,
+  resolved review conversations, and disallows force-push/deletion; rules are enforced for admins.
+- [x] The repo's default branch is `main`, matching the team guide and CI workflow.
 - [ ] Dependency and secret alerts are enabled where available.
 
 ## Release-specific evidence
@@ -54,5 +55,5 @@ a real device/emulator run, and remote branch protection have not yet been verif
   dataset; its current scores are developmental signals, not generalizable accuracy evidence.
 - Triage the 86 existing Android Lint warnings and fix the actionable ones without suppressing
   findings wholesale.
-- After the CI workflow has run on GitHub, enable and verify a required status check and suitable
-  review rules on the default branch. A checked-in workflow alone is not enforcement.
+- Dependency/secret alert settings still need an explicit settings-page check; a passing
+  GitGuardian check is not evidence that every repository alert is enabled.
